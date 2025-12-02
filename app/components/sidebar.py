@@ -27,7 +27,11 @@ def sidebar(current_page: str) -> rx.Component:
     """Main application sidebar."""
     return rx.el.aside(
         rx.el.div(
-            rx.icon("graduation-cap", class_name="h-8 w-8 text-blue-600 mr-3"),
+            rx.image(
+                src="placeholder.svg",
+                class_name="h-8 w-8 object-contain mr-3",
+                alt="CHED Logo",
+            ),
             rx.el.h1(
                 "CHED IR²D", class_name="text-xl font-bold text-gray-900 tracking-tight"
             ),

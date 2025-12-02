@@ -12,7 +12,11 @@ def branding_section() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    rx.icon("graduation-cap", class_name="h-16 w-16 text-white mb-6"),
+                    rx.image(
+                        src="placeholder.svg",
+                        class_name="h-16 w-16 object-contain mb-6",
+                        alt="CHED Logo",
+                    ),
                     class_name="bg-white/20 w-fit p-4 rounded-2xl backdrop-blur-sm",
                 ),
                 rx.el.h1(
@@ -82,7 +86,11 @@ def hei_selection_page() -> rx.Component:
         rx.el.header(
             rx.el.div(
                 rx.el.div(
-                    rx.icon("graduation-cap", class_name="h-8 w-8 text-blue-600 mr-3"),
+                    rx.image(
+                        src="placeholder.svg",
+                        class_name="h-8 w-8 object-contain mr-3",
+                        alt="CHED Logo",
+                    ),
                     rx.el.h1(
                         "CHED IR²D",
                         class_name="text-xl font-bold text-gray-900 tracking-tight",
