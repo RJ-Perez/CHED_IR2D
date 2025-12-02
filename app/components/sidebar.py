@@ -28,7 +28,7 @@ def sidebar(current_page: str) -> rx.Component:
     return rx.el.aside(
         rx.el.div(
             rx.image(
-                src="placeholder.svg",
+                src="https://chedcar.com/wp-content/uploads/2020/09/Commission_on_Higher_Education_CHEd.svg_.png",
                 class_name="h-8 w-8 object-contain mr-3",
                 alt="CHED Logo",
             ),

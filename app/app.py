@@ -13,7 +13,7 @@ def branding_section() -> rx.Component:
             rx.el.div(
                 rx.el.div(
                     rx.image(
-                        src="placeholder.svg",
+                        src="https://chedcar.com/wp-content/uploads/2020/09/Commission_on_Higher_Education_CHEd.svg_.png",
                         class_name="h-16 w-16 object-contain mb-6",
                         alt="CHED Logo",
                     ),
@@ -87,7 +87,7 @@ def hei_selection_page() -> rx.Component:
             rx.el.div(
                 rx.el.div(
                     rx.image(
-                        src="placeholder.svg",
+                        src="https://chedcar.com/wp-content/uploads/2020/09/Commission_on_Higher_Education_CHEd.svg_.png",
                         class_name="h-8 w-8 object-contain mr-3",
                         alt="CHED Logo",
                     ),
