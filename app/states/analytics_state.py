@@ -42,8 +42,10 @@ class AnalyticsState(rx.State):
         s_emp_rate = min(100, emp_rate / b_emp_rate * 100) if b_emp_rate else 0
         s_emp_rep = min(100, emp_rep / b_emp_rep * 100) if b_emp_rep else 0
         self.research_score = int(s_r_output * 0.6 + s_citations * 0.4)
-        self.employability_score = int(s_emp_rate * 0.5 + s_emp_rep * 0.5)
-        self.overall_score = int((self.research_score + self.employability_score) / 2)
+        self.employability_score = int(s_emp_rep * 0.75 + s_emp_rate * 0.25)
+        self.overall_score = int(
+            self.research_score * 0.5 + self.employability_score * 0.2
+        )
         self.research_comparison_data = [
             {
                 "metric": "Publications",
