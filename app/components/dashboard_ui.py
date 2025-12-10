@@ -183,34 +183,35 @@ def dashboard_header() -> rx.Component:
 def data_entry_forms() -> rx.Component:
     """Main data entry area split by thematic sections."""
     return rx.el.div(
+        # Research and Discovery (50%)
         rx.el.div(
             rx.el.div(
                 rx.icon("microscope", class_name="h-6 w-6 text-purple-600 mr-3"),
-                rx.el.h3(
-                    "Research and Discovery",
-                    class_name="text-lg font-bold text-gray-900",
+                rx.el.div(
+                    rx.el.h3(
+                        "Research and Discovery",
+                        class_name="text-lg font-bold text-gray-900",
+                    ),
+                    rx.el.p(
+                        "Weight: 50% | Academic Reputation: 30% | Citations per Faculty: 20%",
+                        class_name="text-xs text-gray-500 mt-1",
+                    ),
                 ),
                 class_name="flex items-center mb-4 border-b pb-2",
             ),
             rx.el.div(
                 rx.el.div(
                     form_input(
-                        "Total Research Output",
-                        "e.g. 1,250 publications",
-                        DashboardState.research_output,
-                        DashboardState.set_research_output,
+                        "Academic Reputation Score",
+                        "e.g. 85/100 (Weight: 30%)",
+                        DashboardState.academic_reputation,
+                        DashboardState.set_academic_reputation,
                     ),
                     form_input(
                         "Citations per Faculty",
-                        "e.g. 15.4",
-                        DashboardState.citations,
-                        DashboardState.set_citations,
-                    ),
-                    form_input(
-                        "Grants Secured (PHP)",
-                        "e.g. 50,000,000",
-                        DashboardState.grants,
-                        DashboardState.set_grants,
+                        "e.g. 15.4 (Weight: 20%)",
+                        DashboardState.citations_per_faculty,
+                        DashboardState.set_citations_per_faculty,
                     ),
                     class_name="space-y-1",
                 ),
@@ -227,28 +228,35 @@ def data_entry_forms() -> rx.Component:
             ),
             class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6",
         ),
+        # Employability and Outcomes (20%)
         rx.el.div(
             rx.el.div(
                 rx.icon("briefcase", class_name="h-6 w-6 text-emerald-600 mr-3"),
-                rx.el.h3(
-                    "Employability and Outcomes",
-                    class_name="text-lg font-bold text-gray-900",
+                rx.el.div(
+                    rx.el.h3(
+                        "Employability and Outcomes",
+                        class_name="text-lg font-bold text-gray-900",
+                    ),
+                    rx.el.p(
+                        "Weight: 20% | Employer Reputation: 15% | Employment Outcomes: 5%",
+                        class_name="text-xs text-gray-500 mt-1",
+                    ),
                 ),
                 class_name="flex items-center mb-4 border-b pb-2",
             ),
             rx.el.div(
                 rx.el.div(
                     form_input(
-                        "Graduate Employment Rate (%)",
-                        "e.g. 94.5",
-                        DashboardState.employment_rate,
-                        DashboardState.set_employment_rate,
-                    ),
-                    form_input(
                         "Employer Reputation Score",
-                        "e.g. 85/100",
+                        "e.g. 85/100 (Weight: 15%)",
                         DashboardState.employer_reputation,
                         DashboardState.set_employer_reputation,
+                    ),
+                    form_input(
+                        "Employment Outcomes (Graduate Employment Rate %)",
+                        "e.g. 94.5 (Weight: 5%)",
+                        DashboardState.employment_outcomes,
+                        DashboardState.set_employment_outcomes,
                     ),
                     class_name="space-y-1",
                 ),
@@ -258,6 +266,141 @@ def data_entry_forms() -> rx.Component:
                         "upload_employability",
                         DashboardState.handle_employability_upload,
                         DashboardState.uploaded_employability_files,
+                    ),
+                    class_name="mt-2",
+                ),
+                class_name="grid grid-cols-1 lg:grid-cols-2 gap-8",
+            ),
+            class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6",
+        ),
+        # Global Engagement (15%)
+        rx.el.div(
+            rx.el.div(
+                rx.icon("globe", class_name="h-6 w-6 text-blue-600 mr-3"),
+                rx.el.div(
+                    rx.el.h3(
+                        "Global Engagement",
+                        class_name="text-lg font-bold text-gray-900",
+                    ),
+                    rx.el.p(
+                        "Weight: 15% | Research Network: 5% | Faculty Ratio: 5% | Student Ratio: 5% | Diversity: 0% (tracked)",
+                        class_name="text-xs text-gray-500 mt-1",
+                    ),
+                ),
+                class_name="flex items-center mb-4 border-b pb-2",
+            ),
+            rx.el.div(
+                rx.el.div(
+                    form_input(
+                        "International Research Network Score",
+                        "e.g. 75/100 (Weight: 5%)",
+                        DashboardState.international_research_network,
+                        DashboardState.set_international_research_network,
+                    ),
+                    form_input(
+                        "International Faculty Ratio (%)",
+                        "e.g. 12.5 (Weight: 5%)",
+                        DashboardState.international_faculty_ratio,
+                        DashboardState.set_international_faculty_ratio,
+                    ),
+                    form_input(
+                        "International Student Ratio (%)",
+                        "e.g. 8.3 (Weight: 5%)",
+                        DashboardState.international_student_ratio,
+                        DashboardState.set_international_student_ratio,
+                    ),
+                    form_input(
+                        "International Student Diversity (Countries)",
+                        "e.g. 45 countries (Tracked, 0% weight)",
+                        DashboardState.international_student_diversity,
+                        DashboardState.set_international_student_diversity,
+                    ),
+                    class_name="space-y-1",
+                ),
+                rx.el.div(
+                    file_upload_section(
+                        "Global Engagement Evidence (Partnerships, Agreements)",
+                        "upload_global_engagement",
+                        DashboardState.handle_global_engagement_upload,
+                        DashboardState.uploaded_global_engagement_files,
+                    ),
+                    class_name="mt-2",
+                ),
+                class_name="grid grid-cols-1 lg:grid-cols-2 gap-8",
+            ),
+            class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6",
+        ),
+        # Learning Experience (10%)
+        rx.el.div(
+            rx.el.div(
+                rx.icon("graduation-cap", class_name="h-6 w-6 text-indigo-600 mr-3"),
+                rx.el.div(
+                    rx.el.h3(
+                        "Learning Experience",
+                        class_name="text-lg font-bold text-gray-900",
+                    ),
+                    rx.el.p(
+                        "Weight: 10% | Faculty-Student Ratio: 10%",
+                        class_name="text-xs text-gray-500 mt-1",
+                    ),
+                ),
+                class_name="flex items-center mb-4 border-b pb-2",
+            ),
+            rx.el.div(
+                rx.el.div(
+                    form_input(
+                        "Faculty-Student Ratio",
+                        "e.g. 1:15 (Weight: 10%)",
+                        DashboardState.faculty_student_ratio,
+                        DashboardState.set_faculty_student_ratio,
+                    ),
+                    class_name="space-y-1",
+                ),
+                rx.el.div(
+                    file_upload_section(
+                        "Learning Experience Evidence (Class Size Reports, Faculty Data)",
+                        "upload_learning_experience",
+                        DashboardState.handle_learning_experience_upload,
+                        DashboardState.uploaded_learning_experience_files,
+                    ),
+                    class_name="mt-2",
+                ),
+                class_name="grid grid-cols-1 lg:grid-cols-2 gap-8",
+            ),
+            class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6",
+        ),
+        # Sustainability (5%)
+        rx.el.div(
+            rx.el.div(
+                rx.icon("leaf", class_name="h-6 w-6 text-green-600 mr-3"),
+                rx.el.div(
+                    rx.el.h3(
+                        "Sustainability",
+                        class_name="text-lg font-bold text-gray-900",
+                    ),
+                    rx.el.p(
+                        "Weight: 5% | Sustainability Metrics: 5%",
+                        class_name="text-xs text-gray-500 mt-1",
+                    ),
+                ),
+                class_name="flex items-center mb-4 border-b pb-2",
+            ),
+            rx.el.div(
+                rx.el.div(
+                    form_input(
+                        "Sustainability Metrics Score",
+                        "e.g. 80/100 (Weight: 5%)",
+                        DashboardState.sustainability_metrics,
+                        DashboardState.set_sustainability_metrics,
+                    ),
+                    class_name="space-y-1",
+                ),
+                rx.el.div(
+                    file_upload_section(
+                        "Sustainability Evidence (ESG Reports, Environmental Certifications)",
+                        "upload_sustainability",
+                        DashboardState.handle_sustainability_upload,
+                        DashboardState.uploaded_sustainability_files,
                     ),
                     class_name="mt-2",
                 ),

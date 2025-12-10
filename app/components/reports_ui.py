@@ -93,17 +93,49 @@ def report_table_row(report: ReportItem) -> rx.Component:
         ),
         rx.el.td(
             rx.el.div(
-                rx.el.span(
-                    f"R: {report['research_score']}",
-                    class_name="text-xs text-gray-600 mr-2",
+                rx.el.div(
+                    rx.el.span(
+                        "Research & Discovery (50%): ",
+                        class_name="text-xs font-medium text-gray-600",
+                    ),
+                    score_badge(report["research_score"]),
+                    class_name="flex items-center gap-2 mb-2",
                 ),
-                rx.el.span(
-                    f"E: {report['employability_score']}",
-                    class_name="text-xs text-gray-600",
+                rx.el.div(
+                    rx.el.span(
+                        "Employability & Outcomes (20%): ",
+                        class_name="text-xs font-medium text-gray-600",
+                    ),
+                    score_badge(report["employability_score"]),
+                    class_name="flex items-center gap-2 mb-2",
                 ),
-                class_name="flex items-center",
+                rx.el.div(
+                    rx.el.span(
+                        "Global Engagement (15%): ",
+                        class_name="text-xs font-medium text-gray-600",
+                    ),
+                    score_badge(report["global_engagement_score"]),
+                    class_name="flex items-center gap-2 mb-2",
+                ),
+                rx.el.div(
+                    rx.el.span(
+                        "Learning Experience (10%): ",
+                        class_name="text-xs font-medium text-gray-600",
+                    ),
+                    score_badge(report["learning_experience_score"]),
+                    class_name="flex items-center gap-2 mb-2",
+                ),
+                rx.el.div(
+                    rx.el.span(
+                        "Sustainability (5%): ",
+                        class_name="text-xs font-medium text-gray-600",
+                    ),
+                    score_badge(report["sustainability_score"]),
+                    class_name="flex items-center gap-2",
+                ),
+                class_name="flex flex-col",
             ),
-            class_name="px-6 py-4 whitespace-nowrap",
+            class_name="px-6 py-4",
         ),
         rx.el.td(
             report_status_badge(report["status"]),
@@ -114,11 +146,20 @@ def report_table_row(report: ReportItem) -> rx.Component:
             class_name="px-6 py-4 whitespace-nowrap",
         ),
         rx.el.td(
-            rx.el.button(
-                rx.icon("download", class_name="h-4 w-4 mr-1"),
-                "CSV",
-                on_click=ReportsState.download_report(report["id"]),
-                class_name="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500",
+            rx.el.div(
+                rx.el.button(
+                    rx.icon("download", class_name="h-4 w-4 mr-1"),
+                    "CSV",
+                    on_click=ReportsState.download_report(report["id"]),
+                    class_name="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500",
+                ),
+                rx.el.button(
+                    rx.icon("trash-2", class_name="h-4 w-4 mr-1"),
+                    "Delete",
+                    on_click=ReportsState.confirm_delete_report(report["id"], report["name"]),
+                    class_name="inline-flex items-center px-3 py-1.5 border border-red-300 shadow-sm text-xs font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 ml-2",
+                ),
+                class_name="flex items-center justify-end",
             ),
             class_name="px-6 py-4 whitespace-nowrap text-right",
         ),
@@ -126,16 +167,75 @@ def report_table_row(report: ReportItem) -> rx.Component:
     )
 
 
+def delete_report_modal() -> rx.Component:
+    """Delete report confirmation modal component."""
+    return rx.cond(
+        ReportsState.show_delete_modal,
+        rx.el.div(
+            rx.el.div(
+                rx.el.div(
+                    rx.el.div(
+                        rx.el.div(
+                            rx.icon(
+                                "triangle_alert",
+                                class_name="h-12 w-12 text-red-600 mx-auto mb-4",
+                            ),
+                            rx.el.h3(
+                                "Delete Report",
+                                class_name="text-lg font-semibold text-gray-900 mb-2",
+                            ),
+                            rx.el.p(
+                                rx.el.span(
+                                    "Are you sure you want to delete the report for ",
+                                    class_name="text-sm text-gray-600",
+                                ),
+                                rx.el.span(
+                                    ReportsState.delete_confirm_name,
+                                    class_name="text-sm font-semibold text-gray-900",
+                                ),
+                                rx.el.span(
+                                    "? This action cannot be undone.",
+                                    class_name="text-sm text-gray-600",
+                                ),
+                                class_name="mb-6",
+                            ),
+                            rx.el.div(
+                                rx.el.button(
+                                    "Cancel",
+                                    on_click=ReportsState.cancel_delete_report,
+                                    class_name="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors",
+                                ),
+                                rx.el.button(
+                                    "Delete",
+                                    on_click=ReportsState.delete_report,
+                                    class_name="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors",
+                                ),
+                                class_name="flex items-center justify-end gap-3",
+                            ),
+                            class_name="text-center",
+                        ),
+                        class_name="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4",
+                    ),
+                    class_name="flex items-center justify-center min-h-screen p-4",
+                ),
+                class_name="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center",
+                on_click=ReportsState.cancel_delete_report,
+            ),
+        ),
+    )
+
+
 def reports_dashboard_ui() -> rx.Component:
     """Main UI for the Reports page."""
     return rx.el.div(
+        delete_report_modal(),
         rx.el.div(
             rx.el.div(
                 rx.el.h1(
                     "Reports & Exports", class_name="text-2xl font-bold text-gray-900"
                 ),
                 rx.el.p(
-                    "Generate and download performance reports for compliance and monitoring.",
+                    "Generate and download performance reports based on Overall Readiness Score and all 5 performance categories per school.",
                     class_name="text-gray-600 mt-1",
                 ),
                 class_name="flex-1",
@@ -167,72 +267,73 @@ def reports_dashboard_ui() -> rx.Component:
                 "clock",
                 "text-orange-600",
             ),
-            class_name="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8",
+            class_name="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
         ),
+        # Reports Table
         rx.el.div(
             rx.el.div(
+                rx.el.input(
+                    placeholder="Search reports by institution name...",
+                    value=ReportsState.search_query,
+                    on_change=ReportsState.set_search_query,
+                    class_name="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500",
+                ),
+                class_name="mb-4",
+            ),
+            rx.cond(
+                ReportsState.filtered_reports.length() > 0,
                 rx.el.div(
-                    rx.icon(
-                        "search",
-                        class_name="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4",
-                    ),
-                    rx.el.input(
-                        placeholder="Search reports by institution...",
-                        on_change=ReportsState.set_search_query,
-                        class_name="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm w-full md:w-80",
-                        default_value=ReportsState.search_query,
-                    ),
-                    class_name="relative",
-                ),
-                class_name="p-5 border-b border-gray-200 bg-white rounded-t-xl",
-            ),
-            rx.el.div(
-                rx.el.table(
-                    rx.el.thead(
-                        rx.el.tr(
-                            rx.el.th(
-                                "Institution",
-                                class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                    rx.el.table(
+                        rx.el.thead(
+                            rx.el.tr(
+                                rx.el.th(
+                                    "Institution",
+                                    class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                ),
+                                rx.el.th(
+                                    "Overall Score",
+                                    class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                ),
+                                rx.el.th(
+                                    "Dimension Scores",
+                                    class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                ),
+                                rx.el.th(
+                                    "Status",
+                                    class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                ),
+                                rx.el.th(
+                                    "Last Generated",
+                                    class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                ),
+                                rx.el.th(
+                                    "Actions",
+                                    class_name="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                ),
+                                class_name="bg-gray-50 border-b border-gray-200",
                             ),
-                            rx.el.th(
-                                "Overall Readiness",
-                                class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
-                            ),
-                            rx.el.th(
-                                "Breakdown",
-                                class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
-                            ),
-                            rx.el.th(
-                                "Status",
-                                class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
-                            ),
-                            rx.el.th(
-                                "Last Generated",
-                                class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
-                            ),
-                            rx.el.th(
-                                "Actions",
-                                class_name="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider",
-                            ),
+                            class_name="bg-gray-50",
                         ),
-                        class_name="bg-gray-50",
+                        rx.el.tbody(
+                            rx.foreach(
+                                ReportsState.filtered_reports,
+                                report_table_row,
+                            ),
+                            class_name="divide-y divide-gray-200",
+                        ),
+                        class_name="min-w-full divide-y divide-gray-200",
                     ),
-                    rx.el.tbody(
-                        rx.foreach(ReportsState.filtered_reports, report_table_row),
-                        class_name="bg-white divide-y divide-gray-200",
+                    class_name="overflow-x-auto shadow-md rounded-lg",
+                ),
+                rx.el.div(
+                    rx.el.p(
+                        "No reports found. Try adjusting your search criteria.",
+                        class_name="text-center py-8 text-gray-500",
                     ),
-                    class_name="min-w-full divide-y divide-gray-200",
+                    class_name="bg-white rounded-lg shadow-md p-8",
                 ),
-                class_name="overflow-x-auto",
             ),
-            rx.el.div(
-                rx.el.p(
-                    f"Showing {ReportsState.filtered_reports.length()} results",
-                    class_name="text-sm text-gray-500",
-                ),
-                class_name="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-gray-50 rounded-b-xl",
-            ),
-            class_name="bg-white rounded-xl border border-gray-200 shadow-sm mb-10",
+            class_name="bg-white rounded-lg shadow-md p-6",
         ),
-        class_name="max-w-7xl mx-auto",
+        class_name="p-6 max-w-7xl mx-auto",
     )

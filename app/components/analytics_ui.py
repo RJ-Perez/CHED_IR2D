@@ -167,6 +167,162 @@ def employability_chart() -> rx.Component:
     )
 
 
+def global_engagement_chart() -> rx.Component:
+    return rx.el.div(
+        rx.el.h4(
+            "Global Engagement Comparison",
+            class_name="text-base font-semibold text-gray-800 mb-4",
+        ),
+        chart_legend(),
+        rx.recharts.bar_chart(
+            rx.recharts.cartesian_grid(
+                horizontal=True, vertical=False, class_name="opacity-25"
+            ),
+            rx.recharts.graphing_tooltip(**TOOLTIP_PROPS),
+            rx.recharts.x_axis(
+                data_key="metric",
+                axis_line=False,
+                tick_line=False,
+                custom_attrs={"fontSize": "12px", "fontWeight": "600"},
+                tick_margin=10,
+            ),
+            rx.recharts.y_axis(
+                axis_line=False, tick_line=False, custom_attrs={"fontSize": "12px"}
+            ),
+            rx.recharts.bar(
+                data_key="You",
+                fill=AnalyticsState.your_color,
+                radius=[4, 4, 0, 0],
+                bar_size=40,
+                name="Your Institution",
+            ),
+            rx.recharts.bar(
+                data_key="NCR Avg",
+                fill=AnalyticsState.ncr_average_color,
+                radius=[4, 4, 0, 0],
+                bar_size=40,
+                name="NCR Average",
+            ),
+            rx.recharts.bar(
+                data_key="Target",
+                fill=AnalyticsState.target_color,
+                radius=[4, 4, 0, 0],
+                bar_size=40,
+                name="Target",
+            ),
+            data=AnalyticsState.global_engagement_comparison_data,
+            width="100%",
+            height=300,
+            margin={"left": -20, "right": 0, "top": 0, "bottom": 0},
+        ),
+        class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm",
+    )
+
+
+def learning_experience_chart() -> rx.Component:
+    return rx.el.div(
+        rx.el.h4(
+            "Learning Experience Comparison",
+            class_name="text-base font-semibold text-gray-800 mb-4",
+        ),
+        chart_legend(),
+        rx.recharts.bar_chart(
+            rx.recharts.cartesian_grid(
+                horizontal=True, vertical=False, class_name="opacity-25"
+            ),
+            rx.recharts.graphing_tooltip(**TOOLTIP_PROPS),
+            rx.recharts.x_axis(
+                data_key="metric",
+                axis_line=False,
+                tick_line=False,
+                custom_attrs={"fontSize": "12px", "fontWeight": "600"},
+                tick_margin=10,
+            ),
+            rx.recharts.y_axis(
+                axis_line=False, tick_line=False, custom_attrs={"fontSize": "12px"}
+            ),
+            rx.recharts.bar(
+                data_key="You",
+                fill=AnalyticsState.your_color,
+                radius=[4, 4, 0, 0],
+                bar_size=40,
+                name="Your Institution",
+            ),
+            rx.recharts.bar(
+                data_key="NCR Avg",
+                fill=AnalyticsState.ncr_average_color,
+                radius=[4, 4, 0, 0],
+                bar_size=40,
+                name="NCR Average",
+            ),
+            rx.recharts.bar(
+                data_key="Target",
+                fill=AnalyticsState.target_color,
+                radius=[4, 4, 0, 0],
+                bar_size=40,
+                name="Target",
+            ),
+            data=AnalyticsState.learning_experience_comparison_data,
+            width="100%",
+            height=300,
+            margin={"left": -20, "right": 0, "top": 0, "bottom": 0},
+        ),
+        class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm",
+    )
+
+
+def sustainability_chart() -> rx.Component:
+    return rx.el.div(
+        rx.el.h4(
+            "Sustainability Comparison",
+            class_name="text-base font-semibold text-gray-800 mb-4",
+        ),
+        chart_legend(),
+        rx.recharts.bar_chart(
+            rx.recharts.cartesian_grid(
+                horizontal=True, vertical=False, class_name="opacity-25"
+            ),
+            rx.recharts.graphing_tooltip(**TOOLTIP_PROPS),
+            rx.recharts.x_axis(
+                data_key="metric",
+                axis_line=False,
+                tick_line=False,
+                custom_attrs={"fontSize": "12px", "fontWeight": "600"},
+                tick_margin=10,
+            ),
+            rx.recharts.y_axis(
+                axis_line=False, tick_line=False, custom_attrs={"fontSize": "12px"}
+            ),
+            rx.recharts.bar(
+                data_key="You",
+                fill=AnalyticsState.your_color,
+                radius=[4, 4, 0, 0],
+                bar_size=40,
+                name="Your Institution",
+            ),
+            rx.recharts.bar(
+                data_key="NCR Avg",
+                fill=AnalyticsState.ncr_average_color,
+                radius=[4, 4, 0, 0],
+                bar_size=40,
+                name="NCR Average",
+            ),
+            rx.recharts.bar(
+                data_key="Target",
+                fill=AnalyticsState.target_color,
+                radius=[4, 4, 0, 0],
+                bar_size=40,
+                name="Target",
+            ),
+            data=AnalyticsState.sustainability_comparison_data,
+            width="100%",
+            height=300,
+            margin={"left": -20, "right": 0, "top": 0, "bottom": 0},
+        ),
+        class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm",
+    )
+
+
 def analytics_content_ui() -> rx.Component:
     """Main Analytics Dashboard View."""
     return rx.el.div(
@@ -188,64 +344,121 @@ def analytics_content_ui() -> rx.Component:
                 "text-blue-600",
             ),
             score_card(
-                "Research Score",
+                "Research & Discovery (50%)",
                 AnalyticsState.research_score,
                 "microscope",
                 "text-purple-600",
             ),
             score_card(
-                "Employability Score",
+                "Employability (20%)",
                 AnalyticsState.employability_score,
                 "briefcase",
                 "text-emerald-600",
             ),
-            class_name="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8",
+            score_card(
+                "Global Engagement (15%)",
+                AnalyticsState.global_engagement_score,
+                "globe",
+                "text-blue-600",
+            ),
+            score_card(
+                "Learning Experience (10%)",
+                AnalyticsState.learning_experience_score,
+                "graduation-cap",
+                "text-indigo-600",
+            ),
+            score_card(
+                "Sustainability (5%)",
+                AnalyticsState.sustainability_score,
+                "leaf",
+                "text-green-600",
+            ),
+            class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8",
         ),
         rx.el.div(
             rx.el.div(research_chart(), class_name="w-full"),
             rx.el.div(employability_chart(), class_name="w-full"),
-            class_name="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8",
+            class_name="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6",
         ),
         rx.el.div(
-            rx.el.h3(
-                "Strategic Recommendations",
-                class_name="text-lg font-bold text-gray-900 mb-4",
-            ),
+            rx.el.div(global_engagement_chart(), class_name="w-full"),
+            rx.el.div(learning_experience_chart(), class_name="w-full"),
+            class_name="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6",
+        ),
+        rx.el.div(
+            rx.el.div(sustainability_chart(), class_name="w-full lg:w-1/2"),
+            class_name="grid grid-cols-1 gap-6 mb-8",
+        ),
+        rx.el.div(
             rx.el.div(
+                rx.el.h3(
+                    "AI-Powered Strategic Recommendations",
+                    class_name="text-lg font-bold text-gray-900",
+                ),
+                rx.el.p(
+                    "Personalized recommendations generated using Google AI based on your institution's performance data.",
+                    class_name="text-sm text-gray-500 mt-1",
+                ),
+                class_name="mb-4",
+            ),
+            rx.cond(
+                AnalyticsState.is_generating_recommendations,
                 rx.el.div(
-                    rx.icon(
-                        "lightbulb",
-                        class_name="h-6 w-6 text-amber-500 mr-4 flex-shrink-0",
-                    ),
                     rx.el.div(
-                        rx.el.h5(
-                            "Improve Citation Impact",
-                            class_name="font-semibold text-gray-900",
+                        rx.el.div(
+                            class_name="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"
                         ),
                         rx.el.p(
-                            "Your citation count is below the regional average. Consider incentivizing high-impact journal publications and international research collaborations.",
-                            class_name="text-sm text-gray-600 mt-1",
+                            "Generating AI recommendations...",
+                            class_name="text-sm text-gray-600 mt-3 text-center",
                         ),
+                        class_name="flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-gray-200",
                     ),
-                    class_name="flex items-start p-4 bg-amber-50 border border-amber-100 rounded-xl",
                 ),
-                rx.el.div(
-                    rx.icon(
-                        "users", class_name="h-6 w-6 text-blue-500 mr-4 flex-shrink-0"
+                rx.cond(
+                    AnalyticsState.ai_recommendations.length() > 0,
+                    rx.el.div(
+                        rx.foreach(
+                            AnalyticsState.ai_recommendations,
+                            lambda rec: rx.el.div(
+                                rx.icon(
+                                    rec["icon"],
+                                    class_name=f"h-6 w-6 {rec['color_class']} mr-4 flex-shrink-0",
+                                ),
+                                rx.el.div(
+                                    rx.el.div(
+                                        rx.el.h5(
+                                            rec["title"],
+                                            class_name="font-semibold text-gray-900",
+                                        ),
+                                        rx.el.span(
+                                            rec["priority"],
+                                            class_name=f"ml-2 text-xs px-2 py-1 rounded-full {rec['bg_class']} {rec['color_class']} font-medium",
+                                        ),
+                                        class_name="flex items-center",
+                                    ),
+                                    rx.el.p(
+                                        rec["description"],
+                                        class_name="text-sm text-gray-600 mt-2",
+                                    ),
+                                    rx.el.span(
+                                        rec["category"],
+                                        class_name="text-xs text-gray-400 mt-2 block",
+                                    ),
+                                ),
+                                class_name=f"flex items-start p-4 {rec['bg_class']} border rounded-xl",
+                            ),
+                        ),
+                        class_name="grid grid-cols-1 md:grid-cols-2 gap-6",
                     ),
                     rx.el.div(
-                        rx.el.h5(
-                            "Enhance Employer Reputation",
-                            class_name="font-semibold text-gray-900",
-                        ),
                         rx.el.p(
-                            "Strengthen industry partnerships and alumni tracking systems to improve employer reputation scores in the next assessment cycle.",
-                            class_name="text-sm text-gray-600 mt-1",
+                            "No recommendations available. Please ensure all data fields are filled.",
+                            class_name="text-sm text-gray-500 text-center p-8",
                         ),
+                        class_name="bg-white rounded-xl border border-gray-200",
                     ),
-                    class_name="flex items-start p-4 bg-blue-50 border border-blue-100 rounded-xl",
                 ),
-                class_name="grid grid-cols-1 md:grid-cols-2 gap-6",
             ),
         ),
         class_name="max-w-6xl mx-auto",

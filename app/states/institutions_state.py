@@ -5,6 +5,9 @@ import asyncio
 
 class InstitutionsState(rx.State):
     search_query: str = ""
+    delete_confirm_id: str = ""
+    delete_confirm_name: str = ""
+    show_delete_modal: bool = False
 
     @rx.var
     async def stats(self) -> dict[str, int]:
@@ -43,5 +46,58 @@ class InstitutionsState(rx.State):
         return rx.toast(f"Editing institution ID: {hei_id}")
 
     @rx.event
-    def delete_institution(self, hei_id: str):
-        return rx.toast(f"Delete action triggered for ID: {hei_id} (Demo only)")
+    def confirm_delete(self, hei_id: str, hei_name: str):
+        """Open delete confirmation modal."""
+        self.delete_confirm_id = hei_id
+        self.delete_confirm_name = hei_name
+        self.show_delete_modal = True
+
+    @rx.event
+    def cancel_delete(self):
+        """Close delete confirmation modal."""
+        self.show_delete_modal = False
+        self.delete_confirm_id = ""
+        self.delete_confirm_name = ""
+
+    @rx.event(background=True)
+    async def delete_institution(self):
+        """Delete institution from database."""
+        # Capture ids inside a mutable context to avoid ImmutableStateError.
+        async with self:
+            if not self.delete_confirm_id:
+                return
+            hei_id = self.delete_confirm_id
+            hei_name = self.delete_confirm_name
+        
+        # Get HEI state and remove institution
+        hei_state = await self.get_state(HEIState)
+        async with hei_state:
+            hei_state.hei_database = [
+                h for h in hei_state.hei_database if h["id"] != hei_id
+            ]
+            # Clear selection if deleted institution was selected
+            if hei_state.selected_hei and hei_state.selected_hei["id"] == hei_id:
+                hei_state.selected_hei = None
+        
+        # Also remove from reports if exists
+        try:
+            from app.states.reports_state import ReportsState
+            reports_state = await self.get_state(ReportsState)
+            async with reports_state:
+                reports_state.reports = [
+                    r for r in reports_state.reports if r["id"] != hei_id
+                ]
+        except Exception:
+            pass  # Reports state might not be available
+        
+        # Close modal and show success message
+        async with self:
+            self.show_delete_modal = False
+            self.delete_confirm_id = ""
+            self.delete_confirm_name = ""
+        
+        yield rx.toast(
+            f"Institution '{hei_name}' has been deleted successfully.",
+            duration=3000,
+            position="top-center",
+        )

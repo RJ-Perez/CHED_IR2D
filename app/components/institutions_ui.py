@@ -89,7 +89,7 @@ def hei_table_row(hei: HEI) -> rx.Component:
                 action_button(
                     "trash-2",
                     "Delete",
-                    InstitutionsState.delete_institution(hei["id"]),
+                    InstitutionsState.confirm_delete(hei["id"], hei["name"]),
                     is_destructive=True,
                 ),
                 class_name="flex items-center gap-2",
@@ -100,9 +100,68 @@ def hei_table_row(hei: HEI) -> rx.Component:
     )
 
 
+def delete_confirmation_modal() -> rx.Component:
+    """Delete confirmation modal component."""
+    return rx.cond(
+        InstitutionsState.show_delete_modal,
+        rx.el.div(
+            rx.el.div(
+                rx.el.div(
+                    rx.el.div(
+                        rx.el.div(
+                            rx.icon(
+                                "triangle_alert",
+                                class_name="h-12 w-12 text-red-600 mx-auto mb-4",
+                            ),
+                            rx.el.h3(
+                                "Delete Institution",
+                                class_name="text-lg font-semibold text-gray-900 mb-2",
+                            ),
+                            rx.el.p(
+                                rx.el.span(
+                                    "Are you sure you want to delete ",
+                                    class_name="text-sm text-gray-600",
+                                ),
+                                rx.el.span(
+                                    InstitutionsState.delete_confirm_name,
+                                    class_name="text-sm font-semibold text-gray-900",
+                                ),
+                                rx.el.span(
+                                    "? This action cannot be undone.",
+                                    class_name="text-sm text-gray-600",
+                                ),
+                                class_name="mb-6",
+                            ),
+                            rx.el.div(
+                                rx.el.button(
+                                    "Cancel",
+                                    on_click=InstitutionsState.cancel_delete,
+                                    class_name="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors",
+                                ),
+                                rx.el.button(
+                                    "Delete",
+                                    on_click=InstitutionsState.delete_institution,
+                                    class_name="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors",
+                                ),
+                                class_name="flex items-center justify-end gap-3",
+                            ),
+                            class_name="text-center",
+                        ),
+                        class_name="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4",
+                    ),
+                    class_name="flex items-center justify-center min-h-screen p-4",
+                ),
+                class_name="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center",
+                on_click=InstitutionsState.cancel_delete,
+            ),
+        ),
+    )
+
+
 def institutions_dashboard_ui() -> rx.Component:
     """Main content for the Institutions Management page."""
     return rx.el.div(
+        delete_confirmation_modal(),
         rx.el.div(
             rx.el.h1(
                 "Institutions Management", class_name="text-2xl font-bold text-gray-900"
