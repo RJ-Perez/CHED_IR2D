@@ -91,10 +91,10 @@ def hei_selection_page() -> rx.Component:
                         class_name="h-8 w-8 object-contain mr-3",
                         alt="CHED Logo",
                     ),
-                    rx.el.h1(
-                        "CHED IR²D",
-                        class_name="text-xl font-bold text-gray-900 tracking-tight",
-                    ),
+                    # rx.el.h1(
+                    #     "CHED IR²D",
+                    #     class_name="text-xl font-bold text-gray-900 tracking-tight",
+                    # ),
                     class_name="flex items-center",
                 ),
                 rx.el.button(
