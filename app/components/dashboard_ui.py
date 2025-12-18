@@ -139,7 +139,7 @@ def dashboard_header() -> rx.Component:
     )
     framework_name = rx.cond(
         HEIState.ranking_framework == "QS",
-        "QS Stars Assessment",
+        "QS University Rankings",
         rx.cond(
             HEIState.ranking_framework == "THE",
             "THE Impact Assessment",
