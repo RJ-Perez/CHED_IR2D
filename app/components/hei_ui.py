@@ -205,7 +205,7 @@ def selection_screen_content() -> rx.Component:
                     ),
                     ranking_framework_option(
                         "THE",
-                        "Times Higher Education",
+                        "The World University Rankings",
                         "Evaluates universities across teaching, research environment, research quality, industry, and international outlook.",
                         "/the-logo.png",
                     ),
