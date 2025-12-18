@@ -20,7 +20,7 @@ def branding_section() -> rx.Component:
                     class_name="bg-white/20 w-fit p-4 rounded-2xl backdrop-blur-sm",
                 ),
                 rx.el.h1(
-                    "CHED-NCR",
+                    "Commission on Higher Education",
                     class_name="text-4xl lg:text-5xl font-bold text-white mb-2 tracking-tight",
                 ),
                 rx.el.h2(
