@@ -35,10 +35,11 @@ def branding_section() -> rx.Component:
                     rx.el.div(
                         rx.icon("bar-chart-2", class_name="h-6 w-6 text-blue-200"),
                         rx.el.span(
-                            "Analytics Driven", class_name="text-white font-medium ml-2"
+                            "Analytics Driven", class_name="text-white font-medium"
                         ),
-                        class_name="flex items-center bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm",
+                        class_name="flex flex-col items-start bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm",
                     ),
+                    
                     rx.el.div(
                         rx.icon("globe", class_name="h-6 w-6 text-blue-200"),
                         rx.el.span(
@@ -46,11 +47,26 @@ def branding_section() -> rx.Component:
                         ),
                         class_name="flex items-center bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm",
                     ),
-                    class_name="flex gap-4 mt-8",
+                    class_name="mt-8 flex space-x-4",
                 ),
-                class_name="relative z-10 flex flex-col justify-center h-full max-w-2xl mx-auto px-8 lg:px-12",
+                rx.el.div(
+                    rx.el.div(    
+                        rx.image(
+                            src="https://ieducationphl.ched.gov.ph/wp-content/uploads/2023/07/QS_World_University_Rankings_Logo-e1688612613821.jpg",
+                            class_name="mt-3 h-20 object-contain",
+                            alt="QS World University Rankings",
+                        ),
+                        rx.image(
+                            src="https://upload.wikimedia.org/wikipedia/commons/4/48/Times_Higher_Education_%28THE%2C_World_University_Rankings%29_magazine_logo.png",
+                            class_name="mt-3 h-20 object-contain",
+                            alt="Times Higher Education Rankings",
+                        ),
+                        class_name="flex gap-4 mt-8",
+                    )
+                ),
+                class_name="relative z-10 flex flex-col justify-center h-full w-full px-8 lg:px-12",
             ),
-            class_name="relative hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-900 to-blue-700 overflow-hidden",
+                class_name="relative hidden lg:flex lg:w-full min-h-screen bg-gradient-to-br from-blue-900 to-blue-700 overflow-hidden",
         )
     )
 
