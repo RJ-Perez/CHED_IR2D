@@ -183,7 +183,6 @@ def dashboard_header() -> rx.Component:
 def data_entry_forms() -> rx.Component:
     """Main data entry area split by thematic sections."""
     return rx.el.div(
-        # Research and Discovery (50%)
         rx.el.div(
             rx.el.div(
                 rx.icon("microscope", class_name="h-6 w-6 text-purple-600 mr-3"),
@@ -228,7 +227,6 @@ def data_entry_forms() -> rx.Component:
             ),
             class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6",
         ),
-        # Employability and Outcomes (20%)
         rx.el.div(
             rx.el.div(
                 rx.icon("briefcase", class_name="h-6 w-6 text-emerald-600 mr-3"),
@@ -273,7 +271,6 @@ def data_entry_forms() -> rx.Component:
             ),
             class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6",
         ),
-        # Global Engagement (15%)
         rx.el.div(
             rx.el.div(
                 rx.icon("globe", class_name="h-6 w-6 text-blue-600 mr-3"),
@@ -330,7 +327,6 @@ def data_entry_forms() -> rx.Component:
             ),
             class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6",
         ),
-        # Learning Experience (10%)
         rx.el.div(
             rx.el.div(
                 rx.icon("graduation-cap", class_name="h-6 w-6 text-indigo-600 mr-3"),
@@ -369,14 +365,12 @@ def data_entry_forms() -> rx.Component:
             ),
             class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6",
         ),
-        # Sustainability (5%)
         rx.el.div(
             rx.el.div(
                 rx.icon("leaf", class_name="h-6 w-6 text-green-600 mr-3"),
                 rx.el.div(
                     rx.el.h3(
-                        "Sustainability",
-                        class_name="text-lg font-bold text-gray-900",
+                        "Sustainability", class_name="text-lg font-bold text-gray-900"
                     ),
                     rx.el.p(
                         "Weight: 5% | Sustainability Metrics: 5%",

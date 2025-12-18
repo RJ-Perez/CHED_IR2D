@@ -153,7 +153,7 @@ def delete_confirmation_modal() -> rx.Component:
                 ),
                 class_name="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center",
                 on_click=InstitutionsState.cancel_delete,
-            ),
+            )
         ),
     )
 

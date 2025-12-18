@@ -9,11 +9,11 @@ class ReportItem(TypedDict):
     id: str
     name: str
     overall_score: int
-    research_score: int  # 50% weight
-    employability_score: int  # 20% weight
-    global_engagement_score: int  # 15% weight
-    learning_experience_score: int  # 10% weight
-    sustainability_score: int  # 5% weight
+    research_score: int
+    employability_score: int
+    global_engagement_score: int
+    learning_experience_score: int
+    sustainability_score: int
     status: str
     last_generated: str
 
@@ -252,18 +252,12 @@ class ReportsState(rx.State):
         """Delete report from reports list."""
         if not self.delete_confirm_id:
             return
-        
         report_id = self.delete_confirm_id
         report_name = self.delete_confirm_name
-        
-        # Remove report from list
         self.reports = [r for r in self.reports if r["id"] != report_id]
-        
-        # Close modal and show success message
         self.show_delete_modal = False
         self.delete_confirm_id = ""
         self.delete_confirm_name = ""
-        
         return rx.toast(
             f"Report for '{report_name}' has been deleted successfully.",
             duration=3000,

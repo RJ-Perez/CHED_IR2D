@@ -1,6 +1,7 @@
 import reflex as rx
 from app.states.hei_state import HEIState, HEI
 import asyncio
+import logging
 
 
 class InstitutionsState(rx.State):
@@ -62,42 +63,35 @@ class InstitutionsState(rx.State):
     @rx.event(background=True)
     async def delete_institution(self):
         """Delete institution from database."""
-        # Capture ids inside a mutable context to avoid ImmutableStateError.
         async with self:
             if not self.delete_confirm_id:
                 return
             hei_id = self.delete_confirm_id
             hei_name = self.delete_confirm_name
-        
-        # Get HEI state and remove institution
-        hei_state = await self.get_state(HEIState)
+            hei_state = await self.get_state(HEIState)
         async with hei_state:
             hei_state.hei_database = [
                 h for h in hei_state.hei_database if h["id"] != hei_id
             ]
-            # Clear selection if deleted institution was selected
             if hei_state.selected_hei and hei_state.selected_hei["id"] == hei_id:
                 hei_state.selected_hei = None
-        
-        # Also remove from reports if exists
         try:
             from app.states.reports_state import ReportsState
-            reports_state = await self.get_state(ReportsState)
+
+            async with self:
+                reports_state = await self.get_state(ReportsState)
             async with reports_state:
                 reports_state.reports = [
                     r for r in reports_state.reports if r["id"] != hei_id
                 ]
-        except Exception:
-            pass  # Reports state might not be available
-        
-        # Close modal and show success message
+        except Exception as e:
+            logging.exception(f"Error deleting institution: {e}")
         async with self:
             self.show_delete_modal = False
             self.delete_confirm_id = ""
             self.delete_confirm_name = ""
-        
-        yield rx.toast(
-            f"Institution '{hei_name}' has been deleted successfully.",
-            duration=3000,
-            position="top-center",
-        )
+            yield rx.toast(
+                f"Institution '{hei_name}' has been deleted successfully.",
+                duration=3000,
+                position="top-center",
+            )

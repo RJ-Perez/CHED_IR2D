@@ -3,39 +3,26 @@ import asyncio
 
 
 class DashboardState(rx.State):
-    # Research and Discovery (50%)
-    academic_reputation: str = ""  # 30%
-    citations_per_faculty: str = ""  # 20%
-    
-    # Employability and Outcomes (20%)
-    employer_reputation: str = ""  # 15%
-    employment_outcomes: str = ""  # 5% (e.g., graduate employment rate)
-    
-    # Global Engagement (15%)
-    international_research_network: str = ""  # 5%
-    international_faculty_ratio: str = ""  # 5%
-    international_student_ratio: str = ""  # 5%
-    international_student_diversity: str = ""  # 0% (tracked but not weighted)
-    
-    # Learning Experience (10%)
-    faculty_student_ratio: str = ""  # 10%
-    
-    # Sustainability (5%)
-    sustainability_metrics: str = ""  # 5%
-    
-    # File uploads
+    academic_reputation: str = ""
+    citations_per_faculty: str = ""
+    employer_reputation: str = ""
+    employment_outcomes: str = ""
+    international_research_network: str = ""
+    international_faculty_ratio: str = ""
+    international_student_ratio: str = ""
+    international_student_diversity: str = ""
+    faculty_student_ratio: str = ""
+    sustainability_metrics: str = ""
     uploaded_research_files: list[str] = []
     uploaded_employability_files: list[str] = []
     uploaded_global_engagement_files: list[str] = []
     uploaded_learning_experience_files: list[str] = []
     uploaded_sustainability_files: list[str] = []
-    
     is_saving: bool = False
 
     @rx.var
     def progress(self) -> int:
         """Calculate completion progress based on filled fields."""
-        # Count weighted fields (excluding diversity which is 0%)
         fields = [
             self.academic_reputation,
             self.citations_per_faculty,
@@ -51,7 +38,6 @@ class DashboardState(rx.State):
         total_fields = 9
         return int(filled_count / total_fields * 100)
 
-    # Research and Discovery setters
     @rx.event
     def set_academic_reputation(self, value: str):
         self.academic_reputation = value
@@ -60,7 +46,6 @@ class DashboardState(rx.State):
     def set_citations_per_faculty(self, value: str):
         self.citations_per_faculty = value
 
-    # Employability and Outcomes setters
     @rx.event
     def set_employer_reputation(self, value: str):
         self.employer_reputation = value
@@ -69,7 +54,6 @@ class DashboardState(rx.State):
     def set_employment_outcomes(self, value: str):
         self.employment_outcomes = value
 
-    # Global Engagement setters
     @rx.event
     def set_international_research_network(self, value: str):
         self.international_research_network = value
@@ -86,17 +70,14 @@ class DashboardState(rx.State):
     def set_international_student_diversity(self, value: str):
         self.international_student_diversity = value
 
-    # Learning Experience setters
     @rx.event
     def set_faculty_student_ratio(self, value: str):
         self.faculty_student_ratio = value
 
-    # Sustainability setters
     @rx.event
     def set_sustainability_metrics(self, value: str):
         self.sustainability_metrics = value
 
-    # File upload handlers
     @rx.event
     async def handle_research_upload(self, files: list[rx.UploadFile]):
         """Handle file upload for Research section."""

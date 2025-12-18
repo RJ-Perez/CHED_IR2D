@@ -413,7 +413,7 @@ def analytics_content_ui() -> rx.Component:
                             class_name="text-sm text-gray-600 mt-3 text-center",
                         ),
                         class_name="flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-gray-200",
-                    ),
+                    )
                 ),
                 rx.cond(
                     AnalyticsState.ai_recommendations.length() > 0,

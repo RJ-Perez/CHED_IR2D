@@ -156,7 +156,9 @@ def report_table_row(report: ReportItem) -> rx.Component:
                 rx.el.button(
                     rx.icon("trash-2", class_name="h-4 w-4 mr-1"),
                     "Delete",
-                    on_click=ReportsState.confirm_delete_report(report["id"], report["name"]),
+                    on_click=ReportsState.confirm_delete_report(
+                        report["id"], report["name"]
+                    ),
                     class_name="inline-flex items-center px-3 py-1.5 border border-red-300 shadow-sm text-xs font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 ml-2",
                 ),
                 class_name="flex items-center justify-end",
@@ -220,7 +222,7 @@ def delete_report_modal() -> rx.Component:
                 ),
                 class_name="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center",
                 on_click=ReportsState.cancel_delete_report,
-            ),
+            )
         ),
     )
 
@@ -267,16 +269,15 @@ def reports_dashboard_ui() -> rx.Component:
                 "clock",
                 "text-orange-600",
             ),
-            class_name="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+            class_name="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8",
         ),
-        # Reports Table
         rx.el.div(
             rx.el.div(
                 rx.el.input(
                     placeholder="Search reports by institution name...",
-                    value=ReportsState.search_query,
                     on_change=ReportsState.set_search_query,
                     class_name="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500",
+                    default_value=ReportsState.search_query,
                 ),
                 class_name="mb-4",
             ),
@@ -315,10 +316,7 @@ def reports_dashboard_ui() -> rx.Component:
                             class_name="bg-gray-50",
                         ),
                         rx.el.tbody(
-                            rx.foreach(
-                                ReportsState.filtered_reports,
-                                report_table_row,
-                            ),
+                            rx.foreach(ReportsState.filtered_reports, report_table_row),
                             class_name="divide-y divide-gray-200",
                         ),
                         class_name="min-w-full divide-y divide-gray-200",
