@@ -46,16 +46,16 @@ def sidebar(current_page: str) -> rx.Component:
                 is_active=current_page == "dashboard",
             ),
             sidebar_item(
-                "Institutions",
-                "building-2",
-                "/institutions",
-                is_active=current_page == "institutions",
-            ),
-            sidebar_item(
                 "Analytics",
                 "bar-chart-3",
                 "/analytics",
                 is_active=current_page == "analytics",
+            ),
+            sidebar_item(
+                "Institutions",
+                "building-2",
+                "/institutions",
+                is_active=current_page == "institutions",
             ),
             sidebar_item(
                 "Reports", "file-text", "/reports", is_active=current_page == "reports"
