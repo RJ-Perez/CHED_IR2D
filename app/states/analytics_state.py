@@ -295,7 +295,7 @@ class AnalyticsState(rx.State):
             if sustainability_score < 70:
                 weak_areas.append("Sustainability")
             prompt = f"""You are an expert higher education consultant specializing in international university rankings (QS and THE). \n\nAnalyze the following performance data for a Higher Education Institution in the Philippines and provide 3-4 strategic, actionable recommendations to improve their international ranking readiness.\n\n{performance_summary}\n\nAreas needing improvement: {(", ".join(weak_areas) if weak_areas else "All areas are performing well")}\n\nProvide recommendations in JSON format with this structure:\n{{\n  "recommendations": [\n    {{\n      "title": "Short, actionable title (max 8 words)",\n      "description": "Detailed recommendation (2-3 sentences) explaining what to do and why",\n      "category": "Research & Discovery|Employability|Global Engagement|Learning Experience|Sustainability|Overall",\n      "priority": "High|Medium|Low"\n    }}\n  ]\n}}\n\nFocus on:\n1. Specific, actionable steps the institution can take\n2. Evidence-based strategies used by top-ranked universities\n3. Realistic improvements given the Philippine higher education context\n4. Prioritize recommendations that will have the most impact on overall score\n\nReturn ONLY valid JSON, no additional text."""
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel("gemini-2.0-flash")
             response = model.generate_content(prompt)
             response_text = response.text.strip()
             if response_text.startswith(""):
