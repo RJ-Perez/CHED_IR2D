@@ -149,7 +149,7 @@ class DashboardState(rx.State):
                     s.evidence_files
                 FROM institution_scores s
                 JOIN ranking_indicators i ON s.indicator_id = i.id
-                WHERE s.institution_id = :inst_id
+                WHERE s.institution_id = :inst_id AND s.ranking_year = 2025
                 """),
                 {"inst_id": institution_id},
             )
@@ -339,9 +339,9 @@ class DashboardState(rx.State):
                 files_json = json.dumps(files)
                 await session.execute(
                     text("""
-                        INSERT INTO institution_scores (institution_id, indicator_id, value, evidence_files)
-                        VALUES (:inst_id, :ind_id, :val, :files)
-                        ON CONFLICT (institution_id, indicator_id)
+                        INSERT INTO institution_scores (institution_id, indicator_id, value, evidence_files, ranking_year)
+                        VALUES (:inst_id, :ind_id, :val, :files, 2025)
+                        ON CONFLICT (institution_id, indicator_id, ranking_year)
                         DO UPDATE SET value = EXCLUDED.value, evidence_files = EXCLUDED.evidence_files, updated_at = CURRENT_TIMESTAMP
                     """),
                     {
