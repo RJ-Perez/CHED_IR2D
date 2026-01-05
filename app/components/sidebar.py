@@ -28,14 +28,10 @@ def sidebar(current_page: str) -> rx.Component:
     return rx.el.aside(
         rx.el.div(
             rx.image(
-                # src="https://chedcar.com/wp-content/uploads/2020/09/Commission_on_Higher_Education_CHEd.svg_.png",
-                 src="/IRRDSytemLogo.png",
+                src="/IRRDSytemLogo.png",
                 class_name="h-15 w-15 object-contain mr-3",
                 alt="CHED Logo",
             ),
-            # rx.el.h1(
-            #     "CHED IR²D", class_name="text-xl font-bold text-gray-900 tracking-tight"
-            # ),
             class_name="flex items-center h-16 px-6 border-b border-gray-200 shrink-0",
         ),
         rx.el.nav(

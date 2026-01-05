@@ -39,7 +39,6 @@ def branding_section() -> rx.Component:
                         ),
                         class_name="flex flex-col items-start bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm",
                     ),
-                    
                     rx.el.div(
                         rx.icon("globe", class_name="h-6 w-6 text-blue-200"),
                         rx.el.span(
@@ -50,7 +49,7 @@ def branding_section() -> rx.Component:
                     class_name="mt-8 flex space-x-4",
                 ),
                 rx.el.div(
-                    rx.el.div(    
+                    rx.el.div(
                         rx.image(
                             src="https://www.uspceu.com/portals/0/docs/prensa/noticias/original/14122.jpg",
                             class_name="mt-3 h-20 object-contain",
@@ -66,7 +65,7 @@ def branding_section() -> rx.Component:
                 ),
                 class_name="relative z-10 flex flex-col justify-center h-full w-full px-8 lg:px-12",
             ),
-                class_name="relative hidden lg:flex lg:w-full min-h-screen bg-gradient-to-br from-blue-900 to-blue-700 overflow-hidden",
+            class_name="relative hidden lg:flex lg:w-full min-h-screen bg-gradient-to-br from-blue-900 to-blue-700 overflow-hidden",
         )
     )
 

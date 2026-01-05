@@ -1,5 +1,6 @@
 import reflex as rx
 from app.states.auth_state import AuthState
+from reflex_google_auth import google_login, google_oauth_provider
 
 
 def input_field(
@@ -34,13 +35,8 @@ def input_field(
 
 
 def social_login_button() -> rx.Component:
-    """Google Login Button Placeholder."""
-    return rx.el.button(
-        rx.icon("mail", class_name="h-5 w-5 mr-2 text-gray-600"),
-        "Continue with Google",
-        on_click=AuthState.google_login,
-        class_name="w-full flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200",
-    )
+    """Real Google Login Button using reflex-google-auth."""
+    return google_oauth_provider(google_login(on_success=AuthState.on_google_login))
 
 
 def auth_form() -> rx.Component:

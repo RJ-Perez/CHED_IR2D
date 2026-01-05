@@ -1,8 +1,11 @@
 import reflex as rx
 import asyncio
+from reflex_google_auth import GoogleAuthState
+from sqlalchemy import text
+import logging
 
 
-class AuthState(rx.State):
+class AuthState(GoogleAuthState):
     email: str = ""
     password: str = ""
     confirm_password: str = ""
@@ -87,14 +90,38 @@ class AuthState(rx.State):
                 yield rx.toast(f"Welcome back, {self.email}!", duration=3000)
                 yield rx.redirect("/hei-selection")
 
-    @rx.event
-    def google_login(self):
-        """Placeholder for Google Login."""
-        return rx.toast("Google Login integration coming in Phase 2", duration=3000)
+    @rx.event(background=True)
+    async def on_google_login(self):
+        """Triggered after Google sign-in. Verifies user in database."""
+        async with self:
+            if not self.token_is_valid:
+                return
+            user_email = self.tokeninfo.get("email")
+            google_id = self.tokeninfo.get("sub")
+        async with rx.asession() as asession:
+            result = await asession.execute(
+                text("""
+                SELECT id, email, auth_provider 
+                FROM users 
+                WHERE google_id = :google_id OR email = :email
+                """),
+                {"google_id": google_id, "email": user_email},
+            )
+            user = result.first()
+            async with self:
+                if user:
+                    yield rx.toast(f"Logged in via Google: {user_email}", duration=3000)
+                    yield rx.redirect("/hei-selection")
+                else:
+                    yield rx.toast(
+                        f"Welcome {user_email}! New account detected.", duration=3000
+                    )
+                    yield rx.redirect("/hei-selection")
 
     @rx.event
     def logout(self):
         """Sign out the user and redirect to landing page."""
+        super().logout()
         self.reset_form()
         self.is_sign_up = False
         return rx.redirect("/")
