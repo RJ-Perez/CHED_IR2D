@@ -5,7 +5,8 @@ import asyncio
 
 
 class SettingsState(rx.State):
-    full_name: str = ""
+    first_name: str = ""
+    last_name: str = ""
     email: str = ""
     current_password: str = ""
     new_password: str = ""
@@ -28,7 +29,8 @@ class SettingsState(rx.State):
         """Load initial settings from Auth and HEI states."""
         auth = await self.get_state(AuthState)
         hei = await self.get_state(HEIState)
-        self.full_name = auth.full_name or "Dr. Juan Dela Cruz"
+        self.first_name = auth.first_name or "Juan"
+        self.last_name = auth.last_name or "Dela Cruz"
         self.email = auth.email or "admin@university.edu.ph"
         if hei.selected_hei:
             self.institution_name = hei.selected_hei["name"]
@@ -42,12 +44,16 @@ class SettingsState(rx.State):
             )
             self.institution_address = "Diliman, Quezon City"
         self.contact_number = hei.reg_contact or "+63 2 8123 4567"
-        self.admin_name = hei.reg_admin or self.full_name
+        self.admin_name = hei.reg_admin or f"{self.first_name} {self.last_name}"
         self.ranking_framework = hei.ranking_framework or "QS"
 
     @rx.event
-    def set_full_name(self, value: str):
-        self.full_name = value
+    def set_first_name(self, value: str):
+        self.first_name = value
+
+    @rx.event
+    def set_last_name(self, value: str):
+        self.last_name = value
 
     @rx.event
     def set_current_password(self, value: str):
@@ -106,9 +112,10 @@ class SettingsState(rx.State):
             if self.new_password and self.new_password != self.confirm_password:
                 self.is_saving_account = False
                 yield rx.toast("New passwords do not match.", duration=3000)
-                return
+        async with self:
             auth = await self.get_state(AuthState)
-            auth.full_name = self.full_name
+            auth.first_name = self.first_name
+            auth.last_name = self.last_name
             self.current_password = ""
             self.new_password = ""
             self.confirm_password = ""

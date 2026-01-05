@@ -70,13 +70,24 @@ def auth_form() -> rx.Component:
             rx.cond(
                 AuthState.is_sign_up,
                 rx.el.div(
-                    input_field(
-                        "Full Name",
-                        "Dr. Juan Dela Cruz",
-                        "text",
-                        AuthState.full_name,
-                        AuthState.set_full_name,
-                        "user",
+                    rx.el.div(
+                        input_field(
+                            "First Name",
+                            "Juan",
+                            "text",
+                            AuthState.first_name,
+                            AuthState.set_first_name,
+                            "user",
+                        ),
+                        input_field(
+                            "Last Name",
+                            "Dela Cruz",
+                            "text",
+                            AuthState.last_name,
+                            AuthState.set_last_name,
+                            "user",
+                        ),
+                        class_name="grid grid-cols-1 md:grid-cols-2 gap-4",
                     ),
                     input_field(
                         "Position",

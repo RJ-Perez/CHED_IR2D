@@ -92,11 +92,20 @@ def account_settings_section() -> rx.Component:
             "Account Settings", "Manage your personal account information.", "user"
         ),
         rx.el.div(
-            setting_input(
-                "Full Name",
-                SettingsState.full_name,
-                SettingsState.set_full_name,
-                placeholder="Your Full Name",
+            rx.el.div(
+                setting_input(
+                    "First Name",
+                    SettingsState.first_name,
+                    SettingsState.set_first_name,
+                    placeholder="First Name",
+                ),
+                setting_input(
+                    "Last Name",
+                    SettingsState.last_name,
+                    SettingsState.set_last_name,
+                    placeholder="Last Name",
+                ),
+                class_name="grid grid-cols-1 md:grid-cols-2 gap-4",
             ),
             setting_input(
                 "Email Address",

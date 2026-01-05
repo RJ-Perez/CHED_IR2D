@@ -11,7 +11,8 @@ class AuthState(GoogleAuthState):
     email: str = ""
     password: str = ""
     confirm_password: str = ""
-    full_name: str = ""
+    first_name: str = ""
+    last_name: str = ""
     institution_name: str = ""
     position: str = ""
     is_sign_up: bool = False
@@ -31,7 +32,8 @@ class AuthState(GoogleAuthState):
         self.email = ""
         self.password = ""
         self.confirm_password = ""
-        self.full_name = ""
+        self.first_name = ""
+        self.last_name = ""
         self.institution_name = ""
         self.position = ""
 
@@ -51,8 +53,12 @@ class AuthState(GoogleAuthState):
         self.error_message = ""
 
     @rx.event
-    def set_full_name(self, value: str):
-        self.full_name = value
+    def set_first_name(self, value: str):
+        self.first_name = value
+
+    @rx.event
+    def set_last_name(self, value: str):
+        self.last_name = value
 
     @rx.event
     def set_institution_name(self, value: str):
@@ -74,8 +80,9 @@ class AuthState(GoogleAuthState):
                 return
             if self.is_sign_up:
                 if (
-                    not self.full_name
-                    or not self.position
+                    not self.first_name
+                    or not self.last_name
+                    or (not self.position)
                     or (not self.institution_name)
                 ):
                     self.error_message = "All fields are required for sign up."
@@ -105,17 +112,14 @@ class AuthState(GoogleAuthState):
                 password_hash = bcrypt.hashpw(
                     self.password.encode("utf-8"), bcrypt.gensalt()
                 ).decode("utf-8")
-                name_parts = self.full_name.split(" ", 1)
-                first_name = name_parts[0]
-                last_name = name_parts[1] if len(name_parts) > 1 else ""
                 await session.execute(
                     text("""
                     INSERT INTO users (first_name, last_name, position, institution_name, email, password_hash, auth_provider)
                     VALUES (:first_name, :last_name, :position, :institution_name, :email, :password_hash, 'email')
                     """),
                     {
-                        "first_name": first_name,
-                        "last_name": last_name,
+                        "first_name": self.first_name,
+                        "last_name": self.last_name,
                         "position": self.position,
                         "institution_name": self.institution_name,
                         "email": self.email,
