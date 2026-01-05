@@ -90,21 +90,21 @@ class AnalyticsState(rx.State):
             if code == "academic_reputation":
                 academic_rep = self._parse_float(val)
             elif code == "citations_per_faculty":
-                citations = parse_float(val)
+                citations = self._parse_float(val)
             elif code == "employer_reputation":
-                emp_rep = parse_float(val)
+                emp_rep = self._parse_float(val)
             elif code == "employment_outcomes":
-                emp_outcomes = parse_float(val)
+                emp_outcomes = self._parse_float(val)
             elif code == "international_research_network":
-                int_research_net = parse_float(val)
+                int_research_net = self._parse_float(val)
             elif code == "international_faculty_ratio":
-                int_faculty_ratio = parse_float(val)
+                int_faculty_ratio = self._parse_float(val)
             elif code == "international_student_ratio":
-                int_student_ratio = parse_float(val)
+                int_student_ratio = self._parse_float(val)
             elif code == "faculty_student_ratio":
-                faculty_student_ratio = parse_float(val)
+                faculty_student_ratio = self._parse_float(val)
             elif code == "sustainability_metrics":
-                sustainability = parse_float(val)
+                sustainability = self._parse_float(val)
         b_academic_rep = 90.0
         b_citations = 20.0
         b_emp_rep = 90.0
