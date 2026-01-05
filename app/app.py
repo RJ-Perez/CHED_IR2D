@@ -94,6 +94,7 @@ app = rx.App(
 )
 app.add_page(landing_page, route="/")
 from app.components.hei_ui import selection_screen_content
+from app.states.hei_state import HEIState
 
 
 def hei_selection_page() -> rx.Component:
@@ -124,7 +125,9 @@ def hei_selection_page() -> rx.Component:
     )
 
 
-app.add_page(hei_selection_page, route="/hei-selection")
+app.add_page(
+    hei_selection_page, route="/hei-selection", on_load=HEIState.fetch_institutions
+)
 from app.components.sidebar import sidebar
 from app.components.dashboard_ui import dashboard_content
 from app.components.placeholder_pages import institutions_content, reports_content

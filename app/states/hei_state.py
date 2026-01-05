@@ -1,6 +1,8 @@
 import reflex as rx
 from typing import TypedDict, Optional
 import asyncio
+from sqlalchemy import text
+import logging
 
 
 class HEI(TypedDict):
@@ -10,53 +12,7 @@ class HEI(TypedDict):
 
 
 class HEIState(rx.State):
-    hei_database: list[HEI] = [
-        {
-            "id": "1",
-            "name": "Ateneo de Manila University",
-            "address": "Katipunan Ave, Quezon City",
-        },
-        {
-            "id": "2",
-            "name": "University of the Philippines Diliman",
-            "address": "Diliman, Quezon City",
-        },
-        {
-            "id": "3",
-            "name": "De La Salle University",
-            "address": "Taft Ave, Malate, Manila",
-        },
-        {
-            "id": "4",
-            "name": "University of Santo Tomas",
-            "address": "España Blvd, Sampaloc, Manila",
-        },
-        {
-            "id": "5",
-            "name": "Polytechnic University of the Philippines",
-            "address": "Sta. Mesa, Manila",
-        },
-        {
-            "id": "6",
-            "name": "Adamson University",
-            "address": "San Marcelino St, Ermita, Manila",
-        },
-        {
-            "id": "7",
-            "name": "Mapúa University",
-            "address": "Muralla St, Intramuros, Manila",
-        },
-        {
-            "id": "8",
-            "name": "Far Eastern University",
-            "address": "Nicanor Reyes St, Sampaloc, Manila",
-        },
-        {
-            "id": "9",
-            "name": "Asia Pacific College",
-            "address": "Makati City, Metro Manila",
-        },
-    ]
+    hei_database: list[HEI] = []
     search_query: str = ""
     selected_hei: Optional[HEI] = None
     ranking_framework: str = ""
@@ -190,10 +146,75 @@ class HEIState(rx.State):
         self.reg_admin = value
 
     @rx.event(background=True)
+    async def fetch_institutions(self):
+        """Loads all institutions from the database."""
+        async with rx.asession() as session:
+            result = await session.execute(
+                text(
+                    "SELECT id, institution_name, street_address, city_municipality FROM institutions ORDER BY institution_name ASC"
+                )
+            )
+            rows = result.all()
+            async with self:
+                self.hei_database = [
+                    {
+                        "id": str(row[0]),
+                        "name": row[1],
+                        "address": f"{row[2]}, {row[3]}",
+                    }
+                    for row in rows
+                ]
+
+    @rx.event(background=True)
     async def submit_selection(self):
         async with self:
             self.is_loading = True
-        await asyncio.sleep(1.0)
+        if self.is_registration_mode:
+            async with rx.asession() as session:
+                result = await session.execute(
+                    text("""
+                    INSERT INTO institutions (
+                        institution_name, 
+                        admin_name, 
+                        contact_number, 
+                        street_address, 
+                        city_municipality, 
+                        region, 
+                        zip_code, 
+                        ranking_framework
+                    )
+                    VALUES (
+                        :name, 
+                        :admin, 
+                        :contact, 
+                        :street, 
+                        :city, 
+                        :region, 
+                        :zip, 
+                        :framework
+                    )
+                    RETURNING id, institution_name, street_address, city_municipality
+                    """),
+                    {
+                        "name": self.reg_name,
+                        "admin": self.reg_admin,
+                        "contact": self.reg_contact,
+                        "street": self.reg_street,
+                        "city": self.reg_city,
+                        "region": self.reg_region,
+                        "zip": self.reg_zip,
+                        "framework": self.ranking_framework,
+                    },
+                )
+                new_hei = result.first()
+                await session.commit()
+                if new_hei:
+                    async with self:
+                        self.selected_hei = {
+                            "id": str(new_hei[0]),
+                            "name": new_hei[1],
+                            "address": f"{new_hei[2]}, {new_hei[3]}",
+                        }
         async with self:
             self.is_loading = False
             hei_name = (
