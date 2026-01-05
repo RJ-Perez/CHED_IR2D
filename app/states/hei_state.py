@@ -62,10 +62,58 @@ class HEIState(rx.State):
     ranking_framework: str = ""
     is_registration_mode: bool = False
     reg_name: str = ""
-    reg_address: str = ""
+    reg_street: str = ""
+    reg_region: str = ""
+    reg_city: str = ""
+    reg_zip: str = ""
     reg_contact: str = ""
     reg_admin: str = ""
     is_loading: bool = False
+    regions_map: dict[str, list[str]] = {
+        "NCR": [
+            "Quezon City",
+            "Manila",
+            "Makati",
+            "Pasig",
+            "Taguig",
+            "Parañaque",
+            "Las Piñas",
+            "Mandaluyong",
+            "San Juan",
+            "Marikina",
+            "Pasay",
+            "Caloocan",
+            "Malabon",
+            "Navotas",
+            "Valenzuela",
+            "Muntinlupa",
+            "Pateros",
+        ],
+        "Region IV-A": ["Cavite", "Laguna", "Batangas", "Rizal", "Quezon"],
+        "Region III": [
+            "Bulacan",
+            "Pampanga",
+            "Tarlac",
+            "Nueva Ecija",
+            "Zambales",
+            "Bataan",
+            "Aurora",
+        ],
+    }
+
+    @rx.var
+    def regions(self) -> list[str]:
+        return list(self.regions_map.keys())
+
+    @rx.var
+    def available_cities(self) -> list[str]:
+        return self.regions_map.get(self.reg_region, [])
+
+    @rx.var
+    def reg_address(self) -> str:
+        """Combines address components into a single string."""
+        parts = [self.reg_street, self.reg_city, self.reg_region, self.reg_zip]
+        return ", ".join([p for p in parts if p])
 
     @rx.var
     def filtered_heis(self) -> list[HEI]:
@@ -79,7 +127,10 @@ class HEIState(rx.State):
         if self.is_registration_mode:
             return (
                 bool(self.reg_name)
-                and bool(self.reg_address)
+                and bool(self.reg_street)
+                and bool(self.reg_region)
+                and bool(self.reg_city)
+                and bool(self.reg_zip)
                 and bool(self.reg_contact)
                 and bool(self.reg_admin)
                 and bool(self.ranking_framework)
@@ -114,8 +165,21 @@ class HEIState(rx.State):
         self.reg_name = value
 
     @rx.event
-    def set_reg_address(self, value: str):
-        self.reg_address = value
+    def set_reg_street(self, value: str):
+        self.reg_street = value
+
+    @rx.event
+    def set_reg_region(self, value: str):
+        self.reg_region = value
+        self.reg_city = ""
+
+    @rx.event
+    def set_reg_city(self, value: str):
+        self.reg_city = value
+
+    @rx.event
+    def set_reg_zip(self, value: str):
+        self.reg_zip = value[:4]
 
     @rx.event
     def set_reg_contact(self, value: str):

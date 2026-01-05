@@ -74,15 +74,74 @@ def registration_form() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.label(
-                    "Address", class_name="block text-sm font-medium text-gray-700 mb-1"
+                    "Street Address / Unit / Building",
+                    class_name="block text-sm font-medium text-gray-700 mb-1",
                 ),
                 rx.el.input(
-                    placeholder="Complete institutional address",
-                    on_change=HEIState.set_reg_address,
+                    placeholder="e.g. 123 Rizal St, Brgy. Central",
+                    on_change=HEIState.set_reg_street,
                     class_name="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors",
-                    default_value=HEIState.reg_address,
+                    default_value=HEIState.reg_street,
                 ),
                 class_name="col-span-2",
+            ),
+            rx.el.div(
+                rx.el.label(
+                    "Region", class_name="block text-sm font-medium text-gray-700 mb-1"
+                ),
+                rx.el.div(
+                    rx.el.select(
+                        rx.el.option("Select Region", value="", disabled=True),
+                        rx.foreach(
+                            HEIState.regions,
+                            lambda region: rx.el.option(region, value=region),
+                        ),
+                        on_change=HEIState.set_reg_region,
+                        value=HEIState.reg_region,
+                        class_name="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none appearance-none bg-white cursor-pointer",
+                    ),
+                    rx.icon(
+                        "chevron-down",
+                        class_name="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none",
+                    ),
+                    class_name="relative",
+                ),
+            ),
+            rx.el.div(
+                rx.el.label(
+                    "City / Municipality",
+                    class_name="block text-sm font-medium text-gray-700 mb-1",
+                ),
+                rx.el.div(
+                    rx.el.select(
+                        rx.el.option("Select City", value="", disabled=True),
+                        rx.foreach(
+                            HEIState.available_cities,
+                            lambda city: rx.el.option(city, value=city),
+                        ),
+                        on_change=HEIState.set_reg_city,
+                        value=HEIState.reg_city,
+                        class_name="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none appearance-none bg-white cursor-pointer",
+                    ),
+                    rx.icon(
+                        "chevron-down",
+                        class_name="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none",
+                    ),
+                    class_name="relative",
+                ),
+            ),
+            rx.el.div(
+                rx.el.label(
+                    "ZIP Code",
+                    class_name="block text-sm font-medium text-gray-700 mb-1",
+                ),
+                rx.el.input(
+                    placeholder="e.g. 1101",
+                    on_change=HEIState.set_reg_zip,
+                    max_length=4,
+                    class_name="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors",
+                    default_value=HEIState.reg_zip,
+                ),
             ),
             rx.el.div(
                 rx.el.label(
@@ -107,6 +166,7 @@ def registration_form() -> rx.Component:
                     class_name="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors",
                     default_value=HEIState.reg_admin,
                 ),
+                class_name="col-span-2 md:col-span-1",
             ),
             class_name="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6",
         ),
