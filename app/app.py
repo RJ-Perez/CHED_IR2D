@@ -52,9 +52,9 @@ def branding_section() -> rx.Component:
                 rx.el.div(
                     rx.el.div(    
                         rx.image(
-                            src="https://ieducationphl.ched.gov.ph/wp-content/uploads/2023/07/QS_World_University_Rankings_Logo-e1688612613821.jpg",
+                            src="https://www.uspceu.com/portals/0/docs/prensa/noticias/original/14122.jpg",
                             class_name="mt-3 h-20 object-contain",
-                            alt="QS World University Rankings",
+                            alt="QS Stars Logo",
                         ),
                         rx.image(
                             src="https://upload.wikimedia.org/wikipedia/commons/4/48/Times_Higher_Education_%28THE%2C_World_University_Rankings%29_magazine_logo.png",
