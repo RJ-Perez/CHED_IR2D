@@ -133,6 +133,7 @@ from app.components.dashboard_ui import dashboard_content
 from app.components.placeholder_pages import institutions_content, reports_content
 from app.components.settings_ui import settings_content
 from app.states.settings_state import SettingsState
+from app.states.dashboard_state import DashboardState
 
 
 def dashboard_page() -> rx.Component:
@@ -185,7 +186,7 @@ def settings_page() -> rx.Component:
     )
 
 
-app.add_page(dashboard_page, route="/dashboard")
+app.add_page(dashboard_page, route="/dashboard", on_load=DashboardState.on_load)
 app.add_page(institutions_page, route="/institutions")
 app.add_page(analytics_page, route="/analytics")
 app.add_page(reports_page, route="/reports")
