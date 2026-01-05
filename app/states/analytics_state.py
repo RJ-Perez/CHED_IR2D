@@ -1,6 +1,7 @@
 from cmd import PROMPT
 import reflex as rx
-from app.states.dashboard_state import DashboardState
+from sqlalchemy import text
+from app.states.hei_state import HEIState
 import random
 import logging
 import json
@@ -47,10 +48,36 @@ class AnalyticsState(rx.State):
     target_color: str = "#10b981"
     your_color: str = "#2563eb"
 
-    @rx.event
+    @rx.event(background=True)
     async def on_load(self):
-        """Calculate scores and prepare chart data based on DashboardState inputs."""
-        dashboard_state = await self.get_state(DashboardState)
+        """Fetch scores from database and calculate metrics."""
+        async with self:
+            hei_state = await self.get_state(HEIState)
+            if not hei_state.selected_hei:
+                return
+            institution_id = int(hei_state.selected_hei["id"])
+        academic_rep = 0.0
+        citations = 0.0
+        emp_rep = 0.0
+        emp_outcomes = 0.0
+        int_research_net = 0.0
+        int_faculty_ratio = 0.0
+        int_student_ratio = 0.0
+        faculty_student_ratio = 0.0
+        sustainability = 0.0
+        async with rx.asession() as session:
+            result = await session.execute(
+                text("""
+                SELECT 
+                    i.code, 
+                    s.value
+                FROM institution_scores s
+                JOIN ranking_indicators i ON s.indicator_id = i.id
+                WHERE s.institution_id = :inst_id AND s.ranking_year = 2025
+                """),
+                {"inst_id": institution_id},
+            )
+            rows = result.all()
 
         @rx.event
         def parse_float(value: str) -> float:
@@ -61,15 +88,25 @@ class AnalyticsState(rx.State):
                 logging.exception(f"Error parsing float: {e}")
                 return 0.0
 
-        academic_rep = parse_float(dashboard_state.academic_reputation)
-        citations = parse_float(dashboard_state.citations_per_faculty)
-        emp_rep = parse_float(dashboard_state.employer_reputation)
-        emp_outcomes = parse_float(dashboard_state.employment_outcomes)
-        int_research_net = parse_float(dashboard_state.international_research_network)
-        int_faculty_ratio = parse_float(dashboard_state.international_faculty_ratio)
-        int_student_ratio = parse_float(dashboard_state.international_student_ratio)
-        faculty_student_ratio = parse_float(dashboard_state.faculty_student_ratio)
-        sustainability = parse_float(dashboard_state.sustainability_metrics)
+        for code, val in rows:
+            if code == "academic_reputation":
+                academic_rep = parse_float(val)
+            elif code == "citations_per_faculty":
+                citations = parse_float(val)
+            elif code == "employer_reputation":
+                emp_rep = parse_float(val)
+            elif code == "employment_outcomes":
+                emp_outcomes = parse_float(val)
+            elif code == "international_research_network":
+                int_research_net = parse_float(val)
+            elif code == "international_faculty_ratio":
+                int_faculty_ratio = parse_float(val)
+            elif code == "international_student_ratio":
+                int_student_ratio = parse_float(val)
+            elif code == "faculty_student_ratio":
+                faculty_student_ratio = parse_float(val)
+            elif code == "sustainability_metrics":
+                sustainability = parse_float(val)
         b_academic_rep = 90.0
         b_citations = 20.0
         b_emp_rep = 90.0
@@ -110,98 +147,105 @@ class AnalyticsState(rx.State):
         s_sustainability = (
             min(100, sustainability / b_sustainability * 100) if b_sustainability else 0
         )
-        self.research_score = int(s_academic_rep * 0.6 + s_citations * 0.4)
-        self.employability_score = int(s_emp_rep * 0.75 + s_emp_outcomes * 0.25)
-        self.global_engagement_score = int(
+        research_score = int(s_academic_rep * 0.6 + s_citations * 0.4)
+        employability_score = int(s_emp_rep * 0.75 + s_emp_outcomes * 0.25)
+        global_engagement_score = int(
             (s_int_research_net + s_int_faculty_ratio + s_int_student_ratio) / 3
         )
-        self.learning_experience_score = int(s_faculty_student)
-        self.sustainability_score = int(s_sustainability)
-        self.overall_score = int(
-            self.research_score * 0.5
-            + self.employability_score * 0.2
-            + self.global_engagement_score * 0.15
-            + self.learning_experience_score * 0.1
-            + self.sustainability_score * 0.05
+        learning_experience_score = int(s_faculty_student)
+        sustainability_score = int(s_sustainability)
+        overall_score = int(
+            research_score * 0.5
+            + employability_score * 0.2
+            + global_engagement_score * 0.15
+            + learning_experience_score * 0.1
+            + sustainability_score * 0.05
         )
-        self.research_comparison_data = [
-            {
-                "metric": "Academic Rep.",
-                "You": academic_rep,
-                "NCR Avg": 65.0,
-                "Target": b_academic_rep,
-            },
-            {
-                "metric": "Citations/Faculty",
-                "You": citations,
-                "NCR Avg": 8.5,
-                "Target": b_citations,
-            },
-        ]
-        self.employability_comparison_data = [
-            {
-                "metric": "Emp. Reputation",
-                "You": emp_rep,
-                "NCR Avg": 65.0,
-                "Target": b_emp_rep,
-            },
-            {
-                "metric": "Emp. Outcomes",
-                "You": emp_outcomes,
-                "NCR Avg": 82.0,
-                "Target": b_emp_outcomes,
-            },
-        ]
-        self.global_engagement_comparison_data = [
-            {
-                "metric": "Research Network",
-                "You": int_research_net,
-                "NCR Avg": 55.0,
-                "Target": b_int_research_net,
-            },
-            {
-                "metric": "Int. Faculty %",
-                "You": int_faculty_ratio,
-                "NCR Avg": 8.0,
-                "Target": b_int_faculty_ratio,
-            },
-            {
-                "metric": "Int. Student %",
-                "You": int_student_ratio,
-                "NCR Avg": 5.5,
-                "Target": b_int_student_ratio,
-            },
-        ]
-        self.learning_experience_comparison_data = [
-            {
-                "metric": "Faculty:Student",
-                "You": faculty_student_ratio,
-                "NCR Avg": 18.0,
-                "Target": b_faculty_student_ratio,
-            }
-        ]
-        self.sustainability_comparison_data = [
-            {
-                "metric": "Sustainability",
-                "You": sustainability,
-                "NCR Avg": 60.0,
-                "Target": b_sustainability,
-            }
-        ]
-        self.ai_recommendations = self._get_fallback_recommendations(
-            research_score=self.research_score,
-            employability_score=self.employability_score,
-            global_engagement_score=self.global_engagement_score,
-            learning_experience_score=self.learning_experience_score,
-            sustainability_score=self.sustainability_score,
-        )
-        self.generate_ai_recommendations(
-            research_score=self.research_score,
-            employability_score=self.employability_score,
-            global_engagement_score=self.global_engagement_score,
-            learning_experience_score=self.learning_experience_score,
-            sustainability_score=self.sustainability_score,
-            overall_score=self.overall_score,
+        async with self:
+            self.research_score = research_score
+            self.employability_score = employability_score
+            self.global_engagement_score = global_engagement_score
+            self.learning_experience_score = learning_experience_score
+            self.sustainability_score = sustainability_score
+            self.overall_score = overall_score
+            self.research_comparison_data = [
+                {
+                    "metric": "Academic Rep.",
+                    "You": academic_rep,
+                    "NCR Avg": 65.0,
+                    "Target": b_academic_rep,
+                },
+                {
+                    "metric": "Citations/Faculty",
+                    "You": citations,
+                    "NCR Avg": 8.5,
+                    "Target": b_citations,
+                },
+            ]
+            self.employability_comparison_data = [
+                {
+                    "metric": "Emp. Reputation",
+                    "You": emp_rep,
+                    "NCR Avg": 65.0,
+                    "Target": b_emp_rep,
+                },
+                {
+                    "metric": "Emp. Outcomes",
+                    "You": emp_outcomes,
+                    "NCR Avg": 82.0,
+                    "Target": b_emp_outcomes,
+                },
+            ]
+            self.global_engagement_comparison_data = [
+                {
+                    "metric": "Research Network",
+                    "You": int_research_net,
+                    "NCR Avg": 55.0,
+                    "Target": b_int_research_net,
+                },
+                {
+                    "metric": "Int. Faculty %",
+                    "You": int_faculty_ratio,
+                    "NCR Avg": 8.0,
+                    "Target": b_int_faculty_ratio,
+                },
+                {
+                    "metric": "Int. Student %",
+                    "You": int_student_ratio,
+                    "NCR Avg": 5.5,
+                    "Target": b_int_student_ratio,
+                },
+            ]
+            self.learning_experience_comparison_data = [
+                {
+                    "metric": "Faculty:Student",
+                    "You": faculty_student_ratio,
+                    "NCR Avg": 18.0,
+                    "Target": b_faculty_student_ratio,
+                }
+            ]
+            self.sustainability_comparison_data = [
+                {
+                    "metric": "Sustainability",
+                    "You": sustainability,
+                    "NCR Avg": 60.0,
+                    "Target": b_sustainability,
+                }
+            ]
+            self.ai_recommendations = self._get_fallback_recommendations(
+                research_score=self.research_score,
+                employability_score=self.employability_score,
+                global_engagement_score=self.global_engagement_score,
+                learning_experience_score=self.learning_experience_score,
+                sustainability_score=self.sustainability_score,
+            )
+        await self.generate_ai_recommendations(
+            research_score=research_score,
+            employability_score=employability_score,
+            global_engagement_score=global_engagement_score,
+            learning_experience_score=learning_experience_score,
+            sustainability_score=sustainability_score,
+            overall_score=overall_score,
             academic_rep=academic_rep,
             citations=citations,
             emp_rep=emp_rep,
