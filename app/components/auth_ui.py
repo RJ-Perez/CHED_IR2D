@@ -100,6 +100,14 @@ def auth_form() -> rx.Component:
                         "user",
                     ),
                     input_field(
+                        "Position",
+                        "VP for Academic Affairs",
+                        "text",
+                        AuthState.position,
+                        AuthState.set_position,
+                        "briefcase",
+                    ),
+                    input_field(
                         "Institution Name",
                         "University of the Philippines",
                         "text",

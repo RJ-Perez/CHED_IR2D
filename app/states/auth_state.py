@@ -3,6 +3,8 @@ import asyncio
 from reflex_google_auth import GoogleAuthState
 from sqlalchemy import text
 import logging
+import bcrypt
+import datetime
 
 
 class AuthState(GoogleAuthState):
@@ -11,6 +13,7 @@ class AuthState(GoogleAuthState):
     confirm_password: str = ""
     full_name: str = ""
     institution_name: str = ""
+    position: str = ""
     is_sign_up: bool = False
     is_loading: bool = False
     error_message: str = ""
@@ -30,6 +33,7 @@ class AuthState(GoogleAuthState):
         self.confirm_password = ""
         self.full_name = ""
         self.institution_name = ""
+        self.position = ""
 
     @rx.event
     def set_email(self, value: str):
@@ -54,9 +58,13 @@ class AuthState(GoogleAuthState):
     def set_institution_name(self, value: str):
         self.institution_name = value
 
+    @rx.event
+    def set_position(self, value: str):
+        self.position = value
+
     @rx.event(background=True)
     async def authenticate(self):
-        """Handle form submission for both Login and Sign Up."""
+        """Handle form submission for both Login and Sign Up using Database."""
         async with self:
             self.is_loading = True
             self.error_message = ""
@@ -65,8 +73,12 @@ class AuthState(GoogleAuthState):
                 self.is_loading = False
                 return
             if self.is_sign_up:
-                if not self.full_name:
-                    self.error_message = "Full Name is required."
+                if (
+                    not self.full_name
+                    or not self.position
+                    or (not self.institution_name)
+                ):
+                    self.error_message = "All fields are required for sign up."
                     self.is_loading = False
                     return
                 if self.password != self.confirm_password:
@@ -77,18 +89,74 @@ class AuthState(GoogleAuthState):
                     self.error_message = "Password must be at least 6 characters."
                     self.is_loading = False
                     return
-        await asyncio.sleep(1.5)
-        async with self:
-            self.is_loading = False
+        async with rx.asession() as session:
             if self.is_sign_up:
-                yield rx.toast(
-                    "Account created successfully! Please sign in.", duration=3000
+                result = await session.execute(
+                    text("SELECT id FROM users WHERE email = :email"),
+                    {"email": self.email},
                 )
-                self.is_sign_up = False
-                self.reset_form()
+                if result.first():
+                    async with self:
+                        self.error_message = (
+                            "An account with this email already exists."
+                        )
+                        self.is_loading = False
+                        return
+                password_hash = bcrypt.hashpw(
+                    self.password.encode("utf-8"), bcrypt.gensalt()
+                ).decode("utf-8")
+                name_parts = self.full_name.split(" ", 1)
+                first_name = name_parts[0]
+                last_name = name_parts[1] if len(name_parts) > 1 else ""
+                await session.execute(
+                    text("""
+                    INSERT INTO users (first_name, last_name, position, institution_name, email, password_hash, auth_provider)
+                    VALUES (:first_name, :last_name, :position, :institution_name, :email, :password_hash, 'email')
+                    """),
+                    {
+                        "first_name": first_name,
+                        "last_name": last_name,
+                        "position": self.position,
+                        "institution_name": self.institution_name,
+                        "email": self.email,
+                        "password_hash": password_hash,
+                    },
+                )
+                await session.commit()
+                async with self:
+                    self.is_loading = False
+                    self.is_sign_up = False
+                    self.reset_form()
+                    yield rx.toast(
+                        "Account created successfully! Please sign in.", duration=3000
+                    )
             else:
-                yield rx.toast(f"Welcome back, {self.email}!", duration=3000)
-                yield rx.redirect("/hei-selection")
+                result = await session.execute(
+                    text(
+                        "SELECT id, password_hash, first_name FROM users WHERE email = :email AND auth_provider = 'email'"
+                    ),
+                    {"email": self.email},
+                )
+                user = result.first()
+                if not user or not bcrypt.checkpw(
+                    self.password.encode("utf-8"), user.password_hash.encode("utf-8")
+                ):
+                    async with self:
+                        self.error_message = "Invalid email or password."
+                        self.is_loading = False
+                        return
+                await session.execute(
+                    text("UPDATE users SET last_login = :now WHERE id = :id"),
+                    {
+                        "now": datetime.datetime.now(datetime.timezone.utc),
+                        "id": user.id,
+                    },
+                )
+                await session.commit()
+                async with self:
+                    self.is_loading = False
+                    yield rx.toast(f"Welcome back, {user.first_name}!", duration=3000)
+                    yield rx.redirect("/hei-selection")
 
     @rx.event(background=True)
     async def on_google_login(self):
