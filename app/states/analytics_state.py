@@ -48,6 +48,14 @@ class AnalyticsState(rx.State):
     target_color: str = "#10b981"
     your_color: str = "#2563eb"
 
+    def _parse_float(self, value: str) -> float:
+        try:
+            clean = "".join((c for c in value if c.isdigit() or c == "."))
+            return float(clean) if clean else 0.0
+        except ValueError as e:
+            logging.exception(f"Error parsing float: {e}")
+            return 0.0
+
     @rx.event(background=True)
     async def on_load(self):
         """Fetch scores from database and calculate metrics."""
@@ -77,20 +85,10 @@ class AnalyticsState(rx.State):
                 """),
                 {"inst_id": institution_id},
             )
-            rows = result.all()
-
-        @rx.event
-        def parse_float(value: str) -> float:
-            try:
-                clean = "".join((c for c in value if c.isdigit() or c == "."))
-                return float(clean) if clean else 0.0
-            except ValueError as e:
-                logging.exception(f"Error parsing float: {e}")
-                return 0.0
-
+        rows = result.all()
         for code, val in rows:
             if code == "academic_reputation":
-                academic_rep = parse_float(val)
+                academic_rep = self._parse_float(val)
             elif code == "citations_per_faculty":
                 citations = parse_float(val)
             elif code == "employer_reputation":
@@ -239,7 +237,7 @@ class AnalyticsState(rx.State):
                 learning_experience_score=self.learning_experience_score,
                 sustainability_score=self.sustainability_score,
             )
-        await self.generate_ai_recommendations(
+        yield AnalyticsState.generate_ai_recommendations(
             research_score=research_score,
             employability_score=employability_score,
             global_engagement_score=global_engagement_score,
