@@ -1,6 +1,5 @@
 import reflex as rx
 from app.states.auth_state import AuthState
-from reflex_google_auth import google_login, google_oauth_provider
 
 
 def input_field(
@@ -34,11 +33,6 @@ def input_field(
     )
 
 
-def social_login_button() -> rx.Component:
-    """Real Google Login Button using reflex-google-auth."""
-    return google_oauth_provider(google_login(on_success=AuthState.on_google_login))
-
-
 def auth_form() -> rx.Component:
     """Main Authentication Form Component."""
     return rx.el.div(
@@ -60,21 +54,6 @@ def auth_form() -> rx.Component:
                 class_name="mt-2 text-sm text-gray-600",
             ),
             class_name="mb-8 text-center",
-        ),
-        rx.el.div(
-            social_login_button(),
-            rx.el.div(
-                rx.el.div(class_name="w-full border-t border-gray-300"),
-                rx.el.div(
-                    rx.el.span(
-                        "Or continue with",
-                        class_name="bg-white px-2 text-gray-500 text-sm",
-                    ),
-                    class_name="absolute inset-0 flex items-center justify-center",
-                ),
-                class_name="relative flex py-5 items-center",
-            ),
-            class_name="mb-2",
         ),
         rx.cond(
             AuthState.error_message != "",
