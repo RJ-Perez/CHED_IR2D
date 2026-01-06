@@ -102,7 +102,8 @@ class AuthState(GoogleAuthState):
                     text("SELECT id FROM users WHERE email = :email"),
                     {"email": self.email},
                 )
-                if result.first():
+                first_row = result.first()
+                if first_row:
                     async with self:
                         self.error_message = (
                             "An account with this email already exists."
@@ -143,7 +144,7 @@ class AuthState(GoogleAuthState):
                 )
                 user = result.first()
                 if not user or not bcrypt.checkpw(
-                    self.password.encode("utf-8"), user.password_hash.encode("utf-8")
+                    self.password.encode("utf-8"), user[1].encode("utf-8")
                 ):
                     async with self:
                         self.error_message = "Invalid email or password."
@@ -153,13 +154,13 @@ class AuthState(GoogleAuthState):
                     text("UPDATE users SET last_login = :now WHERE id = :id"),
                     {
                         "now": datetime.datetime.now(datetime.timezone.utc),
-                        "id": user.id,
+                        "id": user[0],
                     },
                 )
                 await session.commit()
                 async with self:
                     self.is_loading = False
-                    yield rx.toast(f"Welcome back, {user.first_name}!", duration=3000)
+                    yield rx.toast(f"Welcome back, {user[2]}!", duration=3000)
                     yield rx.redirect("/hei-selection")
 
     @rx.event(background=True)

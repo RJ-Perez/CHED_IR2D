@@ -1,27 +1,19 @@
-from cmd import PROMPT
 import reflex as rx
 from sqlalchemy import text
 from app.states.hei_state import HEIState
-import random
 import logging
 import json
+import os
 
 try:
     import google.generativeai as genai
 
-    GOOGLE_AI_API_KEY = "AIzaSyB4N7w-PVlY8ZkVxYkEkQyL9qgBTsLfIr8"
-    genai.configure(api_key=GOOGLE_AI_API_KEY)
-    PROMPT = """
-    You are an expert higher education consultant specializing in international university rankings (QS and THE). 
-
-Analyze the following performance data for a Higher Education Institution in the Philippines and provide 3-4 strategic, actionable recommendations to improve their international ranking readiness.
-
-{performance_summary}
-
-Areas needing improvement: {', '.join(weak_areas) if weak_areas else 'All areas are performing well'}
-Provide Readiness Score for each category and overall score.
-"""
-    GOOGLE_AI_AVAILABLE = True
+    GOOGLE_AI_API_KEY = os.getenv("GOOGLE_API_KEY")
+    if GOOGLE_AI_API_KEY:
+        genai.configure(api_key=GOOGLE_AI_API_KEY)
+        GOOGLE_AI_AVAILABLE = True
+    else:
+        GOOGLE_AI_AVAILABLE = False
 except ImportError as e:
     logging.exception(f"google-generativeai package not installed: {e}")
     GOOGLE_AI_AVAILABLE = False

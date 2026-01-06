@@ -5,3 +5,4 @@ google-generativeai
 reflex-google-auth
 reflex
 google-genai
+resend
