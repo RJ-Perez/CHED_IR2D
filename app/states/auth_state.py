@@ -20,6 +20,7 @@ class AuthState(GoogleAuthState):
     last_name: str = ""
     institution_name: str = ""
     position: str = ""
+    authenticated_user_id: int | None = None
     is_sign_up: bool = False
     is_loading: bool = False
     error_message: str = ""
@@ -169,6 +170,7 @@ class AuthState(GoogleAuthState):
                 )
                 await session.commit()
                 async with self:
+                    self.authenticated_user_id = user[0]
                     self.is_loading = False
                     yield rx.toast(f"Welcome back, {user[2]}!", duration=3000)
                     yield rx.redirect("/hei-selection")
@@ -193,6 +195,7 @@ class AuthState(GoogleAuthState):
             user = result.first()
             async with self:
                 if user:
+                    self.authenticated_user_id = user[0]
                     yield rx.toast(f"Logged in via Google: {user_email}", duration=3000)
                     yield rx.redirect("/hei-selection")
                 else:
@@ -205,6 +208,7 @@ class AuthState(GoogleAuthState):
     def logout(self):
         """Sign out the user and redirect to landing page."""
         super().logout()
+        self.authenticated_user_id = None
         self.reset_form()
         self.is_sign_up = False
         return rx.redirect("/")

@@ -311,12 +311,7 @@ class DashboardState(rx.State):
                     self.is_saving = False
                     yield rx.toast("No institution selected.")
                 return
-            user_result = await session.execute(
-                text("SELECT id FROM users WHERE email = :email"),
-                {"email": auth_state.email},
-            )
-            user_row = user_result.first()
-            current_user_id = user_row[0] if user_row else None
+            current_user_id = auth_state.authenticated_user_id
             institution_id = int(hei_state.selected_hei["id"])
             scores_map = {
                 "academic_reputation": (
