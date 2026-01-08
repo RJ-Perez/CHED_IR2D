@@ -15,7 +15,18 @@ TOOLTIP_PROPS = {
 
 
 def score_card(title: str, score: int, icon: str, color_class: str) -> rx.Component:
-    """Displays a score metric in a card."""
+    """
+    Renders a metric card with a title, numeric score, icon, and progress bar.
+
+    Args:
+        title: Display name of the metric (e.g., 'Research')
+        score: The calculated 0-100 score value
+        icon: Lucide icon name to display
+        color_class: Tailwind text/bg color prefix (e.g., 'text-blue-600')
+
+    Returns:
+        rx.Component: A styled card showing score progress.
+    """
     return rx.el.div(
         rx.el.div(
             rx.el.div(
@@ -324,7 +335,9 @@ def sustainability_chart() -> rx.Component:
 
 
 def analytics_content_ui() -> rx.Component:
-    """Main Analytics Dashboard View."""
+    """The main visualization layout for institution performance.
+    Combines score cards, comparison charts, and AI-powered advice.
+    """
     return rx.el.div(
         rx.el.div(
             rx.el.h1(

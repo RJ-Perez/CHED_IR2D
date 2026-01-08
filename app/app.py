@@ -4,7 +4,13 @@ from app.states.auth_state import AuthState
 
 
 def branding_section() -> rx.Component:
-    """Left side branding section."""
+    """
+    Left-side branding section for the landing page.
+    It provides visual context about CHED and the IRRD system using branding imagery and key mission statements.
+
+    Returns:
+        rx.Component: The visual branding panel for the login screen.
+    """
     return rx.el.div(
         rx.el.div(
             rx.el.div(

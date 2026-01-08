@@ -24,7 +24,9 @@ def sidebar_item(
 
 
 def sidebar(current_page: str) -> rx.Component:
-    """Main application sidebar."""
+    """Main application navigation sidebar.
+    Displays links to all main modules and shows the currently logged-in user info.
+    """
     return rx.el.aside(
         rx.el.div(
             rx.image(

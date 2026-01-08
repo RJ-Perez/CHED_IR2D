@@ -6,6 +6,10 @@ from app.states.hei_state import HEIState
 
 
 class DashboardState(rx.State):
+    """Manages data entry for the ranking readiness assessment.
+    It tracks individual indicator scores and their associated evidence files.
+    """
+
     academic_reputation: str = ""
     citations_per_faculty: str = ""
     employer_reputation: str = ""

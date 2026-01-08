@@ -23,6 +23,11 @@ except Exception as e:
 
 
 class AnalyticsState(rx.State):
+    """
+    Calculates weighted performance scores based on HEI data entry.
+    Triggers AI-driven strategic advice generation based on performance gaps.
+    """
+
     research_score: int = 0
     employability_score: int = 0
     global_engagement_score: int = 0

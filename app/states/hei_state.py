@@ -12,6 +12,10 @@ class HEI(TypedDict):
 
 
 class HEIState(rx.State):
+    """Manages the selection and registration of Higher Education Institutions (HEIs).
+    This state allows users to search for existing schools or register new ones into the system.
+    """
+
     hei_database: list[HEI] = []
     search_query: str = ""
     selected_hei: Optional[HEI] = None

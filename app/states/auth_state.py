@@ -8,6 +8,11 @@ import datetime
 
 
 class AuthState(GoogleAuthState):
+    """
+    Manages the authentication flow for HEI administrators.
+    Integrates with Google OAuth and standard email/password authentication.
+    """
+
     email: str = ""
     password: str = ""
     confirm_password: str = ""
@@ -21,7 +26,10 @@ class AuthState(GoogleAuthState):
 
     @rx.event
     def toggle_auth_mode(self):
-        """Toggle between Login and Sign Up modes."""
+        """
+        Switches the UI between 'Sign In' and 'Sign Up' modes.
+        Clears existing errors and form data to provide a clean state.
+        """
         self.is_sign_up = not self.is_sign_up
         self.error_message = ""
         self.reset_form()
@@ -70,7 +78,9 @@ class AuthState(GoogleAuthState):
 
     @rx.event(background=True)
     async def authenticate(self):
-        """Handle form submission for both Login and Sign Up using Database."""
+        """Main entry point for email/password authentication.
+        It handles validation, password hashing for new users, and credential verification for returning users.
+        """
         async with self:
             self.is_loading = True
             self.error_message = ""
