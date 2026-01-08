@@ -16,6 +16,7 @@ class ReportItem(TypedDict):
     sustainability_score: int
     status: str
     last_generated: str
+    evidence_files: list[str]
 
 
 class ReportsState(rx.State):
@@ -34,6 +35,11 @@ class ReportsState(rx.State):
             "sustainability_score": 90,
             "status": "Completed",
             "last_generated": "2023-10-15",
+            "evidence_files": [
+                "institution_1/research/annual_report_2023.pdf",
+                "institution_1/employability/employer_survey.pdf",
+                "institution_1/sustainability/esg_compliance.pdf",
+            ],
         },
         {
             "id": "2",
@@ -46,6 +52,10 @@ class ReportsState(rx.State):
             "sustainability_score": 85,
             "status": "Completed",
             "last_generated": "2023-10-14",
+            "evidence_files": [
+                "institution_2/research/research_portfolio.pdf",
+                "institution_2/global_engagement/moa_international.pdf",
+            ],
         },
         {
             "id": "3",
@@ -58,6 +68,7 @@ class ReportsState(rx.State):
             "sustainability_score": 85,
             "status": "Completed",
             "last_generated": "2023-10-16",
+            "evidence_files": [],
         },
         {
             "id": "4",

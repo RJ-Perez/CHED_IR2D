@@ -76,6 +76,43 @@ def report_status_badge(status: str) -> rx.Component:
     )
 
 
+def evidence_file_item(file_path: str) -> rx.Component:
+    """Renders a single evidence file link with appropriate icon."""
+    file_name = file_path.split("/")[-1]
+    is_pdf = file_path.lower().endswith(".pdf")
+    icon_name = rx.cond(is_pdf, "file-text", "file-image")
+    icon_color = rx.cond(is_pdf, "text-red-500", "text-blue-500")
+    return rx.el.div(
+        rx.icon(icon_name, class_name=f"h-4 w-4 mr-2 {icon_color}"),
+        rx.el.a(
+            file_name,
+            href=rx.get_upload_url(file_path),
+            target="_blank",
+            class_name="text-xs text-blue-600 hover:text-blue-800 hover:underline truncate max-w-[150px]",
+        ),
+        class_name="flex items-center p-1 bg-gray-50 rounded border border-gray-100",
+    )
+
+
+def evidence_list_section(files: list[str]) -> rx.Component:
+    """Renders the list of evidence files or an empty state."""
+    return rx.el.div(
+        rx.el.p(
+            "Evidence Files:",
+            class_name="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1",
+        ),
+        rx.cond(
+            files.length() > 0,
+            rx.el.div(
+                rx.foreach(files, lambda f: evidence_file_item(f)),
+                class_name="grid grid-cols-1 gap-1",
+            ),
+            rx.el.p("No evidence uploaded.", class_name="text-xs text-gray-400 italic"),
+        ),
+        class_name="mt-2 pt-2 border-t border-gray-100",
+    )
+
+
 def report_table_row(report: ReportItem) -> rx.Component:
     """Row component for the Reports table."""
     return rx.el.tr(
@@ -83,9 +120,10 @@ def report_table_row(report: ReportItem) -> rx.Component:
             rx.el.div(
                 rx.el.p(report["name"], class_name="text-sm font-medium text-gray-900"),
                 rx.el.p(f"ID: {report['id']}", class_name="text-xs text-gray-500"),
+                evidence_list_section(report["evidence_files"]),
                 class_name="flex flex-col",
             ),
-            class_name="px-6 py-4 whitespace-nowrap",
+            class_name="px-6 py-4",
         ),
         rx.el.td(
             score_badge(report["overall_score"]),
