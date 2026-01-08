@@ -116,8 +116,10 @@ def evidence_list_section(files: list[str]) -> rx.Component:
 def dimension_score_row(label: str, score: int) -> rx.Component:
     """Helper component to render a single dimension row with aligned label and badge."""
     return rx.el.div(
-        rx.el.span(label, class_name="text-xs font-medium text-gray-600 min-w-[180px]"),
-        rx.el.div(score_badge(score), class_name="flex-1 flex justify-end"),
+        rx.el.span(label, class_name="text-xs font-medium text-gray-600 min-w-[200px]"),
+        rx.el.div(
+            score_badge(score), class_name="flex-1 flex justify-end min-w-[60px]"
+        ),
         class_name="flex items-center justify-between gap-4 py-1",
     )
 
@@ -136,7 +138,7 @@ def report_table_row(report: ReportItem) -> rx.Component:
         ),
         rx.el.td(
             score_badge(report["overall_score"]),
-            class_name="px-6 py-4 whitespace-nowrap",
+            class_name="px-6 py-4 whitespace-nowrap text-center",
         ),
         rx.el.td(
             rx.el.div(
@@ -161,11 +163,11 @@ def report_table_row(report: ReportItem) -> rx.Component:
         ),
         rx.el.td(
             report_status_badge(report["status"]),
-            class_name="px-6 py-4 whitespace-nowrap",
+            class_name="px-6 py-4 whitespace-nowrap text-center",
         ),
         rx.el.td(
             rx.el.span(report["last_generated"], class_name="text-sm text-gray-500"),
-            class_name="px-6 py-4 whitespace-nowrap",
+            class_name="px-6 py-4 whitespace-nowrap text-center",
         ),
         rx.el.td(
             rx.el.div(
@@ -315,7 +317,7 @@ def reports_dashboard_ui() -> rx.Component:
                                 ),
                                 rx.el.th(
                                     "Overall Score",
-                                    class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                    class_name="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider",
                                 ),
                                 rx.el.th(
                                     "Dimension Scores",
@@ -323,11 +325,11 @@ def reports_dashboard_ui() -> rx.Component:
                                 ),
                                 rx.el.th(
                                     "Status",
-                                    class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                    class_name="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider",
                                 ),
                                 rx.el.th(
                                     "Last Generated",
-                                    class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                    class_name="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider",
                                 ),
                                 rx.el.th(
                                     "Actions",
