@@ -81,6 +81,7 @@ class ReportsState(rx.State):
             "sustainability_score": 80,
             "status": "In Progress",
             "last_generated": "-",
+            "evidence_files": [],
         },
         {
             "id": "5",
@@ -93,6 +94,7 @@ class ReportsState(rx.State):
             "sustainability_score": 78,
             "status": "In Progress",
             "last_generated": "-",
+            "evidence_files": [],
         },
         {
             "id": "6",
@@ -105,6 +107,7 @@ class ReportsState(rx.State):
             "sustainability_score": 70,
             "status": "Pending",
             "last_generated": "-",
+            "evidence_files": [],
         },
         {
             "id": "7",
@@ -117,6 +120,7 @@ class ReportsState(rx.State):
             "sustainability_score": 75,
             "status": "In Progress",
             "last_generated": "-",
+            "evidence_files": [],
         },
         {
             "id": "8",
@@ -129,6 +133,7 @@ class ReportsState(rx.State):
             "sustainability_score": 0,
             "status": "Pending",
             "last_generated": "-",
+            "evidence_files": [],
         },
         {
             "id": "9",
@@ -141,6 +146,7 @@ class ReportsState(rx.State):
             "sustainability_score": 95,
             "status": "Completed",
             "last_generated": "2023-10-18",
+            "evidence_files": [],
         },
     ]
     search_query: str = ""
