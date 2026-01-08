@@ -85,55 +85,62 @@ class DashboardState(rx.State):
     def set_sustainability_metrics(self, value: str):
         self.sustainability_metrics = value
 
+    async def _save_uploaded_file(
+        self, file: rx.UploadFile, category: str
+    ) -> str | None:
+        """Helper to save files into institution-specific directories."""
+        hei_state = await self.get_state(HEIState)
+        if not hei_state.selected_hei:
+            return None
+        inst_id = hei_state.selected_hei["id"]
+        relative_dir = f"institution_{inst_id}/{category}"
+        upload_dir = rx.get_upload_dir() / relative_dir
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        upload_data = await file.read()
+        file_path = upload_dir / file.name
+        with file_path.open("wb") as f:
+            f.write(upload_data)
+        return f"{relative_dir}/{file.name}"
+
     @rx.event
     async def handle_research_upload(self, files: list[rx.UploadFile]):
-        """Handle file upload for Research section."""
+        """Handle file upload for Research section with unique directory."""
         for file in files:
-            upload_data = await file.read()
-            outfile = rx.get_upload_dir() / file.name
-            with outfile.open("wb") as file_object:
-                file_object.write(upload_data)
-            self.uploaded_research_files.append(file.name)
+            saved_path = await self._save_uploaded_file(file, "research")
+            if saved_path:
+                self.uploaded_research_files.append(saved_path)
 
     @rx.event
     async def handle_employability_upload(self, files: list[rx.UploadFile]):
-        """Handle file upload for Employability section."""
+        """Handle file upload for Employability section with unique directory."""
         for file in files:
-            upload_data = await file.read()
-            outfile = rx.get_upload_dir() / file.name
-            with outfile.open("wb") as file_object:
-                file_object.write(upload_data)
-            self.uploaded_employability_files.append(file.name)
+            saved_path = await self._save_uploaded_file(file, "employability")
+            if saved_path:
+                self.uploaded_employability_files.append(saved_path)
 
     @rx.event
     async def handle_global_engagement_upload(self, files: list[rx.UploadFile]):
-        """Handle file upload for Global Engagement section."""
+        """Handle file upload for Global Engagement section with unique directory."""
         for file in files:
-            upload_data = await file.read()
-            outfile = rx.get_upload_dir() / file.name
-            with outfile.open("wb") as file_object:
-                file_object.write(upload_data)
-            self.uploaded_global_engagement_files.append(file.name)
+            saved_path = await self._save_uploaded_file(file, "global_engagement")
+            if saved_path:
+                self.uploaded_global_engagement_files.append(saved_path)
 
     @rx.event
     async def handle_learning_experience_upload(self, files: list[rx.UploadFile]):
-        """Handle file upload for Learning Experience section."""
+        """Handle file upload for Learning Experience section with unique directory."""
         for file in files:
-            upload_data = await file.read()
-            outfile = rx.get_upload_dir() / file.name
-            with outfile.open("wb") as file_object:
-                file_object.write(upload_data)
-            self.uploaded_learning_experience_files.append(file.name)
+            saved_path = await self._save_uploaded_file(file, "learning_experience")
+            if saved_path:
+                self.uploaded_learning_experience_files.append(saved_path)
 
     @rx.event
     async def handle_sustainability_upload(self, files: list[rx.UploadFile]):
-        """Handle file upload for Sustainability section."""
+        """Handle file upload for Sustainability section with unique directory."""
         for file in files:
-            upload_data = await file.read()
-            outfile = rx.get_upload_dir() / file.name
-            with outfile.open("wb") as file_object:
-                file_object.write(upload_data)
-            self.uploaded_sustainability_files.append(file.name)
+            saved_path = await self._save_uploaded_file(file, "sustainability")
+            if saved_path:
+                self.uploaded_sustainability_files.append(saved_path)
 
     @rx.event(background=True)
     async def on_load(self):
