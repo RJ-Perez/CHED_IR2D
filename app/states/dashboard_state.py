@@ -290,17 +290,26 @@ class DashboardState(rx.State):
 
     @rx.event(background=True)
     async def save_progress(self):
-        """Save current dashboard state to the database."""
+        """Save current dashboard state to the database, tracking the submitting user."""
         async with self:
             self.is_saving = True
         async with rx.asession() as session:
             async with self:
+                from app.states.auth_state import AuthState
+
                 hei_state = await self.get_state(HEIState)
+                auth_state = await self.get_state(AuthState)
             if not hei_state.selected_hei:
                 async with self:
                     self.is_saving = False
                     yield rx.toast("No institution selected.")
                 return
+            user_result = await session.execute(
+                text("SELECT id FROM users WHERE email = :email"),
+                {"email": auth_state.email},
+            )
+            user_row = user_result.first()
+            current_user_id = user_row[0] if user_row else None
             institution_id = int(hei_state.selected_hei["id"])
             scores_map = {
                 "academic_reputation": (
@@ -343,14 +352,19 @@ class DashboardState(rx.State):
                 files_json = json.dumps(files)
                 await session.execute(
                     text("""
-                        INSERT INTO institution_scores (institution_id, indicator_id, value, evidence_files, ranking_year)
-                        VALUES (:inst_id, :ind_id, :val, :files, 2025)
+                        INSERT INTO institution_scores (institution_id, indicator_id, user_id, value, evidence_files, ranking_year)
+                        VALUES (:inst_id, :ind_id, :user_id, :val, :files, 2025)
                         ON CONFLICT (institution_id, indicator_id, ranking_year)
-                        DO UPDATE SET value = EXCLUDED.value, evidence_files = EXCLUDED.evidence_files, updated_at = CURRENT_TIMESTAMP
+                        DO UPDATE SET 
+                            value = EXCLUDED.value, 
+                            evidence_files = EXCLUDED.evidence_files, 
+                            user_id = EXCLUDED.user_id,
+                            updated_at = CURRENT_TIMESTAMP
                     """),
                     {
                         "inst_id": institution_id,
                         "ind_id": indicator_id,
+                        "user_id": current_user_id,
                         "val": value,
                         "files": files_json,
                     },
