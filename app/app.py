@@ -175,11 +175,15 @@ def analytics_page() -> rx.Component:
     )
 
 
+from app.states.reports_state import ReportsState
+
+
 def reports_page() -> rx.Component:
     return rx.el.div(
         sidebar(current_page="reports"),
         rx.el.main(reports_content(), class_name="flex-1 p-8 overflow-y-auto h-full"),
         class_name="flex h-screen w-full bg-gray-50 font-['Inter']",
+        on_mount=ReportsState.on_load,
     )
 
 

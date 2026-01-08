@@ -3,6 +3,9 @@ from typing import TypedDict
 import datetime
 import io
 import csv
+import json
+import logging
+from sqlalchemy import text
 
 
 class ReportItem(TypedDict):
@@ -23,133 +26,180 @@ class ReportsState(rx.State):
     delete_confirm_id: str = ""
     delete_confirm_name: str = ""
     show_delete_modal: bool = False
-    reports: list[ReportItem] = [
-        {
-            "id": "1",
-            "name": "Ateneo de Manila University",
-            "overall_score": 85,
-            "research_score": 82,
-            "employability_score": 88,
-            "global_engagement_score": 85,
-            "learning_experience_score": 80,
-            "sustainability_score": 90,
-            "status": "Completed",
-            "last_generated": "2023-10-15",
-            "evidence_files": [
-                "institution_1/research/annual_report_2023.pdf",
-                "institution_1/employability/employer_survey.pdf",
-                "institution_1/sustainability/esg_compliance.pdf",
-            ],
-        },
-        {
-            "id": "2",
-            "name": "University of the Philippines Diliman",
-            "overall_score": 88,
-            "research_score": 90,
-            "employability_score": 86,
-            "global_engagement_score": 88,
-            "learning_experience_score": 85,
-            "sustainability_score": 85,
-            "status": "Completed",
-            "last_generated": "2023-10-14",
-            "evidence_files": [
-                "institution_2/research/research_portfolio.pdf",
-                "institution_2/global_engagement/moa_international.pdf",
-            ],
-        },
-        {
-            "id": "3",
-            "name": "De La Salle University",
-            "overall_score": 82,
-            "research_score": 78,
-            "employability_score": 86,
-            "global_engagement_score": 80,
-            "learning_experience_score": 82,
-            "sustainability_score": 85,
-            "status": "Completed",
-            "last_generated": "2023-10-16",
-            "evidence_files": [],
-        },
-        {
-            "id": "4",
-            "name": "University of Santo Tomas",
-            "overall_score": 79,
-            "research_score": 75,
-            "employability_score": 83,
-            "global_engagement_score": 75,
-            "learning_experience_score": 78,
-            "sustainability_score": 80,
-            "status": "In Progress",
-            "last_generated": "-",
-            "evidence_files": [],
-        },
-        {
-            "id": "5",
-            "name": "Polytechnic University of the Philippines",
-            "overall_score": 75,
-            "research_score": 70,
-            "employability_score": 80,
-            "global_engagement_score": 72,
-            "learning_experience_score": 75,
-            "sustainability_score": 78,
-            "status": "In Progress",
-            "last_generated": "-",
-            "evidence_files": [],
-        },
-        {
-            "id": "6",
-            "name": "Adamson University",
-            "overall_score": 65,
-            "research_score": 60,
-            "employability_score": 70,
-            "global_engagement_score": 65,
-            "learning_experience_score": 65,
-            "sustainability_score": 70,
-            "status": "Pending",
-            "last_generated": "-",
-            "evidence_files": [],
-        },
-        {
-            "id": "7",
-            "name": "Mapúa University",
-            "overall_score": 72,
-            "research_score": 68,
-            "employability_score": 76,
-            "global_engagement_score": 70,
-            "learning_experience_score": 72,
-            "sustainability_score": 75,
-            "status": "In Progress",
-            "last_generated": "-",
-            "evidence_files": [],
-        },
-        {
-            "id": "8",
-            "name": "Far Eastern University",
-            "overall_score": 0,
-            "research_score": 0,
-            "employability_score": 0,
-            "global_engagement_score": 0,
-            "learning_experience_score": 0,
-            "sustainability_score": 0,
-            "status": "Pending",
-            "last_generated": "-",
-            "evidence_files": [],
-        },
-        {
-            "id": "9",
-            "name": "Asia Pacific College",
-            "overall_score": 92,
-            "research_score": 88,
-            "employability_score": 96,
-            "global_engagement_score": 92,
-            "learning_experience_score": 90,
-            "sustainability_score": 95,
-            "status": "Completed",
-            "last_generated": "2023-10-18",
-            "evidence_files": [],
-        },
-    ]
+    reports: list[ReportItem] = []
     search_query: str = ""
+
+    def _parse_float(self, value: str) -> float:
+        try:
+            clean = "".join((c for c in value if c.isdigit() or c == "."))
+            return float(clean) if clean else 0.0
+        except (ValueError, TypeError) as e:
+            logging.exception(f"Error parsing float value '{value}': {e}")
+            return 0.0
+
+    @rx.event(background=True)
+    async def on_load(self):
+        """Fetches all institutions and calculates their scores from database records."""
+        async with rx.asession() as session:
+            inst_result = await session.execute(
+                text(
+                    "SELECT id, institution_name FROM institutions ORDER BY institution_name ASC"
+                )
+            )
+            institutions = inst_result.all()
+            scores_result = await session.execute(
+                text("""
+                SELECT 
+                    s.institution_id, 
+                    i.code, 
+                    s.value, 
+                    s.evidence_files, 
+                    s.updated_at
+                FROM institution_scores s
+                JOIN ranking_indicators i ON s.indicator_id = i.id
+                WHERE s.ranking_year = 2025
+                """)
+            )
+            all_scores = scores_result.all()
+            inst_data = {}
+            for inst_id, code, val, evidence, updated in all_scores:
+                if inst_id not in inst_data:
+                    inst_data[inst_id] = {
+                        "scores": {},
+                        "files": [],
+                        "last_update": updated,
+                    }
+                inst_data[inst_id]["scores"][code] = val
+                if evidence:
+                    try:
+                        files = json.loads(evidence)
+                        if isinstance(files, list):
+                            inst_data[inst_id]["files"].extend(files)
+                    except Exception as e:
+                        logging.exception(
+                            f"Error parsing evidence files JSON for institution {inst_id}: {e}"
+                        )
+                        pass
+                if updated and (
+                    not inst_data[inst_id]["last_update"]
+                    or updated > inst_data[inst_id]["last_update"]
+                ):
+                    inst_data[inst_id]["last_update"] = updated
+            processed_reports = []
+            for i_id, i_name in institutions:
+                data = inst_data.get(
+                    i_id, {"scores": {}, "files": [], "last_update": None}
+                )
+                scores = data["scores"]
+                b_academic_rep = 90.0
+                b_citations = 20.0
+                b_emp_rep = 90.0
+                b_emp_outcomes = 95.0
+                b_int_research_net = 80.0
+                b_int_faculty_ratio = 15.0
+                b_int_student_ratio = 10.0
+                b_faculty_student_ratio = 12.0
+                b_sustainability = 85.0
+                academic_rep = self._parse_float(scores.get("academic_reputation", "0"))
+                citations = self._parse_float(scores.get("citations_per_faculty", "0"))
+                emp_rep = self._parse_float(scores.get("employer_reputation", "0"))
+                emp_outcomes = self._parse_float(scores.get("employment_outcomes", "0"))
+                int_research_net = self._parse_float(
+                    scores.get("international_research_network", "0")
+                )
+                int_faculty_ratio = self._parse_float(
+                    scores.get("international_faculty_ratio", "0")
+                )
+                int_student_ratio = self._parse_float(
+                    scores.get("international_student_ratio", "0")
+                )
+                faculty_student_ratio = self._parse_float(
+                    scores.get("faculty_student_ratio", "0")
+                )
+                sustainability = self._parse_float(
+                    scores.get("sustainability_metrics", "0")
+                )
+                s_academic_rep = (
+                    min(100, academic_rep / b_academic_rep * 100)
+                    if b_academic_rep
+                    else 0
+                )
+                s_citations = (
+                    min(100, citations / b_citations * 100) if b_citations else 0
+                )
+                s_emp_rep = min(100, emp_rep / b_emp_rep * 100) if b_emp_rep else 0
+                s_emp_outcomes = (
+                    min(100, emp_outcomes / b_emp_outcomes * 100)
+                    if b_emp_outcomes
+                    else 0
+                )
+                s_int_research_net = (
+                    min(100, int_research_net / b_int_research_net * 100)
+                    if b_int_research_net
+                    else 0
+                )
+                s_int_faculty_ratio = (
+                    min(100, int_faculty_ratio / b_int_faculty_ratio * 100)
+                    if b_int_faculty_ratio
+                    else 0
+                )
+                s_int_student_ratio = (
+                    min(100, int_student_ratio / b_int_student_ratio * 100)
+                    if b_int_student_ratio
+                    else 0
+                )
+                s_faculty_student = (
+                    min(100, b_faculty_student_ratio / faculty_student_ratio * 100)
+                    if faculty_student_ratio > 0
+                    else 0
+                )
+                s_sustainability = (
+                    min(100, sustainability / b_sustainability * 100)
+                    if b_sustainability
+                    else 0
+                )
+                research_score = int(s_academic_rep * 0.6 + s_citations * 0.4)
+                employability_score = int(s_emp_rep * 0.75 + s_emp_outcomes * 0.25)
+                global_engagement_score = int(
+                    (s_int_research_net + s_int_faculty_ratio + s_int_student_ratio) / 3
+                )
+                learning_experience_score = int(s_faculty_student)
+                sustainability_score = int(s_sustainability)
+                overall_score = int(
+                    research_score * 0.5
+                    + employability_score * 0.2
+                    + global_engagement_score * 0.15
+                    + learning_experience_score * 0.1
+                    + sustainability_score * 0.05
+                )
+                indicators_count = len(scores.keys())
+                status = "Pending"
+                if indicators_count >= 9:
+                    status = "Completed"
+                elif indicators_count > 0:
+                    status = "In Progress"
+                last_gen = (
+                    data["last_update"].strftime("%Y-%m-%d")
+                    if data["last_update"]
+                    else "-"
+                )
+                processed_reports.append(
+                    {
+                        "id": str(i_id),
+                        "name": i_name,
+                        "overall_score": overall_score,
+                        "research_score": research_score,
+                        "employability_score": employability_score,
+                        "global_engagement_score": global_engagement_score,
+                        "learning_experience_score": learning_experience_score,
+                        "sustainability_score": sustainability_score,
+                        "status": status,
+                        "last_generated": last_gen,
+                        "evidence_files": list(set(data["files"])),
+                    }
+                )
+            async with self:
+                self.reports = processed_reports
 
     @rx.var
     def filtered_reports(self) -> list[ReportItem]:
