@@ -113,6 +113,15 @@ def evidence_list_section(files: list[str]) -> rx.Component:
     )
 
 
+def dimension_score_row(label: str, score: int) -> rx.Component:
+    """Helper component to render a single dimension row with aligned label and badge."""
+    return rx.el.div(
+        rx.el.span(label, class_name="text-xs font-medium text-gray-600 min-w-[180px]"),
+        rx.el.div(score_badge(score), class_name="flex-1 flex justify-end"),
+        class_name="flex items-center justify-between gap-4 py-1",
+    )
+
+
 def report_table_row(report: ReportItem) -> rx.Component:
     """Row component for the Reports table."""
     return rx.el.tr(
@@ -131,47 +140,22 @@ def report_table_row(report: ReportItem) -> rx.Component:
         ),
         rx.el.td(
             rx.el.div(
-                rx.el.div(
-                    rx.el.span(
-                        "Research & Discovery (50%): ",
-                        class_name="text-xs font-medium text-gray-600",
-                    ),
-                    score_badge(report["research_score"]),
-                    class_name="flex items-center gap-2 mb-2",
+                dimension_score_row(
+                    "Research & Discovery (50%)", report["research_score"]
                 ),
-                rx.el.div(
-                    rx.el.span(
-                        "Employability & Outcomes (20%): ",
-                        class_name="text-xs font-medium text-gray-600",
-                    ),
-                    score_badge(report["employability_score"]),
-                    class_name="flex items-center gap-2 mb-2",
+                dimension_score_row(
+                    "Employability & Outcomes (20%)", report["employability_score"]
                 ),
-                rx.el.div(
-                    rx.el.span(
-                        "Global Engagement (15%): ",
-                        class_name="text-xs font-medium text-gray-600",
-                    ),
-                    score_badge(report["global_engagement_score"]),
-                    class_name="flex items-center gap-2 mb-2",
+                dimension_score_row(
+                    "Global Engagement (15%)", report["global_engagement_score"]
                 ),
-                rx.el.div(
-                    rx.el.span(
-                        "Learning Experience (10%): ",
-                        class_name="text-xs font-medium text-gray-600",
-                    ),
-                    score_badge(report["learning_experience_score"]),
-                    class_name="flex items-center gap-2 mb-2",
+                dimension_score_row(
+                    "Learning Experience (10%)", report["learning_experience_score"]
                 ),
-                rx.el.div(
-                    rx.el.span(
-                        "Sustainability (5%): ",
-                        class_name="text-xs font-medium text-gray-600",
-                    ),
-                    score_badge(report["sustainability_score"]),
-                    class_name="flex items-center gap-2",
+                dimension_score_row(
+                    "Sustainability (5%)", report["sustainability_score"]
                 ),
-                class_name="flex flex-col",
+                class_name="flex flex-col divide-y divide-gray-50 w-full max-w-[280px]",
             ),
             class_name="px-6 py-4",
         ),
