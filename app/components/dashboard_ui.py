@@ -102,7 +102,7 @@ def file_upload_section(
 
 
 def progress_tracker() -> rx.Component:
-    """Top progress bar component."""
+    """Progress bar element for the bottom bar."""
     return rx.el.div(
         rx.el.div(
             rx.el.div(
@@ -122,7 +122,7 @@ def progress_tracker() -> rx.Component:
             ),
             class_name="w-full bg-gray-200 rounded-full h-2.5",
         ),
-        class_name="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6",
+        class_name="flex-1",
     )
 
 
@@ -156,27 +156,38 @@ def dashboard_header() -> rx.Component:
             ),
             class_name="flex-1",
         ),
-        rx.el.button(
-            rx.cond(
-                DashboardState.is_saving,
-                rx.el.div(
+        class_name="flex items-center justify-between mb-8",
+    )
+
+
+def bottom_action_bar() -> rx.Component:
+    """Sticky-ready bottom bar containing progress and save functionality."""
+    return rx.el.div(
+        rx.el.div(
+            progress_tracker(),
+            rx.el.button(
+                rx.cond(
+                    DashboardState.is_saving,
                     rx.el.div(
-                        class_name="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                        rx.el.div(
+                            class_name="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                        ),
+                        "Saving...",
+                        class_name="flex items-center",
                     ),
-                    "Saving...",
-                    class_name="flex items-center",
+                    rx.el.div(
+                        rx.icon("save", class_name="h-4 w-4 mr-2"),
+                        "Save Progress",
+                        class_name="flex items-center",
+                    ),
                 ),
-                rx.el.div(
-                    rx.icon("save", class_name="h-4 w-4 mr-2"),
-                    "Save Progress",
-                    class_name="flex items-center",
-                ),
+                on_click=DashboardState.save_progress,
+                disabled=DashboardState.is_saving,
+                class_name="flex items-center px-6 py-2.5 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-70 font-semibold",
             ),
-            on_click=DashboardState.save_progress,
-            disabled=DashboardState.is_saving,
-            class_name="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-70",
+            class_name="flex items-center gap-8",
         ),
-        class_name="flex items-center justify-between mb-6",
+        class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mt-8 sticky bottom-0",
     )
 
 
@@ -409,7 +420,7 @@ def dashboard_content() -> rx.Component:
     """Aggregated assessment content view."""
     return rx.el.div(
         dashboard_header(),
-        progress_tracker(),
         data_entry_forms(),
-        class_name="max-w-6xl mx-auto",
+        bottom_action_bar(),
+        class_name="max-w-6xl mx-auto pb-12",
     )
