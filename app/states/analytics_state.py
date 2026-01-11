@@ -331,11 +331,14 @@ class AnalyticsState(rx.State):
             response_text = response_text.strip()
             if response_text.startswith(""):
                 response_text = response_text[7:]
-            if response_text.startswith(""):
+            elif response_text.startswith(""):
                 response_text = response_text[3:]
             if response_text.endswith(""):
                 response_text = response_text[:-3]
             response_text = response_text.strip()
+            if not response_text:
+                logging.warning("JSON response text is empty after cleaning.")
+                raise ValueError("Empty JSON response from Google AI")
             recommendations_data = json.loads(response_text)
             recommendations = []
             for rec in recommendations_data.get("recommendations", []):
