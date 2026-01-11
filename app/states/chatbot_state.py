@@ -2,6 +2,7 @@ import reflex as rx
 from typing import TypedDict
 import os
 import logging
+import asyncio
 import resend
 from app.rag.retrieval import retrieve_documents, format_context
 
@@ -174,18 +175,41 @@ class ChatbotState(rx.State):
                 Do not invent features that are not in the documentation.
                 """
                 full_prompt = f"Context information:\n{context_text}\n\nConversation History:\n{history_text}\n\nUser Question: {user_message}"
-                response = await client.aio.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=full_prompt,
-                    config=types.GenerateContentConfig(
-                        system_instruction=system_prompt, temperature=0.3
-                    ),
-                )
-                if response and response.text:
-                    response_content = response.text
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        response = await client.aio.models.generate_content(
+                            model="gemini-2.5-flash",
+                            contents=full_prompt,
+                            config=types.GenerateContentConfig(
+                                system_instruction=system_prompt, temperature=0.3
+                            ),
+                        )
+                        if response and response.text:
+                            response_content = response.text
+                            break
+                    except Exception as e:
+                        logging.exception(
+                            f"Google AI generation attempt {attempt + 1} failed: {e}"
+                        )
+                        error_str = str(e)
+                        if (
+                            "429" in error_str or "RESOURCE_EXHAUSTED" in error_str
+                        ) and attempt < max_retries - 1:
+                            wait_time = 2 * (attempt + 1)
+                            logging.warning(
+                                f"Google AI Rate limit hit. Retrying in {wait_time}s..."
+                            )
+                            await asyncio.sleep(wait_time)
+                            continue
+                        else:
+                            raise e
             except Exception as e:
                 logging.exception(f"Chatbot AI Error: {e}")
-                response_content = "I'm having trouble connecting to the AI service right now. Please try again later."
+                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                    response_content = "I am currently receiving too many requests. Please try again in a few moments."
+                else:
+                    response_content = "I'm having trouble connecting to the AI service right now. Please try again later."
         else:
             response_content = "AI service is not configured. Please check API keys."
         async with self:
