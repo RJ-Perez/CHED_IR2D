@@ -302,8 +302,13 @@ class AnalyticsState(rx.State):
                             response_mime_type="application/json"
                         ),
                     )
-                    response_text = response.text
-                    break
+                    if response and response.text:
+                        response_text = response.text
+                        break
+                    else:
+                        logging.warning(
+                            f"Attempt {attempt + 1}: Google AI returned empty response or no text."
+                        )
                 except Exception as e:
                     error_str = str(e)
                     if (
@@ -320,7 +325,8 @@ class AnalyticsState(rx.State):
                             f"Error generating content from Google AI: {e}"
                         )
                         raise e
-            if not response_text:
+            if not response_text or not response_text.strip():
+                logging.warning("Received empty text from Google AI after retries.")
                 raise Exception("Empty response from Google AI")
             response_text = response_text.strip()
             if response_text.startswith(""):
