@@ -14,41 +14,52 @@ TOOLTIP_PROPS = {
 }
 
 
-def score_card(title: str, score: int, icon: str, color_class: str) -> rx.Component:
+def performance_pie_card(title: str, score: int, color: str, icon: str) -> rx.Component:
     """
-    Renders a metric card with a title, numeric score, icon, and progress bar.
-
-    Args:
-        title: Display name of the metric (e.g., 'Research')
-        score: The calculated 0-100 score value
-        icon: Lucide icon name to display
-        color_class: Tailwind text/bg color prefix (e.g., 'text-blue-600')
-
-    Returns:
-        rx.Component: A styled card showing score progress.
+    Renders a donut chart for a specific metric with the score centered.
     """
+    chart_data = [
+        {"name": "Score", "value": score, "fill": color},
+        {"name": "Remaining", "value": 100 - score, "fill": "#f1f5f9"},
+    ]
     return rx.el.div(
         rx.el.div(
             rx.el.div(
-                rx.el.p(title, class_name="text-sm font-medium text-gray-500"),
-                rx.el.h3(
-                    f"{score}/100", class_name="text-2xl font-bold text-gray-900 mt-1"
+                rx.icon(icon, class_name=f"h-5 w-5", style={"color": color}),
+                rx.el.span(
+                    title, class_name="text-sm font-semibold text-gray-600 ml-2"
                 ),
+                class_name="flex items-center mb-2",
             ),
             rx.el.div(
-                rx.icon(icon, class_name=f"h-8 w-8 {color_class}"),
-                class_name="p-3 bg-gray-50 rounded-lg",
+                rx.recharts.pie_chart(
+                    rx.recharts.pie(
+                        data=chart_data,
+                        data_key="value",
+                        name_key="name",
+                        cx="50%",
+                        cy="50%",
+                        inner_radius="70%",
+                        outer_radius="95%",
+                        stroke="none",
+                        stroke_width=0,
+                        start_angle=90,
+                        end_angle=-270,
+                    ),
+                    width="100%",
+                    height=160,
+                ),
+                rx.el.div(
+                    rx.el.span(
+                        f"{score}%", class_name="text-2xl font-bold text-gray-900"
+                    ),
+                    class_name="absolute inset-0 flex items-center justify-center pt-4",
+                ),
+                class_name="relative",
             ),
-            class_name="flex justify-between items-start",
+            class_name="p-5",
         ),
-        rx.el.div(
-            rx.el.div(
-                class_name=f"h-2 rounded-full {color_class.replace('text-', 'bg-')}",
-                style={"width": f"{score}%"},
-            ),
-            class_name="w-full bg-gray-100 rounded-full h-2 mt-4",
-        ),
-        class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm",
+        class_name="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden",
     )
 
 
@@ -350,41 +361,41 @@ def analytics_content_ui() -> rx.Component:
             class_name="mb-8",
         ),
         rx.el.div(
-            score_card(
+            performance_pie_card(
                 "Overall Readiness",
                 AnalyticsState.overall_score,
+                "#2563eb",
                 "bar-chart-2",
-                "text-blue-600",
             ),
-            score_card(
+            performance_pie_card(
                 "Research & Discovery (50%)",
                 AnalyticsState.research_score,
+                "#9333ea",
                 "microscope",
-                "text-purple-600",
             ),
-            score_card(
+            performance_pie_card(
                 "Employability (20%)",
                 AnalyticsState.employability_score,
+                "#059669",
                 "briefcase",
-                "text-emerald-600",
             ),
-            score_card(
+            performance_pie_card(
                 "Global Engagement (15%)",
                 AnalyticsState.global_engagement_score,
+                "#0284c7",
                 "globe",
-                "text-blue-600",
             ),
-            score_card(
+            performance_pie_card(
                 "Learning Experience (10%)",
                 AnalyticsState.learning_experience_score,
+                "#4f46e5",
                 "graduation-cap",
-                "text-indigo-600",
             ),
-            score_card(
+            performance_pie_card(
                 "Sustainability (5%)",
                 AnalyticsState.sustainability_score,
+                "#16a34a",
                 "leaf",
-                "text-green-600",
             ),
             class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8",
         ),
