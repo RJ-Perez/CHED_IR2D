@@ -33,6 +33,7 @@ def performance_pie_card(title: str, score: int, color: str, icon: str) -> rx.Co
             ),
             rx.el.div(
                 rx.recharts.pie_chart(
+                    rx.recharts.graphing_tooltip(**TOOLTIP_PROPS),
                     rx.recharts.pie(
                         data=chart_data,
                         data_key="value",
