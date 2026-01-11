@@ -109,7 +109,7 @@ def chatbot_component() -> rx.Component:
                                 class_name="h-5 w-5 stroke-blue-200 mr-2 animate-pulse",
                             ),
                             rx.el.h3(
-                                "IR²D CYBER-CORE",
+                                "CHED IR2D Assistant",
                                 class_name="font-bold text-white tracking-widest text-sm",
                             ),
                             class_name="flex items-center",
