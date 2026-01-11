@@ -174,10 +174,19 @@ class ReportsState(rx.State):
                 )
                 indicators_count = len(scores.keys())
                 status = "Pending"
+                is_any_score_na = (
+                    research_score == 0
+                    or employability_score == 0
+                    or global_engagement_score == 0
+                    or (learning_experience_score == 0)
+                    or (sustainability_score == 0)
+                )
                 if indicators_count >= 9:
                     status = "Completed"
                 elif indicators_count > 0:
                     status = "In Progress"
+                if is_any_score_na and indicators_count > 0:
+                    status = "Incomplete"
                 last_gen = (
                     data["last_update"].strftime("%Y-%m-%d")
                     if data["last_update"]

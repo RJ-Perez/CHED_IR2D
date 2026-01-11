@@ -69,6 +69,13 @@ def report_status_badge(status: str) -> rx.Component:
                 class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800",
             ),
         ),
+        (
+            "Incomplete",
+            rx.el.span(
+                "Incomplete",
+                class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800",
+            ),
+        ),
         rx.el.span(
             "Pending",
             class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600",
