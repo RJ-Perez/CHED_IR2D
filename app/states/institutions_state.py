@@ -62,36 +62,46 @@ class InstitutionsState(rx.State):
 
     @rx.event(background=True)
     async def delete_institution(self):
-        """Delete institution from database."""
+        """Delete institution from database and update local state."""
         async with self:
             if not self.delete_confirm_id:
                 return
             hei_id = self.delete_confirm_id
             hei_name = self.delete_confirm_name
-            hei_state = await self.get_state(HEIState)
-        async with hei_state:
-            hei_state.hei_database = [
-                h for h in hei_state.hei_database if h["id"] != hei_id
-            ]
-            if hei_state.selected_hei and hei_state.selected_hei["id"] == hei_id:
-                hei_state.selected_hei = None
-        try:
-            from app.states.reports_state import ReportsState
+        from sqlalchemy import text
 
-            async with self:
-                reports_state = await self.get_state(ReportsState)
-            async with reports_state:
-                reports_state.reports = [
-                    r for r in reports_state.reports if r["id"] != hei_id
-                ]
-        except Exception as e:
-            logging.exception(f"Error deleting institution: {e}")
+        async with rx.asession() as session:
+            await session.execute(
+                text("DELETE FROM institution_scores WHERE institution_id = :id"),
+                {"id": int(hei_id)},
+            )
+            await session.execute(
+                text("DELETE FROM institutions WHERE id = :id"), {"id": int(hei_id)}
+            )
+            await session.commit()
         async with self:
+            hei_state = await self.get_state(HEIState)
+            async with hei_state:
+                hei_state.hei_database = [
+                    h for h in hei_state.hei_database if h["id"] != hei_id
+                ]
+                if hei_state.selected_hei and hei_state.selected_hei["id"] == hei_id:
+                    hei_state.selected_hei = None
+            try:
+                from app.states.reports_state import ReportsState
+
+                reports_state = await self.get_state(ReportsState)
+                async with reports_state:
+                    reports_state.reports = [
+                        r for r in reports_state.reports if r["id"] != hei_id
+                    ]
+            except Exception as e:
+                logging.exception(f"Error updating reports state after deletion: {e}")
             self.show_delete_modal = False
             self.delete_confirm_id = ""
             self.delete_confirm_name = ""
             yield rx.toast(
-                f"Institution '{hei_name}' has been deleted successfully.",
+                f"Institution '{hei_name}' has been deleted from the database.",
                 duration=3000,
                 position="top-center",
             )
