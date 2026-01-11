@@ -5,6 +5,7 @@ import logging
 import json
 import os
 import asyncio
+import re
 
 try:
     from google import genai
@@ -328,18 +329,20 @@ class AnalyticsState(rx.State):
             if not response_text or not response_text.strip():
                 logging.warning("Received empty text from Google AI after retries.")
                 raise Exception("Empty response from Google AI")
-            response_text = response_text.strip()
-            if response_text.startswith(""):
-                response_text = response_text[7:]
-            elif response_text.startswith(""):
-                response_text = response_text[3:]
-            if response_text.endswith(""):
-                response_text = response_text[:-3]
-            response_text = response_text.strip()
-            if not response_text:
-                logging.warning("JSON response text is empty after cleaning.")
-                raise ValueError("Empty JSON response from Google AI")
-            recommendations_data = json.loads(response_text)
+            match = re.search("\\{[\\s\\S]*\\}", response_text)
+            if match:
+                response_text = match.group(0)
+            else:
+                logging.warning(
+                    f"No JSON object found in response text: {response_text[:200]}..."
+                )
+            try:
+                recommendations_data = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                logging.exception(
+                    f"Failed to parse JSON response: {e}. Raw extracted text: {response_text}"
+                )
+                raise e
             recommendations = []
             for rec in recommendations_data.get("recommendations", []):
                 category = rec.get("category", "Overall")

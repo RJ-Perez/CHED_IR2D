@@ -107,7 +107,7 @@ def chatbot_component() -> rx.Component:
                             ),
                             on_click=ChatbotState.toggle_open,
                         ),
-                        class_name="flex items-center justify-between p-4 bg-blue-700 rounded-t-xl",
+                        class_name="flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-t-xl",
                     ),
                     rx.el.div(
                         rx.cond(
@@ -160,18 +160,34 @@ def chatbot_component() -> rx.Component:
                             ),
                         )
                     ),
-                    class_name="w-80 md:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col animate-in slide-in-from-bottom-5 duration-200 overflow-hidden",
+                    class_name="w-80 md:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col animate-in slide-in-from-bottom-5 duration-200 overflow-hidden mb-4",
                 )
             ),
         ),
-        rx.el.button(
+        rx.el.div(
             rx.cond(
-                ChatbotState.is_open,
-                rx.icon("message-circle-off", class_name="h-6 w-6"),
-                rx.icon("message-circle-question", class_name="h-6 w-6"),
+                ~ChatbotState.is_open,
+                rx.el.span(
+                    class_name="absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75 animate-ping"
+                ),
             ),
-            on_click=ChatbotState.toggle_open,
-            class_name="h-14 w-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 active:scale-95",
+            rx.el.button(
+                rx.cond(
+                    ChatbotState.is_open,
+                    rx.icon("chevron-down", class_name="h-8 w-8 text-white"),
+                    rx.el.div(
+                        rx.icon("bot", class_name="h-8 w-8 text-white"),
+                        rx.icon(
+                            "sparkles",
+                            class_name="absolute -top-1 -right-1 h-4 w-4 text-yellow-300 animate-pulse",
+                        ),
+                        class_name="relative",
+                    ),
+                ),
+                on_click=ChatbotState.toggle_open,
+                class_name="relative h-16 w-16 bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-full shadow-xl shadow-blue-500/30 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 border-2 border-white/20",
+            ),
+            class_name="relative group",
         ),
-        class_name="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4",
+        class_name="fixed bottom-6 right-6 z-50 flex flex-col items-end",
     )
