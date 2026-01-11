@@ -142,7 +142,7 @@ from app.states.settings_state import SettingsState
 from app.states.dashboard_state import DashboardState
 
 
-def dashboard_page() -> rx.Component:
+def assessment_page() -> rx.Component:
     return rx.el.div(
         sidebar(current_page="dashboard"),
         rx.el.main(dashboard_content(), class_name="flex-1 p-8 overflow-y-auto h-full"),
@@ -196,7 +196,7 @@ def settings_page() -> rx.Component:
     )
 
 
-app.add_page(dashboard_page, route="/dashboard", on_load=DashboardState.on_load)
+app.add_page(assessment_page, route="/dashboard", on_load=DashboardState.on_load)
 app.add_page(institutions_page, route="/institutions")
 app.add_page(analytics_page, route="/analytics")
 app.add_page(reports_page, route="/reports")

@@ -38,7 +38,7 @@ def sidebar(current_page: str) -> rx.Component:
         ),
         rx.el.nav(
             sidebar_item(
-                "Dashboard",
+                "Assessment",
                 "layout-dashboard",
                 "/dashboard",
                 is_active=current_page == "dashboard",

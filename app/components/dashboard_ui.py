@@ -6,7 +6,7 @@ from app.states.hei_state import HEIState
 def form_input(
     label: str, placeholder: str, value: rx.Var, on_change: rx.event.EventType
 ) -> rx.Component:
-    """Standard form input for dashboard."""
+    """Standard form input for assessment."""
     return rx.el.div(
         rx.el.label(label, class_name="block text-sm font-medium text-gray-700 mb-1"),
         rx.el.input(
@@ -406,7 +406,7 @@ def data_entry_forms() -> rx.Component:
 
 
 def dashboard_content() -> rx.Component:
-    """Aggregated dashboard content view."""
+    """Aggregated assessment content view."""
     return rx.el.div(
         dashboard_header(),
         progress_tracker(),

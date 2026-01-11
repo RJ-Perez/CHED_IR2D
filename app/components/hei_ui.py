@@ -282,7 +282,7 @@ def selection_screen_content() -> rx.Component:
                             class_name="flex items-center justify-center",
                         ),
                         rx.el.span(
-                            "Continue to Dashboard",
+                            "Continue to Assessment",
                             rx.icon(
                                 "arrow-right", class_name="ml-2 h-5 w-5 inline-block"
                             ),
