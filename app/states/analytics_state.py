@@ -4,18 +4,16 @@ from app.states.hei_state import HEIState
 import logging
 import json
 import os
+import asyncio
 
 try:
-    import google.generativeai as genai
+    from google import genai
+    from google.genai import types
 
     GOOGLE_AI_API_KEY = os.getenv("GOOGLE_API_KEY")
-    if GOOGLE_AI_API_KEY:
-        genai.configure(api_key=GOOGLE_AI_API_KEY)
-        GOOGLE_AI_AVAILABLE = True
-    else:
-        GOOGLE_AI_AVAILABLE = False
+    GOOGLE_AI_AVAILABLE = bool(GOOGLE_AI_API_KEY)
 except ImportError as e:
-    logging.exception(f"google-generativeai package not installed: {e}")
+    logging.exception(f"google-genai package not installed: {e}")
     GOOGLE_AI_AVAILABLE = False
 except Exception as e:
     logging.exception(f"Error configuring Google AI: {e}")
@@ -292,9 +290,39 @@ class AnalyticsState(rx.State):
             if sustainability_score < 70:
                 weak_areas.append("Sustainability")
             prompt = f"""You are an expert higher education consultant specializing in international university rankings (QS and THE). \n\nAnalyze the following performance data for a Higher Education Institution in the Philippines and provide 3-4 strategic, actionable recommendations to improve their international ranking readiness.\n\n{performance_summary}\n\nAreas needing improvement: {(", ".join(weak_areas) if weak_areas else "All areas are performing well")}\n\nProvide recommendations in JSON format with this structure:\n{{\n  "recommendations": [\n    {{\n      "title": "Short, actionable title (max 8 words)",\n      "description": "Detailed recommendation (2-3 sentences) explaining what to do and why",\n      "category": "Research & Discovery|Employability|Global Engagement|Learning Experience|Sustainability|Overall",\n      "priority": "High|Medium|Low"\n    }}\n  ]\n}}\n\nFocus on:\n1. Specific, actionable steps the institution can take\n2. Evidence-based strategies used by top-ranked universities\n3. Realistic improvements given the Philippine higher education context\n4. Prioritize recommendations that will have the most impact on overall score\n\nReturn ONLY valid JSON, no additional text."""
-            model = genai.GenerativeModel("gemini-2.0-flash")
-            response = model.generate_content(prompt)
-            response_text = response.text.strip()
+            client = genai.Client(api_key=GOOGLE_AI_API_KEY)
+            max_retries = 3
+            response_text = ""
+            for attempt in range(max_retries):
+                try:
+                    response = await client.aio.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=prompt,
+                        config=types.GenerateContentConfig(
+                            response_mime_type="application/json"
+                        ),
+                    )
+                    response_text = response.text
+                    break
+                except Exception as e:
+                    error_str = str(e)
+                    if (
+                        "429" in error_str or "RESOURCE_EXHAUSTED" in error_str
+                    ) and attempt < max_retries - 1:
+                        wait_time = 2 * (attempt + 1)
+                        logging.exception(
+                            f"Google AI Rate limit hit. Retrying in {wait_time}s..."
+                        )
+                        await asyncio.sleep(wait_time)
+                        continue
+                    else:
+                        logging.exception(
+                            f"Error generating content from Google AI: {e}"
+                        )
+                        raise e
+            if not response_text:
+                raise Exception("Empty response from Google AI")
+            response_text = response_text.strip()
             if response_text.startswith(""):
                 response_text = response_text[7:]
             if response_text.startswith(""):
