@@ -311,6 +311,7 @@ class AnalyticsState(rx.State):
                             f"Attempt {attempt + 1}: Google AI returned empty response or no text."
                         )
                 except Exception as e:
+                    logging.exception(f"Error generating content from Google AI: {e}")
                     error_str = str(e).lower()
                     retry_match = re.search("retry in ([0-9\\.]+)s", error_str)
                     retry_seconds = float(retry_match.group(1)) if retry_match else None
@@ -319,35 +320,46 @@ class AnalyticsState(rx.State):
                         "429" in error_str or "resource_exhausted" in error_str
                     )
                     if is_quota_error and (not retry_seconds):
-                        logging.warning(
-                            "Google AI Daily Quota Exceeded. Stopping retries."
+                        logging.info(
+                            "Google AI Daily Quota Exceeded. Using fallback recommendations."
                         )
                         break
-                    if (is_rate_limit or retry_seconds) and attempt < max_retries - 1:
-                        if retry_seconds:
-                            wait_time = retry_seconds + 1.5
+                    if is_rate_limit or retry_seconds:
+                        if attempt < max_retries - 1:
+                            if retry_seconds:
+                                wait_time = retry_seconds + 1.5
+                            else:
+                                wait_time = 2 * (attempt + 1)
+                            if wait_time > 60:
+                                logging.info(
+                                    f"Retry wait time {wait_time}s too long. Using fallback recommendations."
+                                )
+                                break
+                            logging.info(
+                                f"Google AI Rate limit hit. Retrying in {wait_time:.2f}s..."
+                            )
+                            await asyncio.sleep(wait_time)
+                            continue
                         else:
-                            wait_time = 2 * (attempt + 1)
-                        if wait_time > 65:
-                            logging.warning(
-                                f"Retry wait time {wait_time}s too long. Aborting."
+                            logging.info(
+                                "Google AI rate limit max retries reached. Using fallback recommendations."
                             )
                             break
-                        logging.info(
-                            f"Google AI Rate limit hit. Retrying in {wait_time:.2f}s..."
-                        )
-                        await asyncio.sleep(wait_time)
-                        continue
-                    else:
-                        logging.exception(
-                            f"Error generating content from Google AI: {e}"
-                        )
-                        raise e
+                    break
             if not response_text or not response_text.strip():
-                logging.warning(
-                    "Received empty text from Google AI after retries/quota check."
+                logging.info(
+                    "Using fallback recommendations (No AI response generated)."
                 )
-                raise Exception("Empty response or Quota Exceeded from Google AI")
+                async with self:
+                    self.ai_recommendations = self._get_fallback_recommendations(
+                        research_score,
+                        employability_score,
+                        global_engagement_score,
+                        learning_experience_score,
+                        sustainability_score,
+                    )
+                    self.is_generating_recommendations = False
+                return
             match = re.search("\\{[\\s\\S]*\\}", response_text)
             if match:
                 response_text = match.group(0)
