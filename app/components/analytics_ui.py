@@ -4,13 +4,17 @@ from app.states.analytics_state import AnalyticsState
 TOOLTIP_PROPS = {
     "content_style": {
         "background": "white",
-        "borderColor": "#e2e8f0",
-        "borderRadius": "0.5rem",
-        "boxShadow": "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-        "padding": "0.5rem",
+        "borderColor": "#E8E8E8",
+        "borderRadius": "0.75rem",
+        "boxShadow": "0px 4px 12px rgba(0, 0, 0, 0.05)",
+        "fontFamily": "Inter, sans-serif",
+        "fontSize": "0.875rem",
+        "fontWeight": "600",
+        "padding": "0.5rem 0.75rem",
     },
-    "item_style": {"color": "#475569", "fontSize": "0.875rem"},
-    "separator": "",
+    "item_style": {"display": "flex", "paddingTop": "2px", "color": "#1e293b"},
+    "label_style": {"color": "#64748b", "fontWeight": "500", "marginBottom": "4px"},
+    "separator": ": ",
 }
 
 
