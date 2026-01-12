@@ -3,6 +3,7 @@ from typing import TypedDict
 import os
 import logging
 import asyncio
+import re
 import resend
 from app.rag.retrieval import retrieve_documents, format_context
 
@@ -192,23 +193,51 @@ class ChatbotState(rx.State):
                         logging.exception(
                             f"Google AI generation attempt {attempt + 1} failed: {e}"
                         )
-                        error_str = str(e)
-                        if (
-                            "429" in error_str or "RESOURCE_EXHAUSTED" in error_str
-                        ) and attempt < max_retries - 1:
-                            wait_time = 2 * (attempt + 1)
+                        error_str = str(e).lower()
+                        retry_match = re.search("retry in ([0-9\\.]+)s", error_str)
+                        retry_seconds = (
+                            float(retry_match.group(1)) if retry_match else None
+                        )
+                        is_quota_error = (
+                            "quota" in error_str and "exceeded" in error_str
+                        )
+                        is_rate_limit = (
+                            "429" in error_str or "resource_exhausted" in error_str
+                        )
+                        if is_quota_error and (not retry_seconds):
                             logging.warning(
-                                f"Google AI Rate limit hit. Retrying in {wait_time}s..."
+                                "Google AI Daily Quota Exceeded. Stopping retries."
+                            )
+                            response_content = "My daily AI processing limit has been reached. Please try again tomorrow or contact support."
+                            break
+                        if (
+                            is_rate_limit or retry_seconds
+                        ) and attempt < max_retries - 1:
+                            if retry_seconds:
+                                wait_time = retry_seconds + 1.5
+                            else:
+                                wait_time = 5 * (attempt + 1)
+                            if wait_time > 65:
+                                logging.warning(
+                                    f"Retry wait time {wait_time}s too long. Aborting."
+                                )
+                                response_content = "I am experiencing very heavy traffic right now. Please try again in a minute."
+                                break
+                            logging.info(
+                                f"Rate limit hit. Retrying in {wait_time:.2f}s..."
                             )
                             await asyncio.sleep(wait_time)
                             continue
-                        else:
+                        if attempt == max_retries - 1 and is_rate_limit:
+                            response_content = "I am currently receiving too many requests. Please try again later."
+                        elif not is_rate_limit:
                             raise e
             except Exception as e:
                 logging.exception(f"Chatbot AI Error: {e}")
-                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                    response_content = "I am currently receiving too many requests. Please try again in a few moments."
-                else:
+                if (
+                    response_content
+                    == "I apologize, but I cannot process your request at the moment."
+                ):
                     response_content = "I'm having trouble connecting to the AI service right now. Please try again later."
         else:
             response_content = "AI service is not configured. Please check API keys."

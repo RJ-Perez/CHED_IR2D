@@ -311,13 +311,30 @@ class AnalyticsState(rx.State):
                             f"Attempt {attempt + 1}: Google AI returned empty response or no text."
                         )
                 except Exception as e:
-                    error_str = str(e)
-                    if (
-                        "429" in error_str or "RESOURCE_EXHAUSTED" in error_str
-                    ) and attempt < max_retries - 1:
-                        wait_time = 2 * (attempt + 1)
-                        logging.exception(
-                            f"Google AI Rate limit hit. Retrying in {wait_time}s..."
+                    error_str = str(e).lower()
+                    retry_match = re.search("retry in ([0-9\\.]+)s", error_str)
+                    retry_seconds = float(retry_match.group(1)) if retry_match else None
+                    is_quota_error = "quota" in error_str and "exceeded" in error_str
+                    is_rate_limit = (
+                        "429" in error_str or "resource_exhausted" in error_str
+                    )
+                    if is_quota_error and (not retry_seconds):
+                        logging.warning(
+                            "Google AI Daily Quota Exceeded. Stopping retries."
+                        )
+                        break
+                    if (is_rate_limit or retry_seconds) and attempt < max_retries - 1:
+                        if retry_seconds:
+                            wait_time = retry_seconds + 1.5
+                        else:
+                            wait_time = 2 * (attempt + 1)
+                        if wait_time > 65:
+                            logging.warning(
+                                f"Retry wait time {wait_time}s too long. Aborting."
+                            )
+                            break
+                        logging.info(
+                            f"Google AI Rate limit hit. Retrying in {wait_time:.2f}s..."
                         )
                         await asyncio.sleep(wait_time)
                         continue
@@ -327,8 +344,10 @@ class AnalyticsState(rx.State):
                         )
                         raise e
             if not response_text or not response_text.strip():
-                logging.warning("Received empty text from Google AI after retries.")
-                raise Exception("Empty response from Google AI")
+                logging.warning(
+                    "Received empty text from Google AI after retries/quota check."
+                )
+                raise Exception("Empty response or Quota Exceeded from Google AI")
             match = re.search("\\{[\\s\\S]*\\}", response_text)
             if match:
                 response_text = match.group(0)
