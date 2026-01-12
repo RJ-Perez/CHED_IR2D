@@ -273,11 +273,19 @@ class AnalyticsState(rx.State):
         """Generate AI-powered strategic recommendations using Google AI."""
         async with self:
             self.is_generating_recommendations = True
-        if not GOOGLE_AI_AVAILABLE:
-            async with self:
-                self.is_generating_recommendations = False
-            return
         try:
+            if not GOOGLE_AI_AVAILABLE:
+                recommendations = self._get_fallback_recommendations(
+                    research_score,
+                    employability_score,
+                    global_engagement_score,
+                    learning_experience_score,
+                    sustainability_score,
+                )
+                async with self:
+                    self.ai_recommendations = recommendations
+                    self.is_generating_recommendations = False
+                return
             performance_summary = f"\nPerformance Summary:\n- Overall Readiness Score: {overall_score}/100\n- Research & Discovery: {research_score}/100 (50% weight)\n  * Academic Reputation: {academic_rep}/100\n  * Citations per Faculty: {citations}\n- Employability & Outcomes: {employability_score}/100 (20% weight)\n  * Employer Reputation: {emp_rep}/100\n  * Employment Outcomes: {emp_outcomes}%\n- Global Engagement: {global_engagement_score}/100 (15% weight)\n  * International Research Network: {int_research_net}/100\n  * International Faculty Ratio: {int_faculty_ratio}%\n  * International Student Ratio: {int_student_ratio}%\n- Learning Experience: {learning_experience_score}/100 (10% weight)\n  * Faculty-Student Ratio: 1:{faculty_student_ratio}\n- Sustainability: {sustainability_score}/100 (5% weight)\n  * Sustainability Metrics: {sustainability}/100\n"
             weak_areas = []
             if research_score < 70:
@@ -311,28 +319,28 @@ class AnalyticsState(rx.State):
                             f"Attempt {attempt + 1}: Google AI returned empty response or no text."
                         )
                 except Exception as e:
-                    logging.exception(f"Error generating content from Google AI: {e}")
-                    error_str = str(e).lower()
-                    retry_match = re.search("retry in ([0-9\\.]+)s", error_str)
-                    retry_seconds = float(retry_match.group(1)) if retry_match else None
-                    is_quota_error = "quota" in error_str and "exceeded" in error_str
-                    is_rate_limit = (
-                        "429" in error_str or "resource_exhausted" in error_str
-                    )
-                    if is_quota_error and (not retry_seconds):
+                    error_str = str(e)
+                    error_lower = error_str.lower()
+                    if "generaterequestsperdayperprojectpermodel" in error_lower:
                         logging.info(
-                            "Google AI Daily Quota Exceeded. Using fallback recommendations."
+                            f"Google AI Daily Quota Exceeded: {error_str}. Using fallback."
                         )
                         break
+                    is_rate_limit = (
+                        "429" in error_lower or "resource_exhausted" in error_lower
+                    )
+                    retry_match = re.search("retry in ([0-9\\.]+)s", error_lower)
+                    retry_seconds = float(retry_match.group(1)) if retry_match else None
                     if is_rate_limit or retry_seconds:
                         if attempt < max_retries - 1:
-                            if retry_seconds:
-                                wait_time = retry_seconds + 1.5
-                            else:
-                                wait_time = 2 * (attempt + 1)
+                            wait_time = (
+                                retry_seconds + 1.0
+                                if retry_seconds
+                                else 2 * (attempt + 1)
+                            )
                             if wait_time > 60:
                                 logging.info(
-                                    f"Retry wait time {wait_time}s too long. Using fallback recommendations."
+                                    f"Rate limit wait time {wait_time}s too long. Using fallback."
                                 )
                                 break
                             logging.info(
@@ -342,89 +350,89 @@ class AnalyticsState(rx.State):
                             continue
                         else:
                             logging.info(
-                                "Google AI rate limit max retries reached. Using fallback recommendations."
+                                "Google AI rate limit max retries reached. Using fallback."
                             )
                             break
+                    logging.exception(f"Unexpected error calling Google AI: {e}")
                     break
             if not response_text or not response_text.strip():
-                logging.info(
-                    "Using fallback recommendations (No AI response generated)."
-                )
-                async with self:
-                    self.ai_recommendations = self._get_fallback_recommendations(
-                        research_score,
-                        employability_score,
-                        global_engagement_score,
-                        learning_experience_score,
-                        sustainability_score,
-                    )
-                    self.is_generating_recommendations = False
-                return
-            match = re.search("\\{[\\s\\S]*\\}", response_text)
-            if match:
-                response_text = match.group(0)
-            else:
-                logging.warning(
-                    f"No JSON object found in response text: {response_text[:200]}..."
-                )
-            try:
-                recommendations_data = json.loads(response_text)
-            except json.JSONDecodeError as e:
-                logging.exception(
-                    f"Failed to parse JSON response: {e}. Raw extracted text: {response_text}"
-                )
-                raise e
-            recommendations = []
-            for rec in recommendations_data.get("recommendations", []):
-                category = rec.get("category", "Overall")
-                if "Research" in category:
-                    icon = "microscope"
-                    color_class = "text-purple-600"
-                    bg_class = "bg-purple-50 border-purple-100"
-                elif "Employability" in category:
-                    icon = "briefcase"
-                    color_class = "text-emerald-600"
-                    bg_class = "bg-emerald-50 border-emerald-100"
-                elif "Global" in category:
-                    icon = "globe"
-                    color_class = "text-blue-600"
-                    bg_class = "bg-blue-50 border-blue-100"
-                elif "Learning" in category:
-                    icon = "graduation-cap"
-                    color_class = "text-indigo-600"
-                    bg_class = "bg-indigo-50 border-indigo-100"
-                elif "Sustainability" in category:
-                    icon = "leaf"
-                    color_class = "text-green-600"
-                    bg_class = "bg-green-50 border-green-100"
-                else:
-                    icon = "lightbulb"
-                    color_class = "text-amber-600"
-                    bg_class = "bg-amber-50 border-amber-100"
-                recommendations.append(
-                    {
-                        "title": rec.get("title", "Strategic Recommendation"),
-                        "description": rec.get("description", ""),
-                        "category": category,
-                        "priority": rec.get("priority", "Medium"),
-                        "icon": icon,
-                        "color_class": color_class,
-                        "bg_class": bg_class,
-                    }
-                )
-            async with self:
-                self.ai_recommendations = recommendations
-                self.is_generating_recommendations = False
-        except Exception as e:
-            logging.exception(f"Error generating AI recommendations: {e}")
-            async with self:
-                self.ai_recommendations = self._get_fallback_recommendations(
+                logging.info("Using fallback recommendations.")
+                recommendations = self._get_fallback_recommendations(
                     research_score,
                     employability_score,
                     global_engagement_score,
                     learning_experience_score,
                     sustainability_score,
                 )
+            else:
+                try:
+                    match = re.search("\\{[\\s\\S]*\\}", response_text)
+                    if match:
+                        response_text = match.group(0)
+                    recommendations_data = json.loads(response_text)
+                    recommendations = []
+                    for rec in recommendations_data.get("recommendations", []):
+                        category = rec.get("category", "Overall")
+                        if "Research" in category:
+                            icon = "microscope"
+                            color_class = "text-purple-600"
+                            bg_class = "bg-purple-50 border-purple-100"
+                        elif "Employability" in category:
+                            icon = "briefcase"
+                            color_class = "text-emerald-600"
+                            bg_class = "bg-emerald-50 border-emerald-100"
+                        elif "Global" in category:
+                            icon = "globe"
+                            color_class = "text-blue-600"
+                            bg_class = "bg-blue-50 border-blue-100"
+                        elif "Learning" in category:
+                            icon = "graduation-cap"
+                            color_class = "text-indigo-600"
+                            bg_class = "bg-indigo-50 border-indigo-100"
+                        elif "Sustainability" in category:
+                            icon = "leaf"
+                            color_class = "text-green-600"
+                            bg_class = "bg-green-50 border-green-100"
+                        else:
+                            icon = "lightbulb"
+                            color_class = "text-amber-600"
+                            bg_class = "bg-amber-50 border-amber-100"
+                        recommendations.append(
+                            {
+                                "title": rec.get("title", "Strategic Recommendation"),
+                                "description": rec.get("description", ""),
+                                "category": category,
+                                "priority": rec.get("priority", "Medium"),
+                                "icon": icon,
+                                "color_class": color_class,
+                                "bg_class": bg_class,
+                            }
+                        )
+                except json.JSONDecodeError as e:
+                    logging.exception(
+                        f"Failed to parse JSON response: {e}. Raw: {response_text}"
+                    )
+                    recommendations = self._get_fallback_recommendations(
+                        research_score,
+                        employability_score,
+                        global_engagement_score,
+                        learning_experience_score,
+                        sustainability_score,
+                    )
+            async with self:
+                self.ai_recommendations = recommendations
+                self.is_generating_recommendations = False
+        except Exception as e:
+            logging.exception(f"Critical error in AI generation flow: {e}")
+            recommendations = self._get_fallback_recommendations(
+                research_score,
+                employability_score,
+                global_engagement_score,
+                learning_experience_score,
+                sustainability_score,
+            )
+            async with self:
+                self.ai_recommendations = recommendations
                 self.is_generating_recommendations = False
 
     def _get_fallback_recommendations(
