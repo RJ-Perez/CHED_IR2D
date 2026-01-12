@@ -201,10 +201,11 @@ class ChatbotState(rx.State):
                         is_quota_error = (
                             "quota" in error_str and "exceeded" in error_str
                         )
+                        is_per_day_quota = "perday" in error_str
                         is_rate_limit = (
                             "429" in error_str or "resource_exhausted" in error_str
                         )
-                        if is_quota_error and (not retry_seconds):
+                        if is_per_day_quota or (is_quota_error and (not retry_seconds)):
                             logging.warning(
                                 "Google AI Daily Quota Exceeded. Stopping retries."
                             )
