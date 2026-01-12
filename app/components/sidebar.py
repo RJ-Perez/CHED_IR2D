@@ -23,6 +23,14 @@ def sidebar_item(
     )
 
 
+def sidebar_group_header(label: str) -> rx.Component:
+    """Group header for sidebar sections."""
+    return rx.el.p(
+        label,
+        class_name="px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-6 mb-2",
+    )
+
+
 def sidebar(current_page: str) -> rx.Component:
     """Main application navigation sidebar.
     Displays links to all main modules and shows the currently logged-in user info.
@@ -37,6 +45,7 @@ def sidebar(current_page: str) -> rx.Component:
             class_name="flex items-center h-16 px-6 border-b border-gray-200 shrink-0",
         ),
         rx.el.nav(
+            sidebar_group_header("HEI Modules"),
             sidebar_item(
                 "Assessment",
                 "layout-dashboard",
@@ -49,6 +58,7 @@ def sidebar(current_page: str) -> rx.Component:
                 "/analytics",
                 is_active=current_page == "analytics",
             ),
+            sidebar_group_header("CHED Admin Modules"),
             sidebar_item(
                 "Institutions",
                 "building-2",
