@@ -1,6 +1,7 @@
 import reflex as rx
 from app.components.auth_ui import auth_form
 from app.states.auth_state import AuthState
+from app.components.chatbot import chatbot_component
 
 
 def branding_section() -> rx.Component:
@@ -83,6 +84,7 @@ def landing_page() -> rx.Component:
             rx.el.div(auth_form(), class_name="w-full max-w-xl px-4"),
             class_name="flex-1 flex items-center justify-center min-h-screen bg-gray-50",
         ),
+        chatbot_component(),
         class_name="flex min-h-screen w-full font-['Inter']",
     )
 
@@ -127,6 +129,7 @@ def hei_selection_page() -> rx.Component:
         rx.el.div(
             selection_screen_content(), class_name="flex-1 py-12 px-4 sm:px-6 lg:px-8"
         ),
+        chatbot_component(),
         class_name="min-h-screen bg-gray-50 font-['Inter'] flex flex-col",
     )
 
@@ -146,6 +149,7 @@ def assessment_page() -> rx.Component:
     return rx.el.div(
         sidebar(current_page="dashboard"),
         rx.el.main(dashboard_content(), class_name="flex-1 p-8 overflow-y-auto h-full"),
+        chatbot_component(),
         class_name="flex h-screen w-full bg-gray-50 font-['Inter']",
     )
 
@@ -156,6 +160,7 @@ def institutions_page() -> rx.Component:
         rx.el.main(
             institutions_content(), class_name="flex-1 p-8 overflow-y-auto h-full"
         ),
+        chatbot_component(),
         class_name="flex h-screen w-full bg-gray-50 font-['Inter']",
     )
 
@@ -170,6 +175,7 @@ def analytics_page() -> rx.Component:
         rx.el.main(
             analytics_content_ui(), class_name="flex-1 p-8 overflow-y-auto h-full"
         ),
+        chatbot_component(),
         class_name="flex h-screen w-full bg-gray-50 font-['Inter']",
         on_mount=AnalyticsState.on_load,
     )
@@ -182,6 +188,7 @@ def reports_page() -> rx.Component:
     return rx.el.div(
         sidebar(current_page="reports"),
         rx.el.main(reports_content(), class_name="flex-1 p-8 overflow-y-auto h-full"),
+        chatbot_component(),
         class_name="flex h-screen w-full bg-gray-50 font-['Inter']",
         on_mount=ReportsState.on_load,
     )
@@ -191,6 +198,7 @@ def settings_page() -> rx.Component:
     return rx.el.div(
         sidebar(current_page="settings"),
         rx.el.main(settings_content(), class_name="flex-1 p-8 overflow-y-auto h-full"),
+        chatbot_component(),
         class_name="flex h-screen w-full bg-gray-50 font-['Inter']",
         on_mount=SettingsState.on_load,
     )

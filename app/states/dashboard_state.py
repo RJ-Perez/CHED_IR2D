@@ -142,36 +142,6 @@ class DashboardState(rx.State):
             if saved_path:
                 self.uploaded_sustainability_files.append(saved_path)
 
-    @rx.event
-    def remove_research_file(self, file_path: str):
-        self.uploaded_research_files = [
-            f for f in self.uploaded_research_files if f != file_path
-        ]
-
-    @rx.event
-    def remove_employability_file(self, file_path: str):
-        self.uploaded_employability_files = [
-            f for f in self.uploaded_employability_files if f != file_path
-        ]
-
-    @rx.event
-    def remove_global_engagement_file(self, file_path: str):
-        self.uploaded_global_engagement_files = [
-            f for f in self.uploaded_global_engagement_files if f != file_path
-        ]
-
-    @rx.event
-    def remove_learning_experience_file(self, file_path: str):
-        self.uploaded_learning_experience_files = [
-            f for f in self.uploaded_learning_experience_files if f != file_path
-        ]
-
-    @rx.event
-    def remove_sustainability_file(self, file_path: str):
-        self.uploaded_sustainability_files = [
-            f for f in self.uploaded_sustainability_files if f != file_path
-        ]
-
     @rx.event(background=True)
     async def on_load(self):
         """Load existing data for the selected institution."""
