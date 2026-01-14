@@ -27,6 +27,7 @@ def synced_slider_input(
     on_change: rx.event.EventType,
 ) -> rx.Component:
     """Synced slider and number input for weighted metrics with prominent value display."""
+    intervals = [0, 25, 50, 75, 100]
     return rx.el.div(
         rx.el.div(
             rx.el.label(label, class_name="text-sm font-semibold text-gray-700"),
@@ -43,6 +44,20 @@ def synced_slider_input(
             class_name="flex justify-center w-full",
         ),
         rx.el.div(
+            rx.el.div(
+                rx.foreach(
+                    intervals,
+                    lambda i: rx.el.div(
+                        rx.el.span(
+                            i.to_string(),
+                            class_name="text-[10px] text-gray-400 font-bold mb-1",
+                        ),
+                        rx.el.div(class_name="w-0.5 h-1.5 bg-gray-300"),
+                        class_name="flex flex-col items-center",
+                    ),
+                ),
+                class_name="flex justify-between px-3 w-full",
+            ),
             rx.el.input(
                 type="range",
                 key=value.to_string(),
@@ -73,7 +88,7 @@ def synced_slider_input(
                     [&::-moz-range-thumb]:cursor-pointer
                 """,
             ),
-            class_name="flex items-center px-2 py-2",
+            class_name="flex flex-col gap-1 items-center px-2 py-2",
         ),
         class_name="mb-6 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm",
     )
