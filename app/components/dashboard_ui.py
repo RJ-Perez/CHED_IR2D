@@ -85,21 +85,22 @@ def synced_slider_input(
                     accent-blue-700 hover:accent-blue-800 transition-all
                     [&::-webkit-slider-thumb]:appearance-none 
                     [&::-webkit-slider-thumb]:w-6 
-                    [&::-webkit-slider-thumb]:h-6 
-                    [&::-webkit-slider-thumb]:bg-white 
-                    [&::-webkit-slider-thumb]:rounded-full 
-                    [&::-webkit-slider-thumb]:border-4 
-                    [&::-webkit-slider-thumb]:border-blue-700
-                    [&::-webkit-slider-thumb]:shadow-md
+                    [&::-webkit-slider-thumb]:h-8 
+                    [&::-webkit-slider-thumb]:bg-transparent 
+                    [&::-webkit-slider-thumb]:bg-no-repeat 
+                    [&::-webkit-slider-thumb]:bg-center
+                    [&::-webkit-slider-thumb]:[background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%231d4ed8"><path d="M12 21l-8-14h16l-8 14z"/></svg>')] 
                     [&::-webkit-slider-thumb]:cursor-pointer
+                    [&::-webkit-slider-thumb]:translate-y-[-4px]
+                    [&::-moz-range-thumb]:appearance-none
                     [&::-moz-range-thumb]:w-6 
-                    [&::-moz-range-thumb]:h-6 
-                    [&::-moz-range-thumb]:bg-white 
-                    [&::-moz-range-thumb]:rounded-full 
-                    [&::-moz-range-thumb]:border-4 
-                    [&::-moz-range-thumb]:border-blue-700
-                    [&::-moz-range-thumb]:shadow-md
+                    [&::-moz-range-thumb]:h-8 
+                    [&::-moz-range-thumb]:bg-transparent 
+                    [&::-moz-range-thumb]:bg-no-repeat 
+                    [&::-moz-range-thumb]:bg-center
+                    [&::-moz-range-thumb]:[background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%231d4ed8"><path d="M12 21l-8-14h16l-8 14z"/></svg>')] 
                     [&::-moz-range-thumb]:cursor-pointer
+                    [&::-moz-range-thumb]:border-none
                 """,
             ),
             class_name="flex flex-col gap-1 items-center px-2 py-2",
