@@ -189,29 +189,45 @@ def selection_screen_content() -> rx.Component:
                 rx.el.div(
                     rx.el.div(
                         rx.el.div(
-                            rx.icon(
-                                "search",
-                                class_name="absolute left-4 top-3.5 text-gray-400 h-5 w-5",
+                            rx.cond(
+                                HEIState.is_searching,
+                                rx.el.div(
+                                    class_name="absolute left-4 top-3.5 h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
+                                ),
+                                rx.icon(
+                                    "search",
+                                    class_name="absolute left-4 top-3.5 text-gray-400 h-5 w-5",
+                                ),
                             ),
                             rx.el.input(
                                 placeholder="Search for an HEI in NCR...",
-                                on_change=HEIState.set_search_query,
+                                on_change=HEIState.set_search_query.debounce(300),
                                 class_name="w-full pl-12 pr-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow shadow-sm text-lg",
                                 default_value=HEIState.search_query,
                             ),
                             class_name="relative mb-2",
                         ),
                         rx.cond(
-                            HEIState.search_query & ~HEIState.selected_hei,
+                            HEIState.search_query.length() > 0 & ~HEIState.selected_hei,
                             rx.el.div(
-                                rx.cond(
-                                    HEIState.filtered_heis.length() > 0,
-                                    rx.foreach(
-                                        HEIState.filtered_heis, search_result_item
+                                rx.match(
+                                    HEIState.is_searching,
+                                    (
+                                        True,
+                                        rx.el.div(
+                                            "Searching...",
+                                            class_name="p-4 text-sm text-gray-400 text-center italic",
+                                        ),
                                     ),
-                                    rx.el.div(
-                                        "No institutions found.",
-                                        class_name="p-4 text-sm text-gray-500 text-center italic",
+                                    rx.cond(
+                                        HEIState.search_results.length() > 0,
+                                        rx.foreach(
+                                            HEIState.search_results, search_result_item
+                                        ),
+                                        rx.el.div(
+                                            "No institutions found.",
+                                            class_name="p-4 text-sm text-gray-500 text-center italic",
+                                        ),
                                     ),
                                 ),
                                 class_name="absolute z-10 w-full bg-white mt-1 rounded-xl border border-gray-200 shadow-lg overflow-hidden max-h-60 overflow-y-auto",

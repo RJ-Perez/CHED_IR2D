@@ -17,10 +17,12 @@ class HEIState(rx.State):
     """
 
     hei_database: list[HEI] = []
+    search_results: list[HEI] = []
     search_query: str = ""
     selected_hei: Optional[HEI] = None
     ranking_framework: str = ""
     is_registration_mode: bool = False
+    is_searching: bool = False
     reg_name: str = ""
     reg_street: str = ""
     reg_region: str = ""
@@ -223,13 +225,6 @@ class HEIState(rx.State):
         return ", ".join([p for p in parts if p])
 
     @rx.var
-    def filtered_heis(self) -> list[HEI]:
-        if not self.search_query:
-            return []
-        query = self.search_query.lower()
-        return [h for h in self.hei_database if query in h["name"].lower()]
-
-    @rx.var
     def is_form_valid(self) -> bool:
         if self.is_registration_mode:
             return (
@@ -249,11 +244,48 @@ class HEIState(rx.State):
         self.search_query = query
         if self.selected_hei and self.selected_hei["name"] != query:
             self.selected_hei = None
+        if not query.strip():
+            self.search_results = []
+            return
+        return HEIState.search_institutions
+
+    @rx.event(background=True)
+    async def search_institutions(self):
+        async with self:
+            if not self.search_query.strip():
+                self.search_results = []
+                self.is_searching = False
+                return
+            self.is_searching = True
+            query_str = self.search_query
+        async with rx.asession() as session:
+            result = await session.execute(
+                text("""
+                SELECT id, institution_name, street_address, city_municipality 
+                FROM institutions 
+                WHERE LOWER(institution_name) LIKE LOWER(:term)
+                ORDER BY institution_name ASC
+                LIMIT 10
+                """),
+                {"term": f"%{query_str}%"},
+            )
+            rows = result.all()
+            async with self:
+                self.search_results = [
+                    {
+                        "id": str(row[0]),
+                        "name": row[1],
+                        "address": f"{row[2]}, {row[3]}",
+                    }
+                    for row in rows
+                ]
+                self.is_searching = False
 
     @rx.event
     def select_hei(self, hei: HEI):
         self.selected_hei = hei
         self.search_query = hei["name"]
+        self.search_results = []
         self.is_registration_mode = False
 
     @rx.event
