@@ -210,20 +210,21 @@ class AuthState(GoogleAuthState):
                     yield rx.redirect("/hei-selection")
 
     @rx.event(background=True)
-    async def on_google_login(self):
+    async def on_google_login(self, token_data: dict):
         """Triggered after Google sign-in. Verifies user in database or creates new record."""
-        for _ in range(10):
+        for _ in range(20):
             if self.token_is_valid:
                 break
             await asyncio.sleep(0.5)
-        if not self.token_is_valid:
+        if not self.token_is_valid and (not token_data):
             logging.warning("Google token validation failed or timed out.")
             return
         async with self:
-            user_email = self.tokeninfo.get("email")
-            google_id = self.tokeninfo.get("sub")
-            first_name = self.tokeninfo.get("given_name", "")
-            last_name = self.tokeninfo.get("family_name", "")
+            info = token_data if token_data else self.tokeninfo
+            user_email = info.get("email")
+            google_id = info.get("sub")
+            first_name = info.get("given_name", "")
+            last_name = info.get("family_name", "")
         user_id = None
         try:
             async with rx.asession() as asession:
