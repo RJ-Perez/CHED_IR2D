@@ -3,6 +3,8 @@ from typing import TypedDict
 import os
 import logging
 import resend
+import asyncio
+import re
 from app.rag.retrieval import retrieve_documents, format_context
 
 try:
@@ -174,15 +176,38 @@ class ChatbotState(rx.State):
                 Do not invent features that are not in the documentation.
                 """
                 full_prompt = f"Context information:\n{context_text}\n\nConversation History:\n{history_text}\n\nUser Question: {user_message}"
-                response = await client.aio.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=full_prompt,
-                    config=types.GenerateContentConfig(
-                        system_instruction=system_prompt, temperature=0.3
-                    ),
-                )
-                if response and response.text:
-                    response_content = response.text
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        response = await client.aio.models.generate_content(
+                            model="gemini-2.5-flash",
+                            contents=full_prompt,
+                            config=types.GenerateContentConfig(
+                                system_instruction=system_prompt, temperature=0.3
+                            ),
+                        )
+                        if response and response.text:
+                            response_content = response.text
+                            break
+                    except Exception as e:
+                        error_str = str(e)
+                        if (
+                            "429" in error_str or "RESOURCE_EXHAUSTED" in error_str
+                        ) and attempt < max_retries - 1:
+                            wait_time = 2.0 * 2**attempt
+                            retry_match = re.search(
+                                "retry in (\\d+(\\.\\d+)?)s", error_str
+                            )
+                            if retry_match:
+                                wait_time = float(retry_match.group(1)) + 1.0
+                            wait_time = min(wait_time, 60.0)
+                            logging.warning(
+                                f"Chatbot rate limit. Retrying in {wait_time:.2f}s"
+                            )
+                            await asyncio.sleep(wait_time)
+                        else:
+                            logging.exception(f"Chatbot generation error: {e}")
+                            break
             except Exception as e:
                 logging.exception(f"Chatbot AI Error: {e}")
                 response_content = "I'm having trouble connecting to the AI service right now. Please try again later."

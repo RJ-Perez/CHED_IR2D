@@ -288,7 +288,7 @@ class AnalyticsState(rx.State):
                 weak_areas.append("Sustainability")
             prompt = f"""You are an expert higher education consultant specializing in international university rankings (QS and THE). \n\nAnalyze the following performance data for a Higher Education Institution in the Philippines and provide 3-4 strategic, actionable recommendations to improve their international ranking readiness.\n\n{performance_summary}\n\nAreas needing improvement: {(", ".join(weak_areas) if weak_areas else "All areas are performing well")}\n\nProvide recommendations in JSON format with this structure:\n{{\n  "recommendations": [\n    {{\n      "title": "Short, actionable title (max 8 words)",\n      "description": "Detailed recommendation (2-3 sentences) explaining what to do and why",\n      "category": "Research & Discovery|Employability|Global Engagement|Learning Experience|Sustainability|Overall",\n      "priority": "High|Medium|Low"\n    }}\n  ]\n}}\n\nFocus on:\n1. Specific, actionable steps the institution can take\n2. Evidence-based strategies used by top-ranked universities\n3. Realistic improvements given the Philippine higher education context\n4. Prioritize recommendations that will have the most impact on overall score\n\nReturn ONLY valid JSON, no additional text."""
             client = genai.Client(api_key=GOOGLE_AI_API_KEY)
-            max_retries = 3
+            max_retries = 5
             response_text = ""
             for attempt in range(max_retries):
                 try:
@@ -308,12 +308,22 @@ class AnalyticsState(rx.State):
                         )
                 except Exception as e:
                     error_str = str(e)
-                    if (
+                    is_rate_limit = (
                         "429" in error_str or "RESOURCE_EXHAUSTED" in error_str
-                    ) and attempt < max_retries - 1:
-                        wait_time = 2 * (attempt + 1)
-                        logging.exception(
-                            f"Google AI Rate limit hit. Retrying in {wait_time}s..."
+                    )
+                    if is_rate_limit:
+                        if attempt == max_retries - 1:
+                            logging.error(
+                                "Google AI quota exhausted after all retries. Falling back."
+                            )
+                            break
+                        wait_time = 2.0 * 2**attempt
+                        retry_match = re.search("retry in (\\d+(\\.\\d+)?)s", error_str)
+                        if retry_match:
+                            wait_time = float(retry_match.group(1)) + 1.0
+                        wait_time = min(wait_time, 60.0)
+                        logging.warning(
+                            f"Google AI Rate limit hit. Retrying in {wait_time:.2f}s (Attempt {attempt + 1}/{max_retries})"
                         )
                         await asyncio.sleep(wait_time)
                         continue
@@ -321,10 +331,10 @@ class AnalyticsState(rx.State):
                         logging.exception(
                             f"Error generating content from Google AI: {e}"
                         )
-                        raise e
+                        break
             if not response_text or not response_text.strip():
                 logging.info(
-                    "Google AI returned an empty response. Falling back to rule-based recommendations."
+                    "Google AI returned an empty response or failed. Falling back to rule-based recommendations."
                 )
                 async with self:
                     self.ai_recommendations = self._get_fallback_recommendations(

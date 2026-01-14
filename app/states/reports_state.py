@@ -408,16 +408,49 @@ class ReportsState(rx.State):
                 weak_areas.append("Sustainability")
             prompt = f"""You are an expert higher education consultant. Analyze the following performance data for {institution_name} in the Philippines and provide 3 strategic, actionable recommendations to improve their international ranking readiness.\n\n{performance_summary}\n\nFocus areas: {(", ".join(weak_areas) if weak_areas else "General Excellence")}\n\nProvide recommendations in JSON format with this structure:\n{{\n  "recommendations": [\n    {{\n      "title": "Short, actionable title (max 8 words)",\n      "description": "Detailed recommendation (2 sentences) explaining strategies specific to the metric",\n      "category": "Research & Discovery|Employability|Global Engagement|Learning Experience|Sustainability|Overall",\n      "priority": "High|Medium|Low"\n    }}\n  ]\n}}\n\nReturn ONLY valid JSON."""
             client = genai.Client(api_key=GOOGLE_AI_API_KEY)
-            response = await client.aio.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json"
-                ),
-            )
-            if not response or not response.text:
-                raise Exception("Empty AI response")
-            response_text = response.text
+            max_retries = 5
+            response_text = ""
+            for attempt in range(max_retries):
+                try:
+                    response = await client.aio.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=prompt,
+                        config=types.GenerateContentConfig(
+                            response_mime_type="application/json"
+                        ),
+                    )
+                    if response and response.text:
+                        response_text = response.text
+                        break
+                    else:
+                        logging.warning(
+                            f"Attempt {attempt + 1}: Empty response from Google AI"
+                        )
+                except Exception as e:
+                    error_str = str(e)
+                    is_rate_limit = (
+                        "429" in error_str or "RESOURCE_EXHAUSTED" in error_str
+                    )
+                    if is_rate_limit:
+                        if attempt == max_retries - 1:
+                            logging.error(
+                                "Google AI quota exhausted after all retries."
+                            )
+                            break
+                        wait_time = 2.0 * 2**attempt
+                        retry_match = re.search("retry in (\\d+(\\.\\d+)?)s", error_str)
+                        if retry_match:
+                            wait_time = float(retry_match.group(1)) + 1.0
+                        wait_time = min(wait_time, 60.0)
+                        logging.warning(
+                            f"Rate limit hit. Retrying in {wait_time:.2f}s (Attempt {attempt + 1}/{max_retries})"
+                        )
+                        await asyncio.sleep(wait_time)
+                    else:
+                        logging.exception(f"Non-retriable AI error: {e}")
+                        break
+            if not response_text:
+                raise Exception("Failed to generate AI content after retries")
             json_match = re.search("\\{.*\\}", response_text, re.DOTALL)
             if json_match:
                 response_text = json_match.group(0)
