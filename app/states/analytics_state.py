@@ -3,6 +3,7 @@ from sqlalchemy import text
 from app.states.hei_state import HEIState
 import logging
 import json
+import re
 import os
 import asyncio
 
@@ -339,15 +340,10 @@ class AnalyticsState(rx.State):
                     )
                     self.is_generating_recommendations = False
                 return
-            response_text = response_text.strip()
-            if response_text.startswith(""):
-                response_text = response_text[7:]
-            elif response_text.startswith(""):
-                response_text = response_text[3:]
-            if response_text.endswith(""):
-                response_text = response_text[:-3]
-            response_text = response_text.strip()
-            if not response_text:
+            json_match = re.search("\\{.*\\}", response_text, re.DOTALL)
+            if json_match:
+                response_text = json_match.group(0)
+            elif not response_text.strip():
                 logging.info(
                     "Cleaned AI response is empty. Falling back to rule-based recommendations."
                 )
