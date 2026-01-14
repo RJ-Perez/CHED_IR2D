@@ -23,7 +23,7 @@ class InstitutionsState(rx.State):
 
     @rx.var
     async def filtered_heis(self) -> list[HEI]:
-        """Filter HEIs based on search query."""
+        """Filter HEIs based on search query (Name, Address, or ID)."""
         hei_state = await self.get_state(HEIState)
         if not self.search_query:
             return hei_state.hei_database
@@ -31,7 +31,9 @@ class InstitutionsState(rx.State):
         return [
             h
             for h in hei_state.hei_database
-            if query in h["name"].lower() or query in h["address"].lower()
+            if query in h["name"].lower()
+            or query in h["address"].lower()
+            or query in str(h["id"]).lower()
         ]
 
     @rx.event

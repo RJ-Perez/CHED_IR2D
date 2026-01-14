@@ -2,18 +2,42 @@ import reflex as rx
 from app.states.hei_state import HEIState, HEI
 
 
-def search_result_item(hei: HEI) -> rx.Component:
-    return rx.el.div(
-        rx.el.div(
-            rx.icon("building-2", class_name="h-5 w-5 text-gray-400 mr-3"),
+def hei_table_row(hei: HEI) -> rx.Component:
+    is_selected = HEIState.selected_hei_id == hei["id"]
+    return rx.el.tr(
+        rx.el.td(
             rx.el.div(
-                rx.el.p(hei["name"], class_name="text-sm font-medium text-gray-900"),
-                rx.el.p(hei["address"], class_name="text-xs text-gray-500"),
+                rx.el.input(
+                    type="radio",
+                    checked=is_selected,
+                    class_name="h-4 w-4 text-blue-600 focus:ring-blue-500 cursor-pointer",
+                ),
+                class_name="flex justify-center",
             ),
-            class_name="flex items-center",
+            class_name="px-4 py-3",
+        ),
+        rx.el.td(
+            rx.el.div(
+                rx.el.p(hei["name"], class_name="text-sm font-semibold text-gray-900"),
+                rx.el.p(
+                    f"ID: {hei['id']}", class_name="text-[10px] text-gray-400 font-mono"
+                ),
+                class_name="flex flex-col",
+            ),
+            class_name="px-4 py-3",
+        ),
+        rx.el.td(
+            rx.el.p(
+                hei["address"], class_name="text-sm text-gray-600 truncate max-w-xs"
+            ),
+            class_name="px-4 py-3",
         ),
         on_click=lambda: HEIState.select_hei(hei),
-        class_name="p-3 cursor-pointer hover:bg-blue-50 transition-colors border-b last:border-b-0",
+        class_name=rx.cond(
+            is_selected,
+            "bg-blue-50 border-l-4 border-blue-600 cursor-pointer transition-all duration-200",
+            "hover:bg-gray-50 cursor-pointer transition-all duration-200 border-l-4 border-transparent",
+        ),
     )
 
 
@@ -200,41 +224,60 @@ def selection_screen_content() -> rx.Component:
                                 ),
                             ),
                             rx.el.input(
-                                placeholder="Search for an HEI in NCR...",
-                                on_change=HEIState.set_search_query.debounce(300),
-                                class_name="w-full pl-12 pr-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow shadow-sm text-lg",
+                                placeholder="Search by name, city, or ID...",
+                                on_change=HEIState.set_search_query.debounce(500),
+                                class_name="w-full pl-12 pr-12 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow shadow-sm text-lg",
                                 default_value=HEIState.search_query,
                             ),
-                            class_name="relative mb-2",
-                        ),
-                        rx.cond(
-                            (HEIState.search_query.length() > 0)
-                            & ~HEIState.selected_hei.to(bool),
-                            rx.el.div(
-                                rx.match(
-                                    HEIState.is_searching,
-                                    (
-                                        True,
-                                        rx.el.div(
-                                            "Searching...",
-                                            class_name="p-4 text-sm text-gray-400 text-center italic",
-                                        ),
-                                    ),
-                                    rx.cond(
-                                        HEIState.search_results.length() > 0,
-                                        rx.foreach(
-                                            HEIState.search_results, search_result_item
-                                        ),
-                                        rx.el.div(
-                                            "No institutions found.",
-                                            class_name="p-4 text-sm text-gray-500 text-center italic",
-                                        ),
-                                    ),
+                            rx.cond(
+                                HEIState.search_query.length() > 0,
+                                rx.el.button(
+                                    rx.icon("x", class_name="h-4 w-4"),
+                                    on_click=HEIState.set_search_query(""),
+                                    class_name="absolute right-4 top-4 text-gray-400 hover:text-gray-600",
                                 ),
-                                class_name="absolute z-10 w-full bg-white mt-1 rounded-xl border border-gray-200 shadow-lg overflow-hidden max-h-60 overflow-y-auto",
                             ),
+                            class_name="relative mb-6",
                         ),
-                        class_name="relative",
+                        rx.el.div(
+                            rx.el.table(
+                                rx.el.thead(
+                                    rx.el.tr(
+                                        rx.el.th("", class_name="w-10 px-4 py-3"),
+                                        rx.el.th(
+                                            "Institution",
+                                            class_name="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
+                                        ),
+                                        rx.el.th(
+                                            "Location",
+                                            class_name="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
+                                        ),
+                                        class_name="bg-gray-50 border-b border-gray-200",
+                                    )
+                                ),
+                                rx.el.tbody(
+                                    rx.foreach(HEIState.search_results, hei_table_row),
+                                    class_name="bg-white divide-y divide-gray-100",
+                                ),
+                                class_name="min-w-full",
+                            ),
+                            rx.cond(
+                                (HEIState.search_results.length() == 0)
+                                & (HEIState.search_query.length() > 0),
+                                rx.el.div(
+                                    rx.icon(
+                                        "search",
+                                        class_name="h-12 w-12 text-gray-200 mb-2",
+                                    ),
+                                    rx.el.p(
+                                        "No institutions matching your search.",
+                                        class_name="text-gray-400 text-sm",
+                                    ),
+                                    class_name="flex flex-col items-center justify-center p-12 bg-white",
+                                ),
+                            ),
+                            class_name="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white",
+                        ),
                     ),
                     rx.el.div(
                         rx.el.span(

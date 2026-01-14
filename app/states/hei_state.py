@@ -19,6 +19,7 @@ class HEIState(rx.State):
     hei_database: list[HEI] = []
     search_results: list[HEI] = []
     search_query: str = ""
+    selected_hei_id: str = ""
     selected_hei: Optional[HEI] = None
     ranking_framework: str = ""
     is_registration_mode: bool = False
@@ -284,6 +285,7 @@ class HEIState(rx.State):
     @rx.event
     def select_hei(self, hei: HEI):
         self.selected_hei = hei
+        self.selected_hei_id = hei["id"]
         self.search_query = hei["name"]
         self.search_results = []
         self.is_registration_mode = False
