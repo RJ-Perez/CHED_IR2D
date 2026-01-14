@@ -84,23 +84,25 @@ def synced_slider_input(
                     w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer 
                     accent-blue-700 hover:accent-blue-800 transition-all
                     [&::-webkit-slider-thumb]:appearance-none 
-                    [&::-webkit-slider-thumb]:w-6 
-                    [&::-webkit-slider-thumb]:h-8 
+                    [&::-webkit-slider-thumb]:w-8 
+                    [&::-webkit-slider-thumb]:h-10 
                     [&::-webkit-slider-thumb]:bg-transparent 
                     [&::-webkit-slider-thumb]:bg-no-repeat 
                     [&::-webkit-slider-thumb]:bg-center
-                    [&::-webkit-slider-thumb]:[background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%231d4ed8"><path d="M12 21l-8-14h16l-8 14z"/></svg>')] 
+                    [&::-webkit-slider-thumb]:[background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%231d4ed8"><path d="M12 24L4 8h16L12 24z"/></svg>')] 
                     [&::-webkit-slider-thumb]:cursor-pointer
-                    [&::-webkit-slider-thumb]:translate-y-[-4px]
+                    [&::-webkit-slider-thumb]:translate-y-[-6px]
+                    [&::-webkit-slider-thumb]:drop-shadow-md
                     [&::-moz-range-thumb]:appearance-none
-                    [&::-moz-range-thumb]:w-6 
-                    [&::-moz-range-thumb]:h-8 
+                    [&::-moz-range-thumb]:w-8 
+                    [&::-moz-range-thumb]:h-10 
                     [&::-moz-range-thumb]:bg-transparent 
                     [&::-moz-range-thumb]:bg-no-repeat 
                     [&::-moz-range-thumb]:bg-center
-                    [&::-moz-range-thumb]:[background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%231d4ed8"><path d="M12 21l-8-14h16l-8 14z"/></svg>')] 
+                    [&::-moz-range-thumb]:[background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%231d4ed8"><path d="M12 24L4 8h16L12 24z"/></svg>')] 
                     [&::-moz-range-thumb]:cursor-pointer
                     [&::-moz-range-thumb]:border-none
+                    [&::-moz-range-thumb]:drop-shadow-md
                 """,
             ),
             class_name="flex flex-col gap-1 items-center px-2 py-2",
