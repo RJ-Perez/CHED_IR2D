@@ -1,5 +1,6 @@
 import reflex as rx
 from app.states.auth_state import AuthState
+from reflex_google_auth import google_login, google_oauth_provider
 
 
 def input_field(
@@ -159,7 +160,7 @@ def auth_form() -> rx.Component:
         ),
         rx.el.button(
             rx.cond(
-                AuthState.is_loading,
+                AuthState.is_sign_up,
                 rx.el.div(
                     rx.el.div(
                         class_name="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"
@@ -176,6 +177,20 @@ def auth_form() -> rx.Component:
                 "mt-8 w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-400 cursor-not-allowed",
                 "mt-8 w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition-colors duration-200",
             ),
+        ),
+        rx.el.div(
+            rx.el.div(class_name="flex-1 h-px bg-gray-200"),
+            rx.el.span(
+                "or", class_name="px-3 text-xs text-gray-400 uppercase font-bold"
+            ),
+            rx.el.div(class_name="h-px flex-1 bg-gray-200"),
+            class_name="flex items-center my-6",
+        ),
+        google_oauth_provider(
+            rx.el.div(
+                google_login(),
+                class_name="w-full flex justify-center [&>div]:w-full [&>div>div]:w-full [&>div>div>iframe]:w-full",
+            )
         ),
         rx.el.div(
             rx.cond(
