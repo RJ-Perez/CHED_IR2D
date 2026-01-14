@@ -27,7 +27,7 @@ def synced_slider_input(
     on_change: rx.event.EventType,
 ) -> rx.Component:
     """Synced slider and number input for weighted metrics with prominent value display."""
-    intervals = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+    intervals = list(range(101))
     return rx.el.div(
         rx.el.div(
             rx.el.label(label, class_name="text-sm font-semibold text-gray-700"),
@@ -48,12 +48,26 @@ def synced_slider_input(
                 rx.foreach(
                     intervals,
                     lambda i: rx.el.div(
-                        rx.el.span(
-                            i.to_string(),
-                            class_name="text-[10px] text-gray-400 font-bold mb-1",
+                        rx.cond(
+                            i % 10 == 0,
+                            rx.el.span(
+                                i.to_string(),
+                                class_name="text-[10px] text-gray-400 font-bold mb-1",
+                            ),
+                            rx.el.span("", class_name="text-[10px] mb-1 h-3"),
                         ),
-                        rx.el.div(class_name="w-0.5 h-1.5 bg-gray-300"),
-                        class_name="flex flex-col items-center",
+                        rx.el.div(
+                            class_name=rx.cond(
+                                i % 10 == 0,
+                                "w-0.5 h-2 bg-gray-400",
+                                rx.cond(
+                                    i % 5 == 0,
+                                    "w-px h-1.5 bg-gray-300",
+                                    "w-px h-1 bg-gray-200",
+                                ),
+                            )
+                        ),
+                        class_name="flex flex-col items-center flex-1",
                     ),
                 ),
                 class_name="flex justify-between px-3 w-full",
