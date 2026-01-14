@@ -25,6 +25,40 @@ class AuthState(GoogleAuthState):
     is_loading: bool = False
     error_message: str = ""
 
+    @rx.var
+    async def user_display_name(self) -> str:
+        """Fetches the user's full name from the database based on session ID."""
+        if self.authenticated_user_id is None:
+            if self.token_is_valid:
+                return self.tokeninfo.get("name", "User")
+            return "Guest User"
+        async with rx.asession() as session:
+            result = await session.execute(
+                text("SELECT first_name, last_name FROM users WHERE id = :id"),
+                {"id": self.authenticated_user_id},
+            )
+            row = result.first()
+            if row:
+                return f"{row[0]} {row[1]}"
+        return "User"
+
+    @rx.var
+    async def user_email_address(self) -> str:
+        """Fetches the user's email from the database or OAuth info."""
+        if self.authenticated_user_id is None:
+            if self.token_is_valid:
+                return self.tokeninfo.get("email", "")
+            return ""
+        async with rx.asession() as session:
+            result = await session.execute(
+                text("SELECT email FROM users WHERE id = :id"),
+                {"id": self.authenticated_user_id},
+            )
+            row = result.first()
+            if row:
+                return row[0]
+        return ""
+
     @rx.event
     def toggle_auth_mode(self):
         """

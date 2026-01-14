@@ -74,9 +74,12 @@ def sidebar(current_page: str) -> rx.Component:
                 ),
                 rx.el.div(
                     rx.el.p(
-                        "Admin User", class_name="text-sm font-medium text-gray-900"
+                        AuthState.user_display_name,
+                        class_name="text-sm font-medium text-gray-900",
                     ),
-                    rx.el.p("admin@ched.gov.ph", class_name="text-xs text-gray-500"),
+                    rx.el.p(
+                        AuthState.user_email_address, class_name="text-xs text-gray-500"
+                    ),
                     class_name="ml-3 overflow-hidden flex-1",
                 ),
                 rx.el.button(
