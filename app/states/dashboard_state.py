@@ -316,30 +316,72 @@ class DashboardState(rx.State):
                             )
                             self.citations_per_faculty = 0
                     elif code == "employer_reputation":
-                        self.employer_reputation = value
+                        try:
+                            self.employer_reputation = int(float(value))
+                        except (ValueError, TypeError) as e:
+                            logging.exception(
+                                f"Error loading employer reputation from DB: {e}"
+                            )
+                            self.employer_reputation = 0
                         self.uploaded_employability_files = (
                             json.loads(evidence) if evidence else []
                         )
                     elif code == "employment_outcomes":
-                        self.employment_outcomes = value
+                        try:
+                            self.employment_outcomes = int(float(value))
+                        except (ValueError, TypeError) as e:
+                            logging.exception(
+                                f"Error loading employment outcomes from DB: {e}"
+                            )
+                            self.employment_outcomes = 0
                     elif code == "international_research_network":
-                        self.international_research_network = value
+                        try:
+                            self.international_research_network = int(float(value))
+                        except (ValueError, TypeError) as e:
+                            logging.exception(
+                                f"Error loading international research network from DB: {e}"
+                            )
+                            self.international_research_network = 0
                         self.uploaded_global_engagement_files = (
                             json.loads(evidence) if evidence else []
                         )
                     elif code == "international_faculty_ratio":
-                        self.international_faculty_ratio = value
+                        try:
+                            self.international_faculty_ratio = int(float(value))
+                        except (ValueError, TypeError) as e:
+                            logging.exception(
+                                f"Error loading international faculty ratio from DB: {e}"
+                            )
+                            self.international_faculty_ratio = 0
                     elif code == "international_student_ratio":
-                        self.international_student_ratio = value
+                        try:
+                            self.international_student_ratio = int(float(value))
+                        except (ValueError, TypeError) as e:
+                            logging.exception(
+                                f"Error loading international student ratio from DB: {e}"
+                            )
+                            self.international_student_ratio = 0
                     elif code == "international_student_diversity":
                         self.international_student_diversity = value
                     elif code == "faculty_student_ratio":
-                        self.faculty_student_ratio = value
+                        try:
+                            self.faculty_student_ratio = int(float(value))
+                        except (ValueError, TypeError) as e:
+                            logging.exception(
+                                f"Error loading faculty student ratio from DB: {e}"
+                            )
+                            self.faculty_student_ratio = 0
                         self.uploaded_learning_experience_files = (
                             json.loads(evidence) if evidence else []
                         )
                     elif code == "sustainability_metrics":
-                        self.sustainability_metrics = value
+                        try:
+                            self.sustainability_metrics = int(float(value))
+                        except (ValueError, TypeError) as e:
+                            logging.exception(
+                                f"Error loading sustainability metrics from DB: {e}"
+                            )
+                            self.sustainability_metrics = 0
                         self.uploaded_sustainability_files = (
                             json.loads(evidence) if evidence else []
                         )
