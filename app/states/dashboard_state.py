@@ -1,6 +1,7 @@
 import reflex as rx
 import asyncio
 import json
+import logging
 from sqlalchemy import text
 from app.states.hei_state import HEIState
 
@@ -10,8 +11,8 @@ class DashboardState(rx.State):
     It tracks individual indicator scores and their associated evidence files.
     """
 
-    academic_reputation: str = ""
-    citations_per_faculty: str = ""
+    academic_reputation: int = 0
+    citations_per_faculty: int = 0
     employer_reputation: str = ""
     employment_outcomes: str = ""
     international_research_network: str = ""
@@ -28,11 +29,23 @@ class DashboardState(rx.State):
     is_saving: bool = False
 
     @rx.var
+    def academic_reputation_points(self) -> float:
+        return round(float(self.academic_reputation) * 0.3, 1)
+
+    @rx.var
+    def citations_per_faculty_points(self) -> float:
+        return round(float(self.citations_per_faculty) * 0.2, 1)
+
+    @rx.var
+    def research_section_total(self) -> float:
+        return round(
+            self.academic_reputation_points + self.citations_per_faculty_points, 1
+        )
+
+    @rx.var
     def progress(self) -> int:
         """Calculate completion progress based on filled fields."""
-        fields = [
-            self.academic_reputation,
-            self.citations_per_faculty,
+        str_fields = [
             self.employer_reputation,
             self.employment_outcomes,
             self.international_research_network,
@@ -41,17 +54,35 @@ class DashboardState(rx.State):
             self.faculty_student_ratio,
             self.sustainability_metrics,
         ]
-        filled_count = len([f for f in fields if f.strip() != ""])
+        filled_count = len([f for f in str_fields if f.strip() != ""])
+        if self.academic_reputation > 0:
+            filled_count += 1
+        if self.citations_per_faculty > 0:
+            filled_count += 1
         total_fields = 9
         return int(filled_count / total_fields * 100)
 
     @rx.event
-    def set_academic_reputation(self, value: str):
-        self.academic_reputation = value
+    def set_academic_reputation(self, value: list[int] | str):
+        if isinstance(value, list):
+            self.academic_reputation = value[0]
+        else:
+            try:
+                self.academic_reputation = int(value)
+            except ValueError as e:
+                logging.exception(f"Error parsing academic reputation: {e}")
+                self.academic_reputation = 0
 
     @rx.event
-    def set_citations_per_faculty(self, value: str):
-        self.citations_per_faculty = value
+    def set_citations_per_faculty(self, value: list[int] | str):
+        if isinstance(value, list):
+            self.citations_per_faculty = value[0]
+        else:
+            try:
+                self.citations_per_faculty = int(value)
+            except ValueError as e:
+                logging.exception(f"Error parsing citations per faculty: {e}")
+                self.citations_per_faculty = 0
 
     @rx.event
     def set_employer_reputation(self, value: str):
@@ -168,12 +199,24 @@ class DashboardState(rx.State):
             async with self:
                 for code, value, evidence in data:
                     if code == "academic_reputation":
-                        self.academic_reputation = value
+                        try:
+                            self.academic_reputation = int(float(value))
+                        except (ValueError, TypeError) as e:
+                            logging.exception(
+                                f"Error loading academic reputation from DB: {e}"
+                            )
+                            self.academic_reputation = 0
                         self.uploaded_research_files = (
                             json.loads(evidence) if evidence else []
                         )
                     elif code == "citations_per_faculty":
-                        self.citations_per_faculty = value
+                        try:
+                            self.citations_per_faculty = int(float(value))
+                        except (ValueError, TypeError) as e:
+                            logging.exception(
+                                f"Error loading citations per faculty from DB: {e}"
+                            )
+                            self.citations_per_faculty = 0
                     elif code == "employer_reputation":
                         self.employer_reputation = value
                         self.uploaded_employability_files = (
@@ -315,10 +358,10 @@ class DashboardState(rx.State):
             institution_id = int(hei_state.selected_hei["id"])
             scores_map = {
                 "academic_reputation": (
-                    self.academic_reputation,
+                    str(self.academic_reputation),
                     self.uploaded_research_files,
                 ),
-                "citations_per_faculty": (self.citations_per_faculty, []),
+                "citations_per_faculty": (str(self.citations_per_faculty), []),
                 "employer_reputation": (
                     self.employer_reputation,
                     self.uploaded_employability_files,

@@ -19,6 +19,48 @@ def form_input(
     )
 
 
+def synced_slider_input(
+    label: str,
+    value: rx.Var,
+    points: rx.Var,
+    max_points: int,
+    on_change: rx.event.EventType,
+) -> rx.Component:
+    """Synced slider and number input for weighted metrics."""
+    return rx.el.div(
+        rx.el.div(
+            rx.el.label(label, class_name="text-sm font-medium text-gray-700"),
+            rx.el.span(
+                f"{points} / {max_points} pts",
+                class_name="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full",
+            ),
+            class_name="flex items-center justify-between mb-2",
+        ),
+        rx.el.div(
+            rx.el.input(
+                type="range",
+                key=value.to_string(),
+                default_value=value.to_string(),
+                on_change=on_change.throttle(500),
+                min=0,
+                max=100,
+                step=1,
+                class_name="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600",
+            ),
+            rx.el.input(
+                type="number",
+                min=0,
+                max=100,
+                default_value=value.to_string(),
+                on_change=on_change,
+                class_name="w-20 px-2 py-1 bg-white border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-blue-500 outline-none transition-colors",
+            ),
+            class_name="flex items-center gap-4",
+        ),
+        class_name="mb-6 p-4 bg-gray-50/50 rounded-xl border border-gray-100",
+    )
+
+
 def file_upload_section(
     label: str,
     upload_id: str,
@@ -211,17 +253,42 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    form_input(
-                        "Academic Reputation Score",
-                        "e.g. 85/100 (Weight: 30%)",
+                    synced_slider_input(
+                        "Academic Reputation",
                         DashboardState.academic_reputation,
+                        DashboardState.academic_reputation_points,
+                        30,
                         DashboardState.set_academic_reputation,
                     ),
-                    form_input(
+                    synced_slider_input(
                         "Citations per Faculty",
-                        "e.g. 15.4 (Weight: 20%)",
                         DashboardState.citations_per_faculty,
+                        DashboardState.citations_per_faculty_points,
+                        20,
                         DashboardState.set_citations_per_faculty,
+                    ),
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.p(
+                                "Research Section Total",
+                                class_name="text-sm font-semibold text-gray-500 uppercase tracking-wider",
+                            ),
+                            rx.el.p(
+                                f"{DashboardState.research_section_total} / 50 pts",
+                                class_name="text-xl font-black text-gray-900",
+                            ),
+                            class_name="flex flex-col",
+                        ),
+                        rx.el.div(
+                            rx.el.div(
+                                class_name="bg-blue-600 h-2 rounded-full transition-all duration-300",
+                                style={
+                                    "width": f"{DashboardState.research_section_total / 50 * 100}%"
+                                },
+                            ),
+                            class_name="w-full bg-gray-200 rounded-full h-2 mt-2",
+                        ),
+                        class_name="bg-white border border-gray-200 p-4 rounded-xl shadow-sm mt-4",
                     ),
                     class_name="space-y-1",
                 ),
