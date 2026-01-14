@@ -27,7 +27,7 @@ def synced_slider_input(
     on_change: rx.event.EventType,
 ) -> rx.Component:
     """Synced slider and number input for weighted metrics with prominent value display."""
-    intervals = [0, 25, 50, 75, 100]
+    intervals = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
     return rx.el.div(
         rx.el.div(
             rx.el.label(label, class_name="text-sm font-semibold text-gray-700"),
