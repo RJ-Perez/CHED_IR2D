@@ -115,22 +115,43 @@ def file_upload_section(
     upload_id: str,
     handle_upload_event: rx.event.EventType,
     uploaded_files: rx.Var,
+    is_uploading: rx.Var,
+    delete_event: rx.event.EventType,
 ) -> rx.Component:
-    """Reusable file upload section."""
+    """Reusable file upload section with auto-upload and progress."""
     return rx.el.div(
         rx.el.label(label, class_name="block text-sm font-medium text-gray-700 mb-2"),
         rx.el.div(
             rx.upload.root(
                 rx.el.div(
-                    rx.icon("cloud-upload", class_name="h-8 w-8 text-gray-400 mb-2"),
-                    rx.el.p(
-                        "Drag & drop evidence files here",
-                        class_name="text-sm text-gray-500",
+                    rx.cond(
+                        is_uploading,
+                        rx.el.div(
+                            rx.el.div(
+                                class_name="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"
+                            ),
+                            rx.el.p(
+                                "Uploading files...",
+                                class_name="text-sm text-blue-600 font-medium animate-pulse",
+                            ),
+                            class_name="flex flex-col items-center",
+                        ),
+                        rx.el.div(
+                            rx.icon(
+                                "cloud-upload", class_name="h-8 w-8 text-gray-400 mb-2"
+                            ),
+                            rx.el.p(
+                                "Drag & drop evidence files here",
+                                class_name="text-sm text-gray-500",
+                            ),
+                            rx.el.p(
+                                "or click to browse",
+                                class_name="text-xs text-gray-400 mt-1",
+                            ),
+                            class_name="flex flex-col items-center",
+                        ),
                     ),
-                    rx.el.p(
-                        "or click to browse", class_name="text-xs text-gray-400 mt-1"
-                    ),
-                    class_name="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer",
+                    class_name="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer min-h-[140px]",
                 ),
                 id=upload_id,
                 accept={
@@ -140,23 +161,8 @@ def file_upload_section(
                 },
                 multiple=True,
                 max_files=5,
+                on_drop=handle_upload_event(rx.upload_files(upload_id=upload_id)),
                 class_name="w-full",
-            ),
-            rx.el.div(
-                rx.foreach(
-                    rx.selected_files(upload_id),
-                    lambda file: rx.el.div(
-                        rx.icon("file", class_name="h-4 w-4 mr-2"),
-                        rx.el.span(file),
-                        class_name="flex items-center text-sm text-gray-600 mt-1",
-                    ),
-                ),
-                class_name="mt-2",
-            ),
-            rx.el.button(
-                "Upload Selected Files",
-                on_click=handle_upload_event(rx.upload_files(upload_id=upload_id)),
-                class_name="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium",
             ),
             class_name="mb-4",
         ),
@@ -167,26 +173,39 @@ def file_upload_section(
             ),
             rx.cond(
                 uploaded_files.length() > 0,
-                rx.foreach(
-                    uploaded_files,
-                    lambda file: rx.el.div(
-                        rx.icon(
-                            "check_check", class_name="h-4 w-4 text-green-500 mr-2"
+                rx.el.div(
+                    rx.foreach(
+                        uploaded_files,
+                        lambda file: rx.el.div(
+                            rx.el.div(
+                                rx.icon(
+                                    "check_check",
+                                    class_name="h-4 w-4 text-green-500 mr-2 flex-shrink-0",
+                                ),
+                                rx.el.a(
+                                    file.split("/").reverse()[0],
+                                    href=rx.get_upload_url(file),
+                                    target="_blank",
+                                    class_name="hover:underline text-blue-600 truncate",
+                                ),
+                                class_name="flex items-center min-w-0",
+                            ),
+                            rx.el.button(
+                                rx.icon("x", class_name="h-4 w-4"),
+                                on_click=lambda: delete_event(file),
+                                class_name="p-1 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50",
+                                title="Remove file",
+                            ),
+                            class_name="flex items-center justify-between text-sm py-1.5 px-2 bg-white border border-gray-100 rounded-lg mb-1 shadow-sm",
                         ),
-                        rx.el.a(
-                            file,
-                            href=rx.get_upload_url(file),
-                            target="_blank",
-                            class_name="hover:underline text-blue-600",
-                        ),
-                        class_name="flex items-center text-sm py-1",
                     ),
+                    class_name="space-y-1",
                 ),
                 rx.el.p(
                     "No files uploaded yet.", class_name="text-sm text-gray-400 italic"
                 ),
             ),
-            class_name="bg-gray-50 p-3 rounded-lg border border-gray-100",
+            class_name="bg-gray-50 p-3 rounded-xl border border-gray-100",
         ),
         class_name="mt-2",
     )
@@ -347,6 +366,8 @@ def data_entry_forms() -> rx.Component:
                         "upload_research",
                         DashboardState.handle_research_upload,
                         DashboardState.uploaded_research_files,
+                        DashboardState.is_uploading_research,
+                        DashboardState.delete_research_file,
                     ),
                     class_name="mt-4 pt-6 border-t border-gray-100",
                 ),
@@ -416,6 +437,8 @@ def data_entry_forms() -> rx.Component:
                         "upload_employability",
                         DashboardState.handle_employability_upload,
                         DashboardState.uploaded_employability_files,
+                        DashboardState.is_uploading_employability,
+                        DashboardState.delete_employability_file,
                     ),
                     class_name="mt-4 pt-6 border-t border-gray-100",
                 ),
@@ -498,6 +521,8 @@ def data_entry_forms() -> rx.Component:
                         "upload_global_engagement",
                         DashboardState.handle_global_engagement_upload,
                         DashboardState.uploaded_global_engagement_files,
+                        DashboardState.is_uploading_global_engagement,
+                        DashboardState.delete_global_engagement_file,
                     ),
                     class_name="mt-4 pt-6 border-t border-gray-100",
                 ),
@@ -560,6 +585,8 @@ def data_entry_forms() -> rx.Component:
                         "upload_learning_experience",
                         DashboardState.handle_learning_experience_upload,
                         DashboardState.uploaded_learning_experience_files,
+                        DashboardState.is_uploading_learning_experience,
+                        DashboardState.delete_learning_experience_file,
                     ),
                     class_name="mt-4 pt-6 border-t border-gray-100",
                 ),
@@ -621,6 +648,8 @@ def data_entry_forms() -> rx.Component:
                         "upload_sustainability",
                         DashboardState.handle_sustainability_upload,
                         DashboardState.uploaded_sustainability_files,
+                        DashboardState.is_uploading_sustainability,
+                        DashboardState.delete_sustainability_file,
                     ),
                     class_name="mt-4 pt-6 border-t border-gray-100",
                 ),

@@ -27,6 +27,11 @@ class DashboardState(rx.State):
     uploaded_learning_experience_files: list[str] = []
     uploaded_sustainability_files: list[str] = []
     is_saving: bool = False
+    is_uploading_research: bool = False
+    is_uploading_employability: bool = False
+    is_uploading_global_engagement: bool = False
+    is_uploading_learning_experience: bool = False
+    is_uploading_sustainability: bool = False
 
     @rx.var
     def academic_reputation_points(self) -> float:
@@ -234,42 +239,87 @@ class DashboardState(rx.State):
     @rx.event
     async def handle_research_upload(self, files: list[rx.UploadFile]):
         """Handle file upload for Research section with unique directory."""
+        self.is_uploading_research = True
         for file in files:
             saved_path = await self._save_uploaded_file(file, "research")
             if saved_path:
                 self.uploaded_research_files.append(saved_path)
+        self.is_uploading_research = False
+        yield rx.toast.success(f"Uploaded {len(files)} file(s) to Research")
 
     @rx.event
     async def handle_employability_upload(self, files: list[rx.UploadFile]):
         """Handle file upload for Employability section with unique directory."""
+        self.is_uploading_employability = True
         for file in files:
             saved_path = await self._save_uploaded_file(file, "employability")
             if saved_path:
                 self.uploaded_employability_files.append(saved_path)
+        self.is_uploading_employability = False
+        yield rx.toast.success(f"Uploaded {len(files)} file(s) to Employability")
 
     @rx.event
     async def handle_global_engagement_upload(self, files: list[rx.UploadFile]):
         """Handle file upload for Global Engagement section with unique directory."""
+        self.is_uploading_global_engagement = True
         for file in files:
             saved_path = await self._save_uploaded_file(file, "global_engagement")
             if saved_path:
                 self.uploaded_global_engagement_files.append(saved_path)
+        self.is_uploading_global_engagement = False
+        yield rx.toast.success(f"Uploaded {len(files)} file(s) to Global Engagement")
 
     @rx.event
     async def handle_learning_experience_upload(self, files: list[rx.UploadFile]):
         """Handle file upload for Learning Experience section with unique directory."""
+        self.is_uploading_learning_experience = True
         for file in files:
             saved_path = await self._save_uploaded_file(file, "learning_experience")
             if saved_path:
                 self.uploaded_learning_experience_files.append(saved_path)
+        self.is_uploading_learning_experience = False
+        yield rx.toast.success(f"Uploaded {len(files)} file(s) to Learning Experience")
 
     @rx.event
     async def handle_sustainability_upload(self, files: list[rx.UploadFile]):
         """Handle file upload for Sustainability section with unique directory."""
+        self.is_uploading_sustainability = True
         for file in files:
             saved_path = await self._save_uploaded_file(file, "sustainability")
             if saved_path:
                 self.uploaded_sustainability_files.append(saved_path)
+        self.is_uploading_sustainability = False
+        yield rx.toast.success(f"Uploaded {len(files)} file(s) to Sustainability")
+
+    @rx.event
+    def delete_research_file(self, filename: str):
+        self.uploaded_research_files = [
+            f for f in self.uploaded_research_files if f != filename
+        ]
+
+    @rx.event
+    def delete_employability_file(self, filename: str):
+        self.uploaded_employability_files = [
+            f for f in self.uploaded_employability_files if f != filename
+        ]
+
+    @rx.event
+    def delete_global_engagement_file(self, filename: str):
+        self.uploaded_global_engagement_files = [
+            f for f in self.uploaded_global_engagement_files if f != filename
+        ]
+
+    @rx.event
+    def delete_learning_experience_file(self, filename: str):
+        self.uploaded_learning_experience_files = [
+            f for f in self.uploaded_learning_experience_files if f != filename
+        ]
+
+    @rx.event
+    def delete_sustainability_file(self, filename: str):
+        self.uploaded_sustainability_files = [
+            f for f in self.uploaded_sustainability_files if f != filename
+        ]
 
     @rx.event(background=True)
     async def on_load(self):
