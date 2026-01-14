@@ -326,8 +326,19 @@ class AnalyticsState(rx.State):
                         )
                         raise e
             if not response_text or not response_text.strip():
-                logging.warning("Received empty text from Google AI after retries.")
-                raise Exception("Empty response from Google AI")
+                logging.info(
+                    "Google AI returned an empty response. Falling back to rule-based recommendations."
+                )
+                async with self:
+                    self.ai_recommendations = self._get_fallback_recommendations(
+                        research_score,
+                        employability_score,
+                        global_engagement_score,
+                        learning_experience_score,
+                        sustainability_score,
+                    )
+                    self.is_generating_recommendations = False
+                return
             response_text = response_text.strip()
             if response_text.startswith(""):
                 response_text = response_text[7:]
@@ -337,9 +348,35 @@ class AnalyticsState(rx.State):
                 response_text = response_text[:-3]
             response_text = response_text.strip()
             if not response_text:
-                logging.warning("JSON response text is empty after cleaning.")
-                raise ValueError("Empty JSON response from Google AI")
-            recommendations_data = json.loads(response_text)
+                logging.info(
+                    "Cleaned AI response is empty. Falling back to rule-based recommendations."
+                )
+                async with self:
+                    self.ai_recommendations = self._get_fallback_recommendations(
+                        research_score,
+                        employability_score,
+                        global_engagement_score,
+                        learning_experience_score,
+                        sustainability_score,
+                    )
+                    self.is_generating_recommendations = False
+                return
+            try:
+                recommendations_data = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                logging.exception(
+                    f"Failed to parse AI JSON response: {e}. Raw response: {response_text[:100]}..."
+                )
+                async with self:
+                    self.ai_recommendations = self._get_fallback_recommendations(
+                        research_score,
+                        employability_score,
+                        global_engagement_score,
+                        learning_experience_score,
+                        sustainability_score,
+                    )
+                    self.is_generating_recommendations = False
+                return
             recommendations = []
             for rec in recommendations_data.get("recommendations", []):
                 category = rec.get("category", "Overall")
