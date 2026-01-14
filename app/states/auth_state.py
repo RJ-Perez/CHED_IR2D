@@ -177,32 +177,82 @@ class AuthState(GoogleAuthState):
 
     @rx.event(background=True)
     async def on_google_login(self):
-        """Triggered after Google sign-in. Verifies user in database."""
+        """Triggered after Google sign-in. Verifies user in database or creates new record."""
         async with self:
             if not self.token_is_valid:
                 return
             user_email = self.tokeninfo.get("email")
             google_id = self.tokeninfo.get("sub")
+            first_name = self.tokeninfo.get("given_name", "")
+            last_name = self.tokeninfo.get("family_name", "")
         async with rx.asession() as asession:
             result = await asession.execute(
                 text("""
-                SELECT id, email, auth_provider 
+                SELECT id, auth_provider 
                 FROM users 
                 WHERE google_id = :google_id OR email = :email
                 """),
                 {"google_id": google_id, "email": user_email},
             )
             user = result.first()
+            now = datetime.datetime.now(datetime.timezone.utc)
+            if user:
+                user_id = user[0]
+                await asession.execute(
+                    text("""
+                    UPDATE users 
+                    SET google_id = :google_id, 
+                        last_login = :now 
+                    WHERE id = :id
+                    """),
+                    {"google_id": google_id, "now": now, "id": user_id},
+                )
+            else:
+                insert_result = await asession.execute(
+                    text("""
+                    INSERT INTO users (
+                        first_name, 
+                        last_name, 
+                        position, 
+                        institution_name, 
+                        email, 
+                        google_id, 
+                        auth_provider, 
+                        last_login
+                    )
+                    VALUES (
+                        :first_name, 
+                        :last_name, 
+                        '', 
+                        '', 
+                        :email, 
+                        :google_id, 
+                        'google', 
+                        :now
+                    )
+                    RETURNING id
+                    """),
+                    {
+                        "first_name": first_name,
+                        "last_name": last_name,
+                        "email": user_email,
+                        "google_id": google_id,
+                        "now": now,
+                    },
+                )
+                new_user_row = insert_result.first()
+                user_id = new_user_row[0] if new_user_row else None
+            await asession.commit()
             async with self:
-                if user:
-                    self.authenticated_user_id = user[0]
-                    yield rx.toast(f"Logged in via Google: {user_email}", duration=3000)
+                if user_id:
+                    self.authenticated_user_id = user_id
+                    yield rx.toast(f"Logged in as {user_email}", duration=3000)
                     yield rx.redirect("/hei-selection")
                 else:
+                    self.error_message = "Authentication failed during database sync."
                     yield rx.toast(
-                        f"Welcome {user_email}! New account detected.", duration=3000
+                        "An error occurred. Please try again.", duration=3000
                     )
-                    yield rx.redirect("/hei-selection")
 
     @rx.event
     def logout(self):
