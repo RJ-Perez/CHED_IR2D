@@ -148,11 +148,7 @@ class ReportsState(rx.State):
                     if b_int_student_ratio
                     else 0
                 )
-                s_faculty_student = (
-                    min(100, b_faculty_student_ratio / faculty_student_ratio * 100)
-                    if faculty_student_ratio > 0
-                    else 0
-                )
+                s_faculty_student = min(100, faculty_student_ratio)
                 s_sustainability = (
                     min(100, sustainability / b_sustainability * 100)
                     if b_sustainability
