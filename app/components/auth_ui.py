@@ -187,7 +187,10 @@ def auth_form() -> rx.Component:
             class_name="flex items-center my-6",
         ),
         google_oauth_provider(
-            rx.el.div(google_login(), class_name="w-full flex justify-center")
+            rx.el.div(
+                google_login(on_success=AuthState.on_google_login),
+                class_name="w-full flex justify-center",
+            )
         ),
         rx.el.div(
             rx.cond(

@@ -178,8 +178,10 @@ class AuthState(GoogleAuthState):
     @rx.event(background=True)
     async def on_google_login(self):
         """Triggered after Google sign-in. Verifies user in database or creates new record."""
+        await asyncio.sleep(0.5)
         async with self:
             if not self.token_is_valid:
+                logging.warning("Google token is not valid yet.")
                 return
             user_email = self.tokeninfo.get("email")
             google_id = self.tokeninfo.get("sub")
