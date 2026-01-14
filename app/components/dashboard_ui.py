@@ -26,15 +26,21 @@ def synced_slider_input(
     max_points: int,
     on_change: rx.event.EventType,
 ) -> rx.Component:
-    """Synced slider and number input for weighted metrics."""
+    """Synced slider and number input for weighted metrics with prominent value display."""
     return rx.el.div(
         rx.el.div(
-            rx.el.label(label, class_name="text-sm font-medium text-gray-700"),
+            rx.el.label(label, class_name="text-sm font-semibold text-gray-700"),
             rx.el.span(
                 f"{points} / {max_points} pts",
-                class_name="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full",
+                class_name="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100",
             ),
             class_name="flex items-center justify-between mb-2",
+        ),
+        rx.el.div(
+            rx.el.span(
+                value.to_string(), class_name="text-3xl font-black text-blue-700 mb-1"
+            ),
+            class_name="flex justify-center w-full",
         ),
         rx.el.div(
             rx.el.input(
@@ -45,11 +51,31 @@ def synced_slider_input(
                 min=0,
                 max=100,
                 step=1,
-                class_name="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600",
+                class_name="""
+                    w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer 
+                    accent-blue-700 hover:accent-blue-800 transition-all
+                    [&::-webkit-slider-thumb]:appearance-none 
+                    [&::-webkit-slider-thumb]:w-6 
+                    [&::-webkit-slider-thumb]:h-6 
+                    [&::-webkit-slider-thumb]:bg-white 
+                    [&::-webkit-slider-thumb]:rounded-full 
+                    [&::-webkit-slider-thumb]:border-4 
+                    [&::-webkit-slider-thumb]:border-blue-700
+                    [&::-webkit-slider-thumb]:shadow-md
+                    [&::-webkit-slider-thumb]:cursor-pointer
+                    [&::-moz-range-thumb]:w-6 
+                    [&::-moz-range-thumb]:h-6 
+                    [&::-moz-range-thumb]:bg-white 
+                    [&::-moz-range-thumb]:rounded-full 
+                    [&::-moz-range-thumb]:border-4 
+                    [&::-moz-range-thumb]:border-blue-700
+                    [&::-moz-range-thumb]:shadow-md
+                    [&::-moz-range-thumb]:cursor-pointer
+                """,
             ),
-            class_name="flex items-center",
+            class_name="flex items-center px-2 py-2",
         ),
-        class_name="mb-6 p-4 bg-gray-50/50 rounded-xl border border-gray-100",
+        class_name="mb-6 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm",
     )
 
 
