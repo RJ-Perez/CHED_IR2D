@@ -287,6 +287,7 @@ class HEIState(rx.State):
         self.search_query = hei["name"]
         self.search_results = []
         self.is_registration_mode = False
+        return rx.toast(f"Selected: {hei['name']}")
 
     @rx.event
     def set_ranking_framework(self, framework: str):

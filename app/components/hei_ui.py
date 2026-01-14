@@ -208,7 +208,8 @@ def selection_screen_content() -> rx.Component:
                             class_name="relative mb-2",
                         ),
                         rx.cond(
-                            HEIState.search_query.length() > 0 & ~HEIState.selected_hei,
+                            (HEIState.search_query.length() > 0)
+                            & ~HEIState.selected_hei.to(bool),
                             rx.el.div(
                                 rx.match(
                                     HEIState.is_searching,
