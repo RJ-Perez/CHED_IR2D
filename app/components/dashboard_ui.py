@@ -192,7 +192,7 @@ def file_upload_section(
                             ),
                             rx.el.button(
                                 rx.icon("x", class_name="h-4 w-4"),
-                                on_click=lambda: delete_event(file),
+                                on_click=delete_event(file),
                                 class_name="p-1 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50",
                                 title="Remove file",
                             ),
