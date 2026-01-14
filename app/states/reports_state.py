@@ -5,7 +5,23 @@ import io
 import csv
 import json
 import logging
+import os
+import re
+import asyncio
 from sqlalchemy import text
+
+try:
+    from google import genai
+    from google.genai import types
+
+    GOOGLE_AI_API_KEY = os.getenv("GOOGLE_API_KEY")
+    GOOGLE_AI_AVAILABLE = bool(GOOGLE_AI_API_KEY)
+except ImportError as e:
+    logging.exception(f"google-genai package not installed: {e}")
+    GOOGLE_AI_AVAILABLE = False
+except Exception as e:
+    logging.exception(f"Error configuring Google AI: {e}")
+    GOOGLE_AI_AVAILABLE = False
 
 
 class ReportItem(TypedDict):
@@ -28,6 +44,9 @@ class ReportsState(rx.State):
     show_delete_modal: bool = False
     reports: list[ReportItem] = []
     search_query: str = ""
+    selected_report_id: str = ""
+    selected_report_recommendations: list[dict[str, str]] = []
+    is_generating_report_recommendations: bool = False
 
     def _parse_float(self, value: str) -> float:
         try:
@@ -335,3 +354,173 @@ class ReportsState(rx.State):
             duration=3000,
             position="top-center",
         )
+
+    @rx.event(background=True)
+    async def select_report_for_analysis(self, report_id: str):
+        """Selects a report and triggers recommendation generation."""
+        async with self:
+            self.selected_report_id = report_id
+            self.selected_report_recommendations = []
+            if not report_id:
+                return
+        report = next((r for r in self.reports if r["id"] == report_id), None)
+        if not report:
+            return
+        yield ReportsState.generate_report_recommendations(report)
+
+    @rx.event(background=True)
+    async def generate_report_recommendations(self, report: dict):
+        """Generate AI recommendations for a specific report."""
+        async with self:
+            self.is_generating_report_recommendations = True
+        research_score = report["research_score"]
+        employability_score = report["employability_score"]
+        global_engagement_score = report["global_engagement_score"]
+        learning_experience_score = report["learning_experience_score"]
+        sustainability_score = report["sustainability_score"]
+        overall_score = report["overall_score"]
+        institution_name = report["name"]
+        if not GOOGLE_AI_AVAILABLE:
+            async with self:
+                self.selected_report_recommendations = (
+                    self._get_fallback_recommendations(
+                        research_score,
+                        employability_score,
+                        global_engagement_score,
+                        learning_experience_score,
+                        sustainability_score,
+                    )
+                )
+                self.is_generating_report_recommendations = False
+            return
+        try:
+            performance_summary = f"\nAnalysis for {institution_name}:\n- Overall Readiness Score: {overall_score}/100\n- Research & Discovery: {research_score}/100\n- Employability: {employability_score}/100\n- Global Engagement: {global_engagement_score}/100\n- Learning Experience: {learning_experience_score}/100\n- Sustainability: {sustainability_score}/100\n"
+            weak_areas = []
+            if research_score < 70:
+                weak_areas.append("Research")
+            if employability_score < 70:
+                weak_areas.append("Employability")
+            if global_engagement_score < 70:
+                weak_areas.append("Global Engagement")
+            if learning_experience_score < 70:
+                weak_areas.append("Learning Experience")
+            if sustainability_score < 70:
+                weak_areas.append("Sustainability")
+            prompt = f"""You are an expert higher education consultant. Analyze the following performance data for {institution_name} in the Philippines and provide 3 strategic, actionable recommendations to improve their international ranking readiness.\n\n{performance_summary}\n\nFocus areas: {(", ".join(weak_areas) if weak_areas else "General Excellence")}\n\nProvide recommendations in JSON format with this structure:\n{{\n  "recommendations": [\n    {{\n      "title": "Short, actionable title (max 8 words)",\n      "description": "Detailed recommendation (2 sentences) explaining strategies specific to the metric",\n      "category": "Research & Discovery|Employability|Global Engagement|Learning Experience|Sustainability|Overall",\n      "priority": "High|Medium|Low"\n    }}\n  ]\n}}\n\nReturn ONLY valid JSON."""
+            client = genai.Client(api_key=GOOGLE_AI_API_KEY)
+            response = await client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json"
+                ),
+            )
+            if not response or not response.text:
+                raise Exception("Empty AI response")
+            response_text = response.text
+            json_match = re.search("\\{.*\\}", response_text, re.DOTALL)
+            if json_match:
+                response_text = json_match.group(0)
+            recommendations_data = json.loads(response_text)
+            recommendations = []
+            for rec in recommendations_data.get("recommendations", []):
+                category = rec.get("category", "Overall")
+                if "Research" in category:
+                    icon = "microscope"
+                    color_class = "text-purple-600"
+                    bg_class = "bg-purple-50 border-purple-100"
+                elif "Employability" in category:
+                    icon = "briefcase"
+                    color_class = "text-emerald-600"
+                    bg_class = "bg-emerald-50 border-emerald-100"
+                elif "Global" in category:
+                    icon = "globe"
+                    color_class = "text-blue-600"
+                    bg_class = "bg-blue-50 border-blue-100"
+                elif "Learning" in category:
+                    icon = "graduation-cap"
+                    color_class = "text-indigo-600"
+                    bg_class = "bg-indigo-50 border-indigo-100"
+                elif "Sustainability" in category:
+                    icon = "leaf"
+                    color_class = "text-green-600"
+                    bg_class = "bg-green-50 border-green-100"
+                else:
+                    icon = "lightbulb"
+                    color_class = "text-amber-600"
+                    bg_class = "bg-amber-50 border-amber-100"
+                recommendations.append(
+                    {
+                        "title": rec.get("title", "Strategic Insight"),
+                        "description": rec.get("description", ""),
+                        "category": category,
+                        "priority": rec.get("priority", "Medium"),
+                        "icon": icon,
+                        "color_class": color_class,
+                        "bg_class": bg_class,
+                    }
+                )
+            async with self:
+                self.selected_report_recommendations = recommendations
+                self.is_generating_report_recommendations = False
+        except Exception as e:
+            logging.exception(f"Error generating report recommendations: {e}")
+            async with self:
+                self.selected_report_recommendations = (
+                    self._get_fallback_recommendations(
+                        research_score,
+                        employability_score,
+                        global_engagement_score,
+                        learning_experience_score,
+                        sustainability_score,
+                    )
+                )
+                self.is_generating_report_recommendations = False
+
+    def _get_fallback_recommendations(
+        self,
+        research_score: int,
+        employability_score: int,
+        global_engagement_score: int,
+        learning_experience_score: int,
+        sustainability_score: int,
+    ) -> list[dict[str, str]]:
+        """Generate fallback recommendations for reports."""
+        recommendations = []
+        if research_score < 75:
+            recommendations.append(
+                {
+                    "title": "Boost Research Output",
+                    "description": "Focus on increasing faculty publication rates in indexed journals to improve academic reputation and citations.",
+                    "category": "Research & Discovery",
+                    "priority": "High",
+                    "icon": "microscope",
+                    "color_class": "text-purple-600",
+                    "bg_class": "bg-purple-50 border-purple-100",
+                }
+            )
+        if employability_score < 75:
+            recommendations.append(
+                {
+                    "title": "Strengthen Industry Ties",
+                    "description": "Expand partnership programs with key industry players to improve graduate employability and employer reputation scores.",
+                    "category": "Employability",
+                    "priority": "High",
+                    "icon": "briefcase",
+                    "color_class": "text-emerald-600",
+                    "bg_class": "bg-emerald-50 border-emerald-100",
+                }
+            )
+        if not recommendations:
+            recommendations.append(
+                {
+                    "title": "Maintain Performance",
+                    "description": "Current metrics are strong. Focus on sustainability and long-term strategic planning to maintain leadership.",
+                    "category": "Overall",
+                    "priority": "Medium",
+                    "icon": "bar-chart-2",
+                    "color_class": "text-blue-600",
+                    "bg_class": "bg-blue-50 border-blue-100",
+                }
+            )
+        return recommendations

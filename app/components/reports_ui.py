@@ -200,6 +200,106 @@ def report_table_row(report: ReportItem) -> rx.Component:
     )
 
 
+def report_recommendation_card(rec: dict) -> rx.Component:
+    """Card component for AI recommendations in reports."""
+    return rx.el.div(
+        rx.icon(
+            rec["icon"], class_name=f"h-6 w-6 {rec['color_class']} mr-4 flex-shrink-0"
+        ),
+        rx.el.div(
+            rx.el.div(
+                rx.el.h5(rec["title"], class_name="font-semibold text-gray-900"),
+                rx.el.span(
+                    rec["priority"],
+                    class_name=f"ml-2 text-xs px-2 py-1 rounded-full {rec['bg_class']} {rec['color_class']} font-medium",
+                ),
+                class_name="flex items-center",
+            ),
+            rx.el.p(rec["description"], class_name="text-sm text-gray-600 mt-2"),
+            rx.el.span(rec["category"], class_name="text-xs text-gray-400 mt-2 block"),
+        ),
+        class_name=f"flex items-start p-4 {rec['bg_class']} border rounded-xl",
+    )
+
+
+def ai_analysis_section() -> rx.Component:
+    """Section for AI-powered strategic recommendations."""
+    return rx.el.div(
+        rx.el.div(
+            rx.el.div(
+                rx.icon("sparkles", class_name="h-6 w-6 text-purple-600 mr-2"),
+                rx.el.h3(
+                    "AI-Powered Strategic Recommendations",
+                    class_name="text-xl font-bold text-gray-900",
+                ),
+                class_name="flex items-center mb-2",
+            ),
+            rx.el.p(
+                "Select an institution to generate data-driven improvement strategies based on their assessment scores.",
+                class_name="text-gray-600 mb-6",
+            ),
+            rx.el.div(
+                rx.el.select(
+                    rx.el.option("Select Institution for Analysis...", value=""),
+                    rx.foreach(
+                        ReportsState.reports,
+                        lambda r: rx.el.option(r["name"], value=r["id"]),
+                    ),
+                    on_change=ReportsState.select_report_for_analysis,
+                    value=ReportsState.selected_report_id,
+                    class_name="w-full md:w-80 px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm appearance-none",
+                ),
+                class_name="mb-8",
+            ),
+        ),
+        rx.cond(
+            ReportsState.selected_report_id != "",
+            rx.cond(
+                ReportsState.is_generating_report_recommendations,
+                rx.el.div(
+                    rx.el.div(
+                        class_name="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"
+                    ),
+                    rx.el.p(
+                        "Generating strategic insights...",
+                        class_name="text-sm text-gray-600 mt-3 text-center",
+                    ),
+                    class_name="flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-gray-200",
+                ),
+                rx.cond(
+                    ReportsState.selected_report_recommendations.length() > 0,
+                    rx.el.div(
+                        rx.foreach(
+                            ReportsState.selected_report_recommendations,
+                            report_recommendation_card,
+                        ),
+                        class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4",
+                    ),
+                    rx.el.div(
+                        rx.el.p(
+                            "No recommendations available for this report.",
+                            class_name="text-sm text-gray-500 italic",
+                        ),
+                        class_name="p-8 text-center bg-gray-50 rounded-xl border border-gray-200",
+                    ),
+                ),
+            ),
+            rx.el.div(
+                rx.el.div(
+                    rx.icon("bar-chart-2", class_name="h-12 w-12 text-gray-300 mb-3"),
+                    rx.el.p(
+                        "Select an institution above to view AI recommendations",
+                        class_name="text-gray-500 font-medium",
+                    ),
+                    class_name="flex flex-col items-center justify-center h-48",
+                ),
+                class_name="bg-white rounded-xl border border-dashed border-gray-300",
+            ),
+        ),
+        class_name="mt-12 pt-8 border-t border-gray-200",
+    )
+
+
 def delete_report_modal() -> rx.Component:
     """Delete report confirmation modal component."""
     return rx.cond(
@@ -364,5 +464,6 @@ def reports_dashboard_ui() -> rx.Component:
             ),
             class_name="bg-white rounded-lg shadow-md p-6",
         ),
+        ai_analysis_section(),
         class_name="p-6 max-w-7xl mx-auto",
     )
