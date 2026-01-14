@@ -371,17 +371,42 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    form_input(
-                        "Employer Reputation Score",
-                        "e.g. 85/100 (Weight: 15%)",
+                    synced_slider_input(
+                        "Employer Reputation",
                         DashboardState.employer_reputation,
+                        DashboardState.employer_reputation_points,
+                        15,
                         DashboardState.set_employer_reputation,
                     ),
-                    form_input(
-                        "Employment Outcomes (Graduate Employment Rate %)",
-                        "e.g. 94.5 (Weight: 5%)",
+                    synced_slider_input(
+                        "Employment Outcomes",
                         DashboardState.employment_outcomes,
+                        DashboardState.employment_outcomes_points,
+                        5,
                         DashboardState.set_employment_outcomes,
+                    ),
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.p(
+                                "Employability Section Total",
+                                class_name="text-sm font-semibold text-gray-500 uppercase tracking-wider",
+                            ),
+                            rx.el.p(
+                                f"{DashboardState.employability_section_total} / 20 pts",
+                                class_name="text-xl font-black text-gray-900",
+                            ),
+                            class_name="flex flex-col",
+                        ),
+                        rx.el.div(
+                            rx.el.div(
+                                class_name="bg-blue-600 h-2 rounded-full transition-all duration-300",
+                                style={
+                                    "width": f"{DashboardState.employability_section_total / 20 * 100}%"
+                                },
+                            ),
+                            class_name="w-full bg-gray-200 rounded-full h-2 mt-2",
+                        ),
+                        class_name="bg-white border border-gray-200 p-4 rounded-xl shadow-sm mt-4",
                     ),
                     class_name="space-y-1",
                 ),
@@ -392,9 +417,9 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.handle_employability_upload,
                         DashboardState.uploaded_employability_files,
                     ),
-                    class_name="mt-2",
+                    class_name="mt-4 pt-6 border-t border-gray-100",
                 ),
-                class_name="grid grid-cols-1 lg:grid-cols-2 gap-8",
+                class_name="flex flex-col gap-4",
             ),
             class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6",
         ),
@@ -415,22 +440,25 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    form_input(
-                        "International Research Network Score",
-                        "e.g. 75/100 (Weight: 5%)",
+                    synced_slider_input(
+                        "International Research Network",
                         DashboardState.international_research_network,
+                        DashboardState.international_research_network_points,
+                        5,
                         DashboardState.set_international_research_network,
                     ),
-                    form_input(
-                        "International Faculty Ratio (%)",
-                        "e.g. 12.5 (Weight: 5%)",
+                    synced_slider_input(
+                        "International Faculty Ratio",
                         DashboardState.international_faculty_ratio,
+                        DashboardState.international_faculty_ratio_points,
+                        5,
                         DashboardState.set_international_faculty_ratio,
                     ),
-                    form_input(
-                        "International Student Ratio (%)",
-                        "e.g. 8.3 (Weight: 5%)",
+                    synced_slider_input(
+                        "International Student Ratio",
                         DashboardState.international_student_ratio,
+                        DashboardState.international_student_ratio_points,
+                        5,
                         DashboardState.set_international_student_ratio,
                     ),
                     form_input(
@@ -438,6 +466,29 @@ def data_entry_forms() -> rx.Component:
                         "e.g. 45 countries (Tracked, 0% weight)",
                         DashboardState.international_student_diversity,
                         DashboardState.set_international_student_diversity,
+                    ),
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.p(
+                                "Global Engagement Total",
+                                class_name="text-sm font-semibold text-gray-500 uppercase tracking-wider",
+                            ),
+                            rx.el.p(
+                                f"{DashboardState.global_engagement_section_total} / 15 pts",
+                                class_name="text-xl font-black text-gray-900",
+                            ),
+                            class_name="flex flex-col",
+                        ),
+                        rx.el.div(
+                            rx.el.div(
+                                class_name="bg-blue-600 h-2 rounded-full transition-all duration-300",
+                                style={
+                                    "width": f"{DashboardState.global_engagement_section_total / 15 * 100}%"
+                                },
+                            ),
+                            class_name="w-full bg-gray-200 rounded-full h-2 mt-2",
+                        ),
+                        class_name="bg-white border border-gray-200 p-4 rounded-xl shadow-sm mt-4",
                     ),
                     class_name="space-y-1",
                 ),
@@ -448,9 +499,9 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.handle_global_engagement_upload,
                         DashboardState.uploaded_global_engagement_files,
                     ),
-                    class_name="mt-2",
+                    class_name="mt-4 pt-6 border-t border-gray-100",
                 ),
-                class_name="grid grid-cols-1 lg:grid-cols-2 gap-8",
+                class_name="flex flex-col gap-4",
             ),
             class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6",
         ),
@@ -471,11 +522,35 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    form_input(
+                    synced_slider_input(
                         "Faculty-Student Ratio",
-                        "e.g. 1:15 (Weight: 10%)",
                         DashboardState.faculty_student_ratio,
+                        DashboardState.faculty_student_ratio_points,
+                        10,
                         DashboardState.set_faculty_student_ratio,
+                    ),
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.p(
+                                "Learning Experience Total",
+                                class_name="text-sm font-semibold text-gray-500 uppercase tracking-wider",
+                            ),
+                            rx.el.p(
+                                f"{DashboardState.learning_experience_section_total} / 10 pts",
+                                class_name="text-xl font-black text-gray-900",
+                            ),
+                            class_name="flex flex-col",
+                        ),
+                        rx.el.div(
+                            rx.el.div(
+                                class_name="bg-blue-600 h-2 rounded-full transition-all duration-300",
+                                style={
+                                    "width": f"{DashboardState.learning_experience_section_total / 10 * 100}%"
+                                },
+                            ),
+                            class_name="w-full bg-gray-200 rounded-full h-2 mt-2",
+                        ),
+                        class_name="bg-white border border-gray-200 p-4 rounded-xl shadow-sm mt-4",
                     ),
                     class_name="space-y-1",
                 ),
@@ -486,9 +561,9 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.handle_learning_experience_upload,
                         DashboardState.uploaded_learning_experience_files,
                     ),
-                    class_name="mt-2",
+                    class_name="mt-4 pt-6 border-t border-gray-100",
                 ),
-                class_name="grid grid-cols-1 lg:grid-cols-2 gap-8",
+                class_name="flex flex-col gap-4",
             ),
             class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6",
         ),
@@ -508,11 +583,35 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    form_input(
+                    synced_slider_input(
                         "Sustainability Metrics Score",
-                        "e.g. 80/100 (Weight: 5%)",
                         DashboardState.sustainability_metrics,
+                        DashboardState.sustainability_metrics_points,
+                        5,
                         DashboardState.set_sustainability_metrics,
+                    ),
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.p(
+                                "Sustainability Total",
+                                class_name="text-sm font-semibold text-gray-500 uppercase tracking-wider",
+                            ),
+                            rx.el.p(
+                                f"{DashboardState.sustainability_section_total} / 5 pts",
+                                class_name="text-xl font-black text-gray-900",
+                            ),
+                            class_name="flex flex-col",
+                        ),
+                        rx.el.div(
+                            rx.el.div(
+                                class_name="bg-blue-600 h-2 rounded-full transition-all duration-300",
+                                style={
+                                    "width": f"{DashboardState.sustainability_section_total / 5 * 100}%"
+                                },
+                            ),
+                            class_name="w-full bg-gray-200 rounded-full h-2 mt-2",
+                        ),
+                        class_name="bg-white border border-gray-200 p-4 rounded-xl shadow-sm mt-4",
                     ),
                     class_name="space-y-1",
                 ),
@@ -523,9 +622,9 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.handle_sustainability_upload,
                         DashboardState.uploaded_sustainability_files,
                     ),
-                    class_name="mt-2",
+                    class_name="mt-4 pt-6 border-t border-gray-100",
                 ),
-                class_name="grid grid-cols-1 lg:grid-cols-2 gap-8",
+                class_name="flex flex-col gap-4",
             ),
             class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm",
         ),

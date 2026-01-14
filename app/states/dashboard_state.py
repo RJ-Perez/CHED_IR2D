@@ -13,14 +13,14 @@ class DashboardState(rx.State):
 
     academic_reputation: int = 0
     citations_per_faculty: int = 0
-    employer_reputation: str = ""
-    employment_outcomes: str = ""
-    international_research_network: str = ""
-    international_faculty_ratio: str = ""
-    international_student_ratio: str = ""
+    employer_reputation: int = 0
+    employment_outcomes: int = 0
+    international_research_network: int = 0
+    international_faculty_ratio: int = 0
+    international_student_ratio: int = 0
     international_student_diversity: str = ""
-    faculty_student_ratio: str = ""
-    sustainability_metrics: str = ""
+    faculty_student_ratio: int = 0
+    sustainability_metrics: int = 0
     uploaded_research_files: list[str] = []
     uploaded_employability_files: list[str] = []
     uploaded_global_engagement_files: list[str] = []
@@ -43,9 +43,62 @@ class DashboardState(rx.State):
         )
 
     @rx.var
+    def employer_reputation_points(self) -> float:
+        return round(float(self.employer_reputation) * 0.15, 1)
+
+    @rx.var
+    def employment_outcomes_points(self) -> float:
+        return round(float(self.employment_outcomes) * 0.05, 1)
+
+    @rx.var
+    def employability_section_total(self) -> float:
+        return round(
+            self.employer_reputation_points + self.employment_outcomes_points, 1
+        )
+
+    @rx.var
+    def international_research_network_points(self) -> float:
+        return round(float(self.international_research_network) * 0.05, 1)
+
+    @rx.var
+    def international_faculty_ratio_points(self) -> float:
+        return round(float(self.international_faculty_ratio) * 0.05, 1)
+
+    @rx.var
+    def international_student_ratio_points(self) -> float:
+        return round(float(self.international_student_ratio) * 0.05, 1)
+
+    @rx.var
+    def global_engagement_section_total(self) -> float:
+        return round(
+            self.international_research_network_points
+            + self.international_faculty_ratio_points
+            + self.international_student_ratio_points,
+            1,
+        )
+
+    @rx.var
+    def faculty_student_ratio_points(self) -> float:
+        return round(float(self.faculty_student_ratio) * 0.1, 1)
+
+    @rx.var
+    def learning_experience_section_total(self) -> float:
+        return self.faculty_student_ratio_points
+
+    @rx.var
+    def sustainability_metrics_points(self) -> float:
+        return round(float(self.sustainability_metrics) * 0.05, 1)
+
+    @rx.var
+    def sustainability_section_total(self) -> float:
+        return self.sustainability_metrics_points
+
+    @rx.var
     def progress(self) -> int:
         """Calculate completion progress based on filled fields."""
-        str_fields = [
+        metrics = [
+            self.academic_reputation,
+            self.citations_per_faculty,
             self.employer_reputation,
             self.employment_outcomes,
             self.international_research_network,
@@ -54,11 +107,7 @@ class DashboardState(rx.State):
             self.faculty_student_ratio,
             self.sustainability_metrics,
         ]
-        filled_count = len([f for f in str_fields if f.strip() != ""])
-        if self.academic_reputation > 0:
-            filled_count += 1
-        if self.citations_per_faculty > 0:
-            filled_count += 1
+        filled_count = len([m for m in metrics if m > 0])
         total_fields = 9
         return int(filled_count / total_fields * 100)
 
@@ -85,36 +134,85 @@ class DashboardState(rx.State):
                 self.citations_per_faculty = 0
 
     @rx.event
-    def set_employer_reputation(self, value: str):
-        self.employer_reputation = value
+    def set_employer_reputation(self, value: list[int] | str):
+        if isinstance(value, list):
+            self.employer_reputation = value[0]
+        else:
+            try:
+                self.employer_reputation = int(value)
+            except ValueError as e:
+                logging.exception(f"Error parsing employer reputation: {e}")
+                self.employer_reputation = 0
 
     @rx.event
-    def set_employment_outcomes(self, value: str):
-        self.employment_outcomes = value
+    def set_employment_outcomes(self, value: list[int] | str):
+        if isinstance(value, list):
+            self.employment_outcomes = value[0]
+        else:
+            try:
+                self.employment_outcomes = int(value)
+            except ValueError as e:
+                logging.exception(f"Error parsing employment outcomes: {e}")
+                self.employment_outcomes = 0
 
     @rx.event
-    def set_international_research_network(self, value: str):
-        self.international_research_network = value
+    def set_international_research_network(self, value: list[int] | str):
+        if isinstance(value, list):
+            self.international_research_network = value[0]
+        else:
+            try:
+                self.international_research_network = int(value)
+            except ValueError as e:
+                logging.exception(f"Error parsing international research network: {e}")
+                self.international_research_network = 0
 
     @rx.event
-    def set_international_faculty_ratio(self, value: str):
-        self.international_faculty_ratio = value
+    def set_international_faculty_ratio(self, value: list[int] | str):
+        if isinstance(value, list):
+            self.international_faculty_ratio = value[0]
+        else:
+            try:
+                self.international_faculty_ratio = int(value)
+            except ValueError as e:
+                logging.exception(f"Error parsing international faculty ratio: {e}")
+                self.international_faculty_ratio = 0
 
     @rx.event
-    def set_international_student_ratio(self, value: str):
-        self.international_student_ratio = value
+    def set_international_student_ratio(self, value: list[int] | str):
+        if isinstance(value, list):
+            self.international_student_ratio = value[0]
+        else:
+            try:
+                self.international_student_ratio = int(value)
+            except ValueError as e:
+                logging.exception(f"Error parsing international student ratio: {e}")
+                self.international_student_ratio = 0
 
     @rx.event
     def set_international_student_diversity(self, value: str):
         self.international_student_diversity = value
 
     @rx.event
-    def set_faculty_student_ratio(self, value: str):
-        self.faculty_student_ratio = value
+    def set_faculty_student_ratio(self, value: list[int] | str):
+        if isinstance(value, list):
+            self.faculty_student_ratio = value[0]
+        else:
+            try:
+                self.faculty_student_ratio = int(value)
+            except ValueError as e:
+                logging.exception(f"Error parsing faculty student ratio: {e}")
+                self.faculty_student_ratio = 0
 
     @rx.event
-    def set_sustainability_metrics(self, value: str):
-        self.sustainability_metrics = value
+    def set_sustainability_metrics(self, value: list[int] | str):
+        if isinstance(value, list):
+            self.sustainability_metrics = value[0]
+        else:
+            try:
+                self.sustainability_metrics = int(value)
+            except ValueError as e:
+                logging.exception(f"Error parsing sustainability metrics: {e}")
+                self.sustainability_metrics = 0
 
     async def _save_uploaded_file(
         self, file: rx.UploadFile, category: str
