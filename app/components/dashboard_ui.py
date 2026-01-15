@@ -41,15 +41,27 @@ def text_input_metric(
                 type="number",
                 min=0,
                 max=100,
+                step=1,
+                pattern="[0-9]*",
+                input_mode="numeric",
                 placeholder="0-100",
                 default_value=rx.cond(value == 0, "", value.to_string()),
                 on_change=on_change.debounce(300),
+                on_key_down=lambda key: rx.cond(
+                    (key == ".")
+                    | (key == "e")
+                    | (key == "E")
+                    | (key == "+")
+                    | (key == "-"),
+                    rx.event.prevent_default,
+                    rx.noop(),
+                ),
                 class_name="w-full text-center text-3xl font-black text-blue-700 bg-gray-50 border border-gray-200 rounded-xl py-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all",
             ),
             class_name="relative",
         ),
         rx.el.p(
-            "Enter a value between 0 and 100",
+            "Enter an integer between 0 and 100",
             class_name="text-[10px] text-gray-400 mt-2 text-center font-medium",
         ),
         class_name="mb-6 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm",

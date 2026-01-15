@@ -116,108 +116,62 @@ class DashboardState(rx.State):
         total_fields = 9
         return int(filled_count / total_fields * 100)
 
-    @rx.event
-    def set_academic_reputation(self, value: list[int] | str):
-        if isinstance(value, list):
-            self.academic_reputation = value[0]
-        else:
-            try:
-                self.academic_reputation = int(value)
-            except ValueError as e:
-                logging.exception(f"Error parsing academic reputation: {e}")
-                self.academic_reputation = 0
+    def _validate_score(self, value: str | int) -> int:
+        """Internal helper to sanitize and clamp scores to [0, 100]."""
+        try:
+            if isinstance(value, str):
+                import re
+
+                clean_val = re.sub("[^0-9]", "", value)
+                if not clean_val:
+                    return 0
+                parsed_val = int(clean_val)
+            else:
+                parsed_val = int(value)
+            return max(0, min(100, parsed_val))
+        except (ValueError, TypeError) as e:
+            logging.exception(f"Error validating score: {e}")
+            return 0
 
     @rx.event
-    def set_citations_per_faculty(self, value: list[int] | str):
-        if isinstance(value, list):
-            self.citations_per_faculty = value[0]
-        else:
-            try:
-                self.citations_per_faculty = int(value)
-            except ValueError as e:
-                logging.exception(f"Error parsing citations per faculty: {e}")
-                self.citations_per_faculty = 0
+    def set_academic_reputation(self, value: str):
+        self.academic_reputation = self._validate_score(value)
 
     @rx.event
-    def set_employer_reputation(self, value: list[int] | str):
-        if isinstance(value, list):
-            self.employer_reputation = value[0]
-        else:
-            try:
-                self.employer_reputation = int(value)
-            except ValueError as e:
-                logging.exception(f"Error parsing employer reputation: {e}")
-                self.employer_reputation = 0
+    def set_citations_per_faculty(self, value: str):
+        self.citations_per_faculty = self._validate_score(value)
 
     @rx.event
-    def set_employment_outcomes(self, value: list[int] | str):
-        if isinstance(value, list):
-            self.employment_outcomes = value[0]
-        else:
-            try:
-                self.employment_outcomes = int(value)
-            except ValueError as e:
-                logging.exception(f"Error parsing employment outcomes: {e}")
-                self.employment_outcomes = 0
+    def set_employer_reputation(self, value: str):
+        self.employer_reputation = self._validate_score(value)
 
     @rx.event
-    def set_international_research_network(self, value: list[int] | str):
-        if isinstance(value, list):
-            self.international_research_network = value[0]
-        else:
-            try:
-                self.international_research_network = int(value)
-            except ValueError as e:
-                logging.exception(f"Error parsing international research network: {e}")
-                self.international_research_network = 0
+    def set_employment_outcomes(self, value: str):
+        self.employment_outcomes = self._validate_score(value)
 
     @rx.event
-    def set_international_faculty_ratio(self, value: list[int] | str):
-        if isinstance(value, list):
-            self.international_faculty_ratio = value[0]
-        else:
-            try:
-                self.international_faculty_ratio = int(value)
-            except ValueError as e:
-                logging.exception(f"Error parsing international faculty ratio: {e}")
-                self.international_faculty_ratio = 0
+    def set_international_research_network(self, value: str):
+        self.international_research_network = self._validate_score(value)
 
     @rx.event
-    def set_international_student_ratio(self, value: list[int] | str):
-        if isinstance(value, list):
-            self.international_student_ratio = value[0]
-        else:
-            try:
-                self.international_student_ratio = int(value)
-            except ValueError as e:
-                logging.exception(f"Error parsing international student ratio: {e}")
-                self.international_student_ratio = 0
+    def set_international_faculty_ratio(self, value: str):
+        self.international_faculty_ratio = self._validate_score(value)
+
+    @rx.event
+    def set_international_student_ratio(self, value: str):
+        self.international_student_ratio = self._validate_score(value)
 
     @rx.event
     def set_international_student_diversity(self, value: str):
         self.international_student_diversity = value
 
     @rx.event
-    def set_faculty_student_ratio(self, value: list[int] | str):
-        if isinstance(value, list):
-            self.faculty_student_ratio = value[0]
-        else:
-            try:
-                self.faculty_student_ratio = int(value)
-            except ValueError as e:
-                logging.exception(f"Error parsing faculty student ratio: {e}")
-                self.faculty_student_ratio = 0
+    def set_faculty_student_ratio(self, value: str):
+        self.faculty_student_ratio = self._validate_score(value)
 
     @rx.event
-    def set_sustainability_metrics(self, value: list[int] | str):
-        if isinstance(value, list):
-            self.sustainability_metrics = value[0]
-        else:
-            try:
-                self.sustainability_metrics = int(value)
-            except ValueError as e:
-                logging.exception(f"Error parsing sustainability metrics: {e}")
-                self.sustainability_metrics = 0
+    def set_sustainability_metrics(self, value: str):
+        self.sustainability_metrics = self._validate_score(value)
 
     async def _save_uploaded_file(
         self, file: rx.UploadFile, category: str
