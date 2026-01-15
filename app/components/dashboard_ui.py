@@ -66,8 +66,8 @@ def text_input_metric(
                 ),
                 class_name=rx.cond(
                     has_error,
-                    "w-full text-center text-4xl font-black text-red-700 bg-red-50 border-2 border-red-300 rounded-2xl py-6 focus:ring-4 focus:ring-red-100 outline-none transition-all shadow-inner",
-                    "w-full text-center text-4xl font-black text-slate-800 bg-slate-50 border-2 border-slate-200 rounded-2xl py-6 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all shadow-inner hover:border-slate-300",
+                    "w-full text-center text-2xl font-black text-red-700 bg-red-50 border-2 border-red-300 rounded-2xl py-4 focus:ring-4 focus:ring-red-100 outline-none transition-all shadow-inner",
+                    "w-full text-center text-2xl font-black text-slate-800 bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all shadow-inner hover:border-slate-300",
                 ),
             ),
             class_name="relative",
