@@ -2,56 +2,6 @@ import reflex as rx
 from app.states.hei_state import HEIState, HEI
 
 
-def hei_table_row(hei: HEI) -> rx.Component:
-    is_selected = HEIState.selected_hei_id == hei["id"]
-    return rx.el.tr(
-        rx.el.td(
-            rx.el.div(
-                rx.el.input(
-                    type="radio",
-                    checked=is_selected,
-                    class_name="h-4 w-4 text-blue-600 focus:ring-blue-500 cursor-pointer",
-                ),
-                class_name="flex justify-center",
-            ),
-            class_name="px-4 py-3",
-        ),
-        rx.el.td(
-            rx.el.div(
-                rx.el.p(hei["name"], class_name="text-sm font-semibold text-gray-900"),
-                rx.el.p(
-                    f"ID: {hei['id']}", class_name="text-[10px] text-gray-400 font-mono"
-                ),
-                class_name="flex flex-col",
-            ),
-            class_name="px-4 py-3",
-        ),
-        rx.el.td(
-            rx.el.p(
-                hei["address"], class_name="text-sm text-gray-600 truncate max-w-xs"
-            ),
-            class_name="px-4 py-3",
-        ),
-        rx.el.td(
-            rx.el.span(
-                hei["type"],
-                class_name=rx.cond(
-                    hei["type"] == "Public",
-                    "px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-indigo-100 text-indigo-700",
-                    "px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-emerald-100 text-emerald-700",
-                ),
-            ),
-            class_name="px-4 py-3",
-        ),
-        on_click=lambda: HEIState.select_hei(hei),
-        class_name=rx.cond(
-            is_selected,
-            "bg-blue-50 border-l-4 border-blue-600 cursor-pointer transition-all duration-200",
-            "hover:bg-gray-50 cursor-pointer transition-all duration-200 border-l-4 border-transparent",
-        ),
-    )
-
-
 def ranking_framework_option(
     value: str, label: str, description: str, image_path: str
 ) -> rx.Component:
@@ -249,50 +199,7 @@ def selection_screen_content() -> rx.Component:
                                 ),
                             ),
                             class_name="relative mb-6",
-                        ),
-                        rx.el.div(
-                            rx.el.table(
-                                rx.el.thead(
-                                    rx.el.tr(
-                                        rx.el.th("", class_name="w-10 px-4 py-3"),
-                                        rx.el.th(
-                                            "Institution",
-                                            class_name="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
-                                        ),
-                                        rx.el.th(
-                                            "Location",
-                                            class_name="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
-                                        ),
-                                        rx.el.th(
-                                            "Type",
-                                            class_name="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
-                                        ),
-                                        class_name="bg-gray-50 border-b border-gray-200",
-                                    )
-                                ),
-                                rx.el.tbody(
-                                    rx.foreach(HEIState.search_results, hei_table_row),
-                                    class_name="bg-white divide-y divide-gray-100",
-                                ),
-                                class_name="min-w-full",
-                            ),
-                            rx.cond(
-                                (HEIState.search_results.length() == 0)
-                                & (HEIState.search_query.length() > 0),
-                                rx.el.div(
-                                    rx.icon(
-                                        "search",
-                                        class_name="h-12 w-12 text-gray-200 mb-2",
-                                    ),
-                                    rx.el.p(
-                                        "No institutions matching your search.",
-                                        class_name="text-gray-400 text-sm",
-                                    ),
-                                    class_name="flex flex-col items-center justify-center p-12 bg-white",
-                                ),
-                            ),
-                            class_name="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white",
-                        ),
+                        )
                     ),
                     rx.el.div(
                         rx.el.span(
