@@ -180,6 +180,17 @@ def hei_dropdown_item(hei: HEI) -> rx.Component:
     )
 
 
+def info_field(label: str, value: str) -> rx.Component:
+    return rx.el.div(
+        rx.el.p(
+            label,
+            class_name="text-[10px] font-bold text-gray-400 uppercase tracking-wider",
+        ),
+        rx.el.p(value, class_name="text-sm font-semibold text-gray-700"),
+        class_name="flex flex-col gap-0.5",
+    )
+
+
 def selected_hei_card() -> rx.Component:
     return rx.el.div(
         rx.el.div(
@@ -190,58 +201,47 @@ def selected_hei_card() -> rx.Component:
                 ),
                 rx.el.div(
                     rx.el.div(
-                        rx.el.h3(
-                            HEIState.selected_hei["name"],
-                            class_name="text-xl font-bold text-gray-900",
-                        ),
                         rx.el.div(
-                            rx.icon(
-                                "circle_check", class_name="h-4 w-4 text-green-500 mr-1"
+                            rx.el.h3(
+                                HEIState.selected_hei["name"],
+                                class_name="text-xl font-extrabold text-gray-900 leading-none",
                             ),
-                            rx.el.span(
-                                "Verified Institution",
-                                class_name="text-xs font-semibold text-green-600 uppercase tracking-wider",
+                            rx.el.div(
+                                rx.icon(
+                                    "circle_check",
+                                    class_name="h-4 w-4 text-green-500 mr-1",
+                                ),
+                                rx.el.span(
+                                    "Verified Institution",
+                                    class_name="text-[10px] font-bold text-green-600 uppercase tracking-widest",
+                                ),
+                                class_name="flex items-center mt-1.5",
                             ),
-                            class_name="flex items-center mt-0.5",
+                            class_name="flex flex-col",
                         ),
-                        class_name="flex flex-col",
+                        rx.el.button(
+                            "Change Selection",
+                            on_click=HEIState.deselect_hei,
+                            class_name="px-3 py-1.5 text-xs font-bold text-blue-600 hover:text-white hover:bg-blue-600 rounded-lg border border-blue-200 transition-all shadow-sm",
+                        ),
+                        class_name="flex items-start justify-between w-full mb-6",
                     ),
                     rx.el.div(
-                        rx.el.div(
-                            rx.el.p(
-                                "Type",
-                                class_name="text-[10px] font-bold text-gray-400 uppercase",
-                            ),
-                            rx.el.p(
-                                HEIState.selected_hei["type"],
-                                class_name="text-sm font-medium text-gray-700",
-                            ),
+                        info_field("Type", HEIState.selected_hei["type"]),
+                        info_field("President", HEIState.selected_hei["admin_name"]),
+                        info_field("Street", HEIState.selected_hei["street"]),
+                        info_field(
+                            "City / Municipality", HEIState.selected_hei["city"]
                         ),
-                        class_name="flex mt-3",
-                    ),
-                    rx.el.div(
-                        rx.icon(
-                            "map-pin",
-                            class_name="h-3.5 w-3.5 text-gray-400 mr-1.5 mt-0.5 flex-shrink-0",
-                        ),
-                        rx.el.p(
-                            HEIState.selected_hei["address"],
-                            class_name="text-sm text-gray-600 leading-relaxed",
-                        ),
-                        class_name="flex items-start mt-3 pt-3 border-t border-gray-100",
+                        class_name="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 pt-6 border-t border-gray-100",
                     ),
                     class_name="flex-1",
                 ),
-                rx.el.button(
-                    "Change Selection",
-                    on_click=HEIState.deselect_hei,
-                    class_name="ml-4 px-4 py-2 text-sm font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors shrink-0",
-                ),
                 class_name="flex items-start",
             ),
-            class_name="p-6",
+            class_name="p-6 md:p-8",
         ),
-        class_name="bg-white rounded-2xl border border-gray-200 border-l-4 border-l-blue-600 shadow-sm mb-8 animate-in fade-in slide-in-from-bottom-4 duration-300",
+        class_name="bg-white rounded-2xl border border-gray-200 border-l-[6px] border-l-blue-600 shadow-lg mb-10 animate-in fade-in slide-in-from-bottom-4 duration-300",
     )
 
 

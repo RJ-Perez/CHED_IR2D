@@ -10,6 +10,9 @@ class HEI(TypedDict):
     name: str
     address: str
     type: str
+    admin_name: str
+    street: str
+    city: str
 
 
 class HEIState(rx.State):
@@ -329,7 +332,7 @@ class HEIState(rx.State):
         async with rx.asession() as session:
             result = await session.execute(
                 text(
-                    "SELECT id, institution_name, street_address, city_municipality, 'Private' FROM institutions ORDER BY institution_name ASC"
+                    "SELECT id, institution_name, street_address, city_municipality, 'Private', admin_name FROM institutions ORDER BY institution_name ASC"
                 )
             )
             rows = result.all()
@@ -340,6 +343,9 @@ class HEIState(rx.State):
                         "name": row[1],
                         "address": f"{row[2]}, {row[3]}",
                         "type": row[4],
+                        "street": row[2],
+                        "city": row[3],
+                        "admin_name": row[5] if row[5] else "Not Assigned",
                     }
                     for row in rows
                 ]
