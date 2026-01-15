@@ -131,30 +131,34 @@ def file_upload_section(
                         is_uploading,
                         rx.el.div(
                             rx.el.div(
-                                class_name="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"
+                                rx.el.div(
+                                    class_name="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600 mb-3"
+                                ),
+                                rx.el.p(
+                                    "Uploading...",
+                                    class_name="text-base text-emerald-600 font-bold animate-pulse",
+                                ),
+                                class_name="flex flex-col items-center justify-center",
                             ),
-                            rx.el.p(
-                                "Uploading files...",
-                                class_name="text-sm text-blue-600 font-medium animate-pulse",
-                            ),
-                            class_name="flex flex-col items-center",
+                            class_name="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-xl",
                         ),
-                        rx.el.div(
-                            rx.icon(
-                                "cloud-upload", class_name="h-8 w-8 text-gray-400 mb-2"
-                            ),
-                            rx.el.p(
-                                "Drag & drop evidence files here",
-                                class_name="text-sm text-gray-500",
-                            ),
-                            rx.el.p(
-                                "or click to browse",
-                                class_name="text-xs text-gray-400 mt-1",
-                            ),
-                            class_name="flex flex-col items-center",
-                        ),
+                        None,
                     ),
-                    class_name="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer min-h-[140px]",
+                    rx.el.div(
+                        rx.icon(
+                            "cloud-upload", class_name="h-8 w-8 text-gray-400 mb-2"
+                        ),
+                        rx.el.p(
+                            "Drag & drop evidence files here",
+                            class_name="text-sm text-gray-500",
+                        ),
+                        rx.el.p(
+                            "or click to browse",
+                            class_name="text-xs text-gray-400 mt-1",
+                        ),
+                        class_name="flex flex-col items-center",
+                    ),
+                    class_name="relative flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer min-h-[140px]",
                 ),
                 id=upload_id,
                 accept={
@@ -167,7 +171,7 @@ def file_upload_section(
                 on_drop=handle_upload_event(rx.upload_files(upload_id=upload_id)),
                 class_name="w-full",
             ),
-            class_name="mb-4",
+            class_name="mb-4 relative",
         ),
         rx.el.div(
             rx.el.p(
@@ -224,13 +228,13 @@ def progress_tracker() -> rx.Component:
             ),
             rx.el.div(
                 f"{DashboardState.progress}%",
-                class_name="text-sm font-bold text-blue-600",
+                class_name="text-sm font-bold text-emerald-600",
             ),
             class_name="flex justify-between items-center",
         ),
         rx.el.div(
             rx.el.div(
-                class_name="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-in-out",
+                class_name="bg-emerald-500 h-2.5 rounded-full transition-all duration-500 ease-in-out",
                 style={"width": f"{DashboardState.progress}%"},
             ),
             class_name="w-full bg-gray-200 rounded-full h-2.5",
