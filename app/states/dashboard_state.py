@@ -148,7 +148,7 @@ class DashboardState(rx.State):
                 return 0
             import re
 
-            clean_val = re.sub("[^0-9-]", "", value)
+            clean_val = re.sub("[^0-9-]", "", value_str)
             if not clean_val or clean_val == "-":
                 self.setvar(f"{field_name}_error", "Please enter a valid number")
                 return 0
