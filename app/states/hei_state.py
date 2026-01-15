@@ -316,7 +316,7 @@ class HEIState(rx.State):
         async with rx.asession() as session:
             result = await session.execute(
                 text(
-                    "SELECT id, institution_name, street_address, city_municipality, COALESCE(institution_type, 'Private') FROM institutions ORDER BY institution_name ASC"
+                    "SELECT id, institution_name, street_address, city_municipality, 'Private' FROM institutions ORDER BY institution_name ASC"
                 )
             )
             rows = result.all()
