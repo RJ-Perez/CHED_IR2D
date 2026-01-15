@@ -32,6 +32,7 @@ class HEIState(rx.State):
     reg_contact: str = ""
     reg_admin: str = ""
     is_loading: bool = False
+    is_fetching: bool = False
     regions_map: dict[str, list[str]] = {
         "NCR (National Capital Region)": [
             "Manila",
@@ -313,6 +314,8 @@ class HEIState(rx.State):
     @rx.event(background=True)
     async def fetch_institutions(self):
         """Loads all institutions from the database."""
+        async with self:
+            self.is_fetching = True
         async with rx.asession() as session:
             result = await session.execute(
                 text(
@@ -330,6 +333,7 @@ class HEIState(rx.State):
                     }
                     for row in rows
                 ]
+                self.is_fetching = False
 
     @rx.event(background=True)
     async def submit_selection(self):

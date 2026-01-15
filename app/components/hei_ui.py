@@ -201,42 +201,58 @@ def hei_table_row(hei: HEI) -> rx.Component:
 
 def hei_selection_table() -> rx.Component:
     return rx.el.div(
-        rx.el.div(
-            rx.el.table(
-                rx.el.thead(
-                    rx.el.tr(
-                        rx.el.th(
-                            "Institution",
-                            class_name="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
-                        ),
-                        rx.el.th(
-                            "Location",
-                            class_name="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
-                        ),
-                        rx.el.th(
-                            "Type",
-                            class_name="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
-                        ),
-                        class_name="bg-gray-50 border-b border-gray-200",
-                    )
-                ),
-                rx.el.tbody(
-                    rx.foreach(HEIState.search_results, hei_table_row),
-                    class_name="divide-y divide-gray-200 bg-white",
-                ),
-                class_name="min-w-full",
-            ),
-            class_name="overflow-x-auto overflow-y-auto max-h-[480px] border border-gray-200 rounded-xl",
-        ),
         rx.cond(
-            HEIState.search_results.length() == 0,
+            HEIState.is_fetching,
             rx.el.div(
-                rx.icon("search-slash", class_name="h-8 w-8 text-gray-300 mb-2"),
-                rx.el.p(
-                    "No institutions found matching your criteria.",
-                    class_name="text-sm text-gray-500",
+                rx.el.div(
+                    class_name="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
                 ),
-                class_name="flex flex-col items-center justify-center py-10 bg-gray-50 border border-dashed border-gray-300 rounded-xl mt-2",
+                rx.el.p(
+                    "Loading institutions...", class_name="text-sm text-gray-500 mt-4"
+                ),
+                class_name="flex flex-col items-center justify-center py-24 bg-white border border-gray-200 rounded-xl",
+            ),
+            rx.el.div(
+                rx.el.div(
+                    rx.el.table(
+                        rx.el.thead(
+                            rx.el.tr(
+                                rx.el.th(
+                                    "Institution",
+                                    class_name="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
+                                ),
+                                rx.el.th(
+                                    "Location",
+                                    class_name="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
+                                ),
+                                rx.el.th(
+                                    "Type",
+                                    class_name="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
+                                ),
+                                class_name="bg-gray-50 border-b border-gray-200",
+                            )
+                        ),
+                        rx.el.tbody(
+                            rx.foreach(HEIState.search_results, hei_table_row),
+                            class_name="divide-y divide-gray-200 bg-white",
+                        ),
+                        class_name="min-w-full",
+                    ),
+                    class_name="overflow-x-auto overflow-y-auto max-h-[480px] border border-gray-200 rounded-xl",
+                ),
+                rx.cond(
+                    HEIState.search_results.length() == 0,
+                    rx.el.div(
+                        rx.icon(
+                            "search-slash", class_name="h-8 w-8 text-gray-300 mb-2"
+                        ),
+                        rx.el.p(
+                            "No institutions found matching your criteria.",
+                            class_name="text-sm text-gray-500",
+                        ),
+                        class_name="flex flex-col items-center justify-center py-10 bg-gray-50 border border-dashed border-gray-300 rounded-xl mt-2",
+                    ),
+                ),
             ),
         ),
         class_name="mt-4",
