@@ -21,13 +21,13 @@ def branding_section() -> rx.Component:
                 rx.el.div(
                     rx.image(
                         src="https://chedcar.com/wp-content/uploads/2020/09/Commission_on_Higher_Education_CHEd.svg_.png",
-                        class_name="h-16 w-16 object-contain mb-6",
+                        class_name="h-20 w-20s object-contain mb-6",
                         alt="CHED Logo",
                     ),
-                    class_name="bg-white/20 w-fit p-4 rounded-2xl backdrop-blur-sm",
+                    class_name="bg-white/15 w-fit p-4 rounded-2x2 backdrop-blur-sm",
                 ),
                 rx.el.h1(
-                    "CHED",
+                    "Commission on Higher Education",
                     class_name="text-4xl lg:text-5xl font-bold text-white mb-2 tracking-tight",
                 ),
                 rx.el.h2(

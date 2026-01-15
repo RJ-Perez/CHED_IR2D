@@ -260,6 +260,13 @@ class AuthState(GoogleAuthState):
             google_id = info.get("sub")
             first_name = info.get("given_name", "")
             last_name = info.get("family_name", "")
+        if not user_email:
+            logging.warning("Google login failed: No email provided in token data.")
+            yield rx.toast(
+                "Authentication failed: No email address returned from Google.",
+                duration=5000,
+            )
+            return
         user_id = None
         try:
             async with rx.asession() as asession:
