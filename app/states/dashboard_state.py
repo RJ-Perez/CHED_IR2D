@@ -139,10 +139,11 @@ class DashboardState(rx.State):
         total_fields = 9
         return int(filled_count / total_fields * 100)
 
-    def _check_and_clamp(self, value: str, field_name: str) -> int:
+    def _check_and_clamp(self, value: str | int, field_name: str) -> int:
         """Validates range and returns clamped value while setting errors."""
         try:
-            if not value.strip():
+            value_str = str(value)
+            if not value_str.strip():
                 self.setvar(f"{field_name}_error", "")
                 return 0
             import re
