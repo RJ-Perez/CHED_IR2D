@@ -32,6 +32,16 @@ class DashboardState(rx.State):
     is_uploading_global_engagement: bool = False
     is_uploading_learning_experience: bool = False
     is_uploading_sustainability: bool = False
+    upload_progress_research: int = 0
+    upload_progress_employability: int = 0
+    upload_progress_global_engagement: int = 0
+    upload_progress_learning_experience: int = 0
+    upload_progress_sustainability: int = 0
+    upload_count_research: str = ""
+    upload_count_employability: str = ""
+    upload_count_global_engagement: str = ""
+    upload_count_learning_experience: str = ""
+    upload_count_sustainability: str = ""
     save_successful: bool = False
     academic_reputation_error: str = ""
     citations_per_faculty_error: str = ""
@@ -237,10 +247,15 @@ class DashboardState(rx.State):
     async def handle_research_upload(self, files: list[rx.UploadFile]):
         """Handle file upload for Research section with unique directory."""
         self.is_uploading_research = True
-        for file in files:
+        self.upload_progress_research = 0
+        total = len(files)
+        for i, file in enumerate(files):
+            self.upload_count_research = f"{i + 1} of {total}"
             saved_path = await self._save_uploaded_file(file, "research")
             if saved_path:
                 self.uploaded_research_files.append(saved_path)
+            self.upload_progress_research = int((i + 1) / total * 100)
+            yield
         self.is_uploading_research = False
         yield rx.toast.success(f"Uploaded {len(files)} file(s) to Research")
 
@@ -248,10 +263,15 @@ class DashboardState(rx.State):
     async def handle_employability_upload(self, files: list[rx.UploadFile]):
         """Handle file upload for Employability section with unique directory."""
         self.is_uploading_employability = True
-        for file in files:
+        self.upload_progress_employability = 0
+        total = len(files)
+        for i, file in enumerate(files):
+            self.upload_count_employability = f"{i + 1} of {total}"
             saved_path = await self._save_uploaded_file(file, "employability")
             if saved_path:
                 self.uploaded_employability_files.append(saved_path)
+            self.upload_progress_employability = int((i + 1) / total * 100)
+            yield
         self.is_uploading_employability = False
         yield rx.toast.success(f"Uploaded {len(files)} file(s) to Employability")
 
@@ -259,10 +279,15 @@ class DashboardState(rx.State):
     async def handle_global_engagement_upload(self, files: list[rx.UploadFile]):
         """Handle file upload for Global Engagement section with unique directory."""
         self.is_uploading_global_engagement = True
-        for file in files:
+        self.upload_progress_global_engagement = 0
+        total = len(files)
+        for i, file in enumerate(files):
+            self.upload_count_global_engagement = f"{i + 1} of {total}"
             saved_path = await self._save_uploaded_file(file, "global_engagement")
             if saved_path:
                 self.uploaded_global_engagement_files.append(saved_path)
+            self.upload_progress_global_engagement = int((i + 1) / total * 100)
+            yield
         self.is_uploading_global_engagement = False
         yield rx.toast.success(f"Uploaded {len(files)} file(s) to Global Engagement")
 
@@ -270,10 +295,15 @@ class DashboardState(rx.State):
     async def handle_learning_experience_upload(self, files: list[rx.UploadFile]):
         """Handle file upload for Learning Experience section with unique directory."""
         self.is_uploading_learning_experience = True
-        for file in files:
+        self.upload_progress_learning_experience = 0
+        total = len(files)
+        for i, file in enumerate(files):
+            self.upload_count_learning_experience = f"{i + 1} of {total}"
             saved_path = await self._save_uploaded_file(file, "learning_experience")
             if saved_path:
                 self.uploaded_learning_experience_files.append(saved_path)
+            self.upload_progress_learning_experience = int((i + 1) / total * 100)
+            yield
         self.is_uploading_learning_experience = False
         yield rx.toast.success(f"Uploaded {len(files)} file(s) to Learning Experience")
 
@@ -281,10 +311,15 @@ class DashboardState(rx.State):
     async def handle_sustainability_upload(self, files: list[rx.UploadFile]):
         """Handle file upload for Sustainability section with unique directory."""
         self.is_uploading_sustainability = True
-        for file in files:
+        self.upload_progress_sustainability = 0
+        total = len(files)
+        for i, file in enumerate(files):
+            self.upload_count_sustainability = f"{i + 1} of {total}"
             saved_path = await self._save_uploaded_file(file, "sustainability")
             if saved_path:
                 self.uploaded_sustainability_files.append(saved_path)
+            self.upload_progress_sustainability = int((i + 1) / total * 100)
+            yield
         self.is_uploading_sustainability = False
         yield rx.toast.success(f"Uploaded {len(files)} file(s) to Sustainability")
 

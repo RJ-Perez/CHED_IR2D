@@ -121,7 +121,28 @@ def file_upload_section(
     is_uploading: rx.Var,
     delete_event: rx.event.EventType,
 ) -> rx.Component:
-    """Reusable file upload section with auto-upload and progress."""
+    """Reusable file upload section with auto-upload and progress indicator."""
+    progress_var = rx.match(
+        upload_id,
+        ("upload_research", DashboardState.upload_progress_research),
+        ("upload_employability", DashboardState.upload_progress_employability),
+        ("upload_global_engagement", DashboardState.upload_progress_global_engagement),
+        (
+            "upload_learning_experience",
+            DashboardState.upload_progress_learning_experience,
+        ),
+        ("upload_sustainability", DashboardState.upload_progress_sustainability),
+        0,
+    )
+    count_var = rx.match(
+        upload_id,
+        ("upload_research", DashboardState.upload_count_research),
+        ("upload_employability", DashboardState.upload_count_employability),
+        ("upload_global_engagement", DashboardState.upload_count_global_engagement),
+        ("upload_learning_experience", DashboardState.upload_count_learning_experience),
+        ("upload_sustainability", DashboardState.upload_count_sustainability),
+        "",
+    )
     return rx.el.div(
         rx.el.label(label, class_name="block text-sm font-medium text-gray-700 mb-2"),
         rx.el.div(
@@ -132,15 +153,19 @@ def file_upload_section(
                         rx.el.div(
                             rx.el.div(
                                 rx.el.div(
-                                    class_name="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600 mb-3"
+                                    rx.el.div(
+                                        class_name="bg-emerald-500 h-2.5 rounded-full transition-all duration-300",
+                                        style={"width": f"{progress_var}%"},
+                                    ),
+                                    class_name="w-48 bg-gray-200 rounded-full h-2.5 mb-4",
                                 ),
                                 rx.el.p(
-                                    "Uploading...",
-                                    class_name="text-base text-emerald-600 font-bold animate-pulse",
+                                    f"Uploading {count_var}... {progress_var}%",
+                                    class_name="text-sm text-emerald-600 font-bold",
                                 ),
                                 class_name="flex flex-col items-center justify-center",
                             ),
-                            class_name="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-xl",
+                            class_name="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-10 rounded-xl",
                         ),
                         None,
                     ),
