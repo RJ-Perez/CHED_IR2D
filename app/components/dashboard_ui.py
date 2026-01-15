@@ -248,7 +248,7 @@ def bottom_action_bar() -> rx.Component:
 
 
 def data_entry_forms() -> rx.Component:
-    """Main data entry area split by thematic sections."""
+    """Main data entry area split by thematic sections using a 2-column layout."""
     return rx.el.div(
         rx.el.div(
             rx.el.div(
@@ -315,9 +315,9 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.is_uploading_research,
                         DashboardState.delete_research_file,
                     ),
-                    class_name="mt-4 pt-6 border-t border-gray-100",
+                    class_name="p-5 bg-gray-50 rounded-2xl border border-gray-100 shadow-sm",
                 ),
-                class_name="flex flex-col gap-4",
+                class_name="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start",
             ),
             class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6",
         ),
@@ -386,9 +386,9 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.is_uploading_employability,
                         DashboardState.delete_employability_file,
                     ),
-                    class_name="mt-4 pt-6 border-t border-gray-100",
+                    class_name="p-5 bg-gray-50 rounded-2xl border border-gray-100 shadow-sm",
                 ),
-                class_name="flex flex-col gap-4",
+                class_name="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start",
             ),
             class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6",
         ),
@@ -470,9 +470,9 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.is_uploading_global_engagement,
                         DashboardState.delete_global_engagement_file,
                     ),
-                    class_name="mt-4 pt-6 border-t border-gray-100",
+                    class_name="p-5 bg-gray-50 rounded-2xl border border-gray-100 shadow-sm",
                 ),
-                class_name="flex flex-col gap-4",
+                class_name="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start",
             ),
             class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6",
         ),
@@ -534,9 +534,9 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.is_uploading_learning_experience,
                         DashboardState.delete_learning_experience_file,
                     ),
-                    class_name="mt-4 pt-6 border-t border-gray-100",
+                    class_name="p-5 bg-gray-50 rounded-2xl border border-gray-100 shadow-sm",
                 ),
-                class_name="flex flex-col gap-4",
+                class_name="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start",
             ),
             class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6",
         ),
@@ -597,9 +597,9 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.is_uploading_sustainability,
                         DashboardState.delete_sustainability_file,
                     ),
-                    class_name="mt-4 pt-6 border-t border-gray-100",
+                    class_name="p-5 bg-gray-50 rounded-2xl border border-gray-100 shadow-sm",
                 ),
-                class_name="flex flex-col gap-4",
+                class_name="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start",
             ),
             class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm",
         ),
