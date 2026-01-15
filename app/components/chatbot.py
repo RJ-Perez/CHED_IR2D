@@ -173,5 +173,5 @@ def chatbot_component() -> rx.Component:
             on_click=ChatbotState.toggle_open,
             class_name="h-14 w-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 active:scale-95",
         ),
-        class_name="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4",
+        class_name="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-4",
     )

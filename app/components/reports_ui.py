@@ -348,9 +348,9 @@ def delete_report_modal() -> rx.Component:
                         ),
                         class_name="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4",
                     ),
-                    class_name="flex items-center justify-center min-h-screen p-4",
+                    class_name="flex items-start justify-center min-h-screen p-4 pt-24",
                 ),
-                class_name="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center",
+                class_name="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-start justify-center",
                 on_click=ReportsState.cancel_delete_report,
             )
         ),
