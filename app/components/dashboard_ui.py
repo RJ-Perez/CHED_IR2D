@@ -42,7 +42,7 @@ def text_input_metric(
                 min=0,
                 max=100,
                 placeholder="0-100",
-                default_value=value.to_string(),
+                default_value=rx.cond(value == 0, "", value.to_string()),
                 on_change=on_change.debounce(300),
                 class_name="w-full text-center text-3xl font-black text-blue-700 bg-gray-50 border border-gray-200 rounded-xl py-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all",
             ),
