@@ -27,16 +27,22 @@ def text_input_metric(
     on_change: rx.event.EventType,
     error_msg: rx.Var = "",
 ) -> rx.Component:
-    """Text box input for weighted metrics with prominent score display and validation."""
+    """Text box input for weighted metrics with modernized scoring visualization."""
     has_error = error_msg != ""
     return rx.el.div(
         rx.el.div(
-            rx.el.label(label, class_name="text-sm font-semibold text-gray-700"),
-            rx.el.span(
-                f"{points} / {max_points} pts",
-                class_name="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100",
+            rx.el.label(
+                label, class_name="text-sm font-bold text-gray-800 tracking-tight"
             ),
-            class_name="flex items-center justify-between mb-4",
+            rx.el.div(
+                rx.el.span(points, class_name="text-sm font-black text-blue-700"),
+                rx.el.span(
+                    f" / {max_points} pts",
+                    class_name="text-[10px] font-bold text-gray-400 uppercase ml-1",
+                ),
+                class_name="px-2.5 py-1 bg-blue-50 rounded-lg border border-blue-100 flex items-baseline",
+            ),
+            class_name="flex items-center justify-between mb-5",
         ),
         rx.el.div(
             rx.el.input(
@@ -46,7 +52,7 @@ def text_input_metric(
                 step=1,
                 pattern="[0-9]*",
                 input_mode="numeric",
-                placeholder="0-100",
+                placeholder="0",
                 default_value=rx.cond(value == 0, "", value.to_string()),
                 on_change=on_change.debounce(300),
                 on_key_down=lambda key: rx.cond(
@@ -60,8 +66,8 @@ def text_input_metric(
                 ),
                 class_name=rx.cond(
                     has_error,
-                    "w-full text-center text-3xl font-black text-red-700 bg-red-50 border-2 border-red-500 rounded-xl py-4 focus:ring-2 focus:ring-red-500 outline-none transition-all animate-pulse",
-                    "w-full text-center text-3xl font-black text-blue-700 bg-gray-50 border border-gray-200 rounded-xl py-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all",
+                    "w-full text-center text-4xl font-black text-red-700 bg-red-50 border-2 border-red-300 rounded-2xl py-6 focus:ring-4 focus:ring-red-100 outline-none transition-all shadow-inner",
+                    "w-full text-center text-4xl font-black text-slate-800 bg-slate-50 border-2 border-slate-200 rounded-2xl py-6 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all shadow-inner hover:border-slate-300",
                 ),
             ),
             class_name="relative",
@@ -69,16 +75,19 @@ def text_input_metric(
         rx.cond(
             has_error,
             rx.el.div(
-                rx.icon("triangle-alert", class_name="h-3 w-3 mr-1"),
+                rx.icon("triangle-alert", class_name="h-4 w-4 mr-2"),
                 rx.el.span(error_msg),
-                class_name="text-[10px] text-red-600 mt-2 flex items-center justify-center font-bold uppercase tracking-wider",
+                class_name="text-xs text-red-600 mt-3 flex items-center justify-center font-bold bg-red-50 py-2 rounded-lg",
             ),
-            rx.el.p(
-                "Enter an integer between 0 and 100",
-                class_name="text-[10px] text-gray-400 mt-2 text-center font-medium",
+            rx.el.div(
+                rx.el.div(
+                    class_name=rx.cond(value > 0, "bg-blue-500", "bg-slate-200"),
+                    style={"width": f"{value}%", "height": "4px"},
+                ),
+                class_name="w-full bg-slate-100 h-1 rounded-full mt-4 overflow-hidden flex",
             ),
         ),
-        class_name="mb-6 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm",
+        class_name="group mb-6 p-6 bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300",
     )
 
 
@@ -209,7 +218,7 @@ def progress_tracker() -> rx.Component:
 
 
 def dashboard_header() -> rx.Component:
-    """Dynamic header showing selected HEI context."""
+    """Dynamic header showing selected HEI context with a modern banner design."""
     hei_name = rx.cond(
         HEIState.is_registration_mode,
         HEIState.reg_name,
@@ -221,60 +230,123 @@ def dashboard_header() -> rx.Component:
     )
     framework_name = rx.cond(
         HEIState.ranking_framework == "QS",
-        "QS University Rankings",
+        "QS World University Rankings",
         rx.cond(
             HEIState.ranking_framework == "THE",
-            "THE Impact Assessment",
-            "Ranking Assessment",
+            "THE Impact Rankings",
+            "Academic Assessment Framework",
         ),
     )
     return rx.el.div(
         rx.el.div(
-            rx.el.h1(hei_name, class_name="text-2xl font-bold text-gray-900"),
             rx.el.div(
-                rx.icon("award", class_name="h-5 w-5 text-amber-500 mr-2"),
-                rx.el.span(framework_name, class_name="font-medium text-gray-600"),
-                class_name="flex items-center mt-1",
+                rx.el.div(
+                    rx.el.div(
+                        rx.icon("building-2", class_name="h-8 w-8 text-white"),
+                        class_name="p-3 bg-white/20 rounded-2xl backdrop-blur-md border border-white/30 mr-6",
+                    ),
+                    rx.el.div(
+                        rx.el.h1(
+                            hei_name,
+                            class_name="text-3xl font-extrabold text-white tracking-tight",
+                        ),
+                        rx.el.div(
+                            rx.icon("award", class_name="h-4 w-4 text-blue-200 mr-2"),
+                            rx.el.span(
+                                framework_name,
+                                class_name="text-sm font-semibold text-blue-50 uppercase tracking-widest",
+                            ),
+                            class_name="flex items-center mt-2 opacity-90",
+                        ),
+                        class_name="flex-1",
+                    ),
+                    class_name="flex items-center",
+                ),
+                rx.el.div(
+                    rx.el.div(
+                        rx.el.p(
+                            "Assessment Status",
+                            class_name="text-[10px] font-bold text-blue-200 uppercase tracking-widest mb-1",
+                        ),
+                        rx.el.div(
+                            rx.el.div(
+                                class_name="h-2 w-2 rounded-full bg-emerald-400 animate-pulse mr-2"
+                            ),
+                            rx.el.span(
+                                "Active Data Entry",
+                                class_name="text-xs font-bold text-white uppercase",
+                            ),
+                            class_name="flex items-center bg-white/10 px-3 py-1.5 rounded-full border border-white/20",
+                        ),
+                        class_name="flex flex-col items-end",
+                    ),
+                    class_name="hidden sm:block",
+                ),
+                class_name="flex items-center justify-between",
             ),
-            class_name="flex-1",
+            class_name="max-w-7xl mx-auto px-8 py-10",
         ),
-        class_name="flex items-center justify-between mb-8",
+        class_name="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 shadow-xl mb-10",
     )
 
 
 def bottom_action_bar() -> rx.Component:
-    """Sticky-ready bottom bar containing progress and save functionality."""
+    """Sticky-ready bottom bar containing progress and save functionality with a floating design."""
     return rx.el.div(
         rx.el.div(
-            progress_tracker(),
-            rx.el.button(
-                rx.cond(
-                    DashboardState.is_saving,
+            rx.el.div(
+                rx.el.div(
                     rx.el.div(
-                        rx.el.div(
-                            class_name="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                        rx.el.p(
+                            "Submission Status",
+                            class_name="text-[10px] font-bold text-gray-400 uppercase tracking-widest",
                         ),
-                        "Saving...",
-                        class_name="flex items-center",
+                        rx.cond(
+                            DashboardState.has_validation_errors,
+                            rx.el.span(
+                                "Action Required",
+                                class_name="text-xs font-bold text-red-500",
+                            ),
+                            rx.el.span(
+                                "Ready to Sync",
+                                class_name="text-xs font-bold text-emerald-500",
+                            ),
+                        ),
+                        class_name="flex flex-col mr-8",
                     ),
-                    rx.el.div(
-                        rx.icon("save", class_name="h-4 w-4 mr-2"),
-                        "Save Progress",
-                        class_name="flex items-center",
+                    progress_tracker(),
+                    class_name="flex flex-1 items-center",
+                ),
+                rx.el.button(
+                    rx.cond(
+                        DashboardState.is_saving,
+                        rx.el.div(
+                            rx.el.div(
+                                class_name="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"
+                            ),
+                            "Syncing Data...",
+                            class_name="flex items-center",
+                        ),
+                        rx.el.div(
+                            rx.icon("cloud-upload", class_name="h-5 w-5 mr-3"),
+                            "Submit & Save",
+                            class_name="flex items-center",
+                        ),
+                    ),
+                    on_click=DashboardState.save_progress,
+                    disabled=DashboardState.is_saving
+                    | DashboardState.has_validation_errors,
+                    class_name=rx.cond(
+                        DashboardState.has_validation_errors,
+                        "flex items-center px-8 py-4 bg-slate-200 text-slate-400 rounded-2xl shadow-lg cursor-not-allowed transition-all font-bold text-sm",
+                        "flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-xl hover:shadow-blue-200 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-70 font-bold text-sm",
                     ),
                 ),
-                on_click=DashboardState.save_progress,
-                disabled=DashboardState.is_saving
-                | DashboardState.has_validation_errors,
-                class_name=rx.cond(
-                    DashboardState.has_validation_errors,
-                    "flex items-center px-6 py-2.5 bg-gray-400 text-white rounded-lg shadow-md cursor-not-allowed transition-colors font-semibold",
-                    "flex items-center px-6 py-2.5 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-70 font-semibold",
-                ),
+                class_name="flex items-center gap-10",
             ),
-            class_name="flex items-center gap-8",
+            class_name="max-w-7xl mx-auto px-6 py-5",
         ),
-        class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mt-8 sticky bottom-0",
+        class_name="bg-white/90 backdrop-blur-xl border border-white/20 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] mt-12 sticky bottom-6 rounded-3xl mx-8 z-[40]",
     )
 
 
@@ -646,11 +718,82 @@ def data_entry_forms() -> rx.Component:
     )
 
 
+def dashboard_stat_cards() -> rx.Component:
+    """Row of summary cards for the assessment top-view."""
+    return rx.el.div(
+        rx.el.div(
+            rx.el.div(
+                rx.el.div(
+                    rx.icon("target", class_name="h-6 w-6 text-purple-600"),
+                    class_name="p-3 bg-purple-50 rounded-2xl",
+                ),
+                rx.el.div(
+                    rx.el.p(
+                        "Section Performance",
+                        class_name="text-xs font-bold text-gray-400 uppercase tracking-widest",
+                    ),
+                    rx.el.h3(
+                        f"{DashboardState.research_section_total + DashboardState.employability_section_total + DashboardState.global_engagement_section_total + DashboardState.learning_experience_section_total + DashboardState.sustainability_section_total} / 100",
+                        class_name="text-2xl font-black text-slate-900 mt-1",
+                    ),
+                    class_name="ml-4",
+                ),
+                class_name="flex items-center",
+            ),
+            class_name="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm",
+        ),
+        rx.el.div(
+            rx.el.div(
+                rx.el.div(
+                    rx.icon("circle_check", class_name="h-6 w-6 text-emerald-600"),
+                    class_name="p-3 bg-emerald-50 rounded-2xl",
+                ),
+                rx.el.div(
+                    rx.el.p(
+                        "Completion Rate",
+                        class_name="text-xs font-bold text-gray-400 uppercase tracking-widest",
+                    ),
+                    rx.el.h3(
+                        f"{DashboardState.progress}%",
+                        class_name="text-2xl font-black text-slate-900 mt-1",
+                    ),
+                    class_name="ml-4",
+                ),
+                class_name="flex items-center",
+            ),
+            class_name="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm",
+        ),
+        rx.el.div(
+            rx.el.div(
+                rx.el.div(
+                    rx.icon("file-check-2", class_name="h-6 w-6 text-blue-600"),
+                    class_name="p-3 bg-blue-50 rounded-2xl",
+                ),
+                rx.el.div(
+                    rx.el.p(
+                        "Evidence Files",
+                        class_name="text-xs font-bold text-gray-400 uppercase tracking-widest",
+                    ),
+                    rx.el.h3(
+                        f"{DashboardState.uploaded_research_files.length() + DashboardState.uploaded_employability_files.length() + DashboardState.uploaded_global_engagement_files.length() + DashboardState.uploaded_learning_experience_files.length() + DashboardState.uploaded_sustainability_files.length()}",
+                        class_name="text-2xl font-black text-slate-900 mt-1",
+                    ),
+                    class_name="ml-4",
+                ),
+                class_name="flex items-center",
+            ),
+            class_name="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm",
+        ),
+        class_name="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10",
+    )
+
+
 def dashboard_content() -> rx.Component:
-    """Aggregated assessment content view."""
+    """Aggregated assessment content view with improved spacing."""
     return rx.el.div(
         dashboard_header(),
+        dashboard_stat_cards(),
         data_entry_forms(),
         bottom_action_bar(),
-        class_name="max-w-6xl mx-auto pb-12",
+        class_name="max-w-7xl mx-auto pb-12 px-4",
     )
