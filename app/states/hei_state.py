@@ -24,6 +24,7 @@ class HEIState(rx.State):
     ranking_framework: str = ""
     is_registration_mode: bool = False
     is_searching: bool = False
+    is_dropdown_open: bool = False
     reg_name: str = ""
     reg_street: str = ""
     reg_region: str = ""
@@ -259,15 +260,17 @@ class HEIState(rx.State):
     @rx.event
     def set_search_query(self, query: str):
         self.search_query = query
-        if not query.strip():
-            pass
+        if query.strip():
+            self.is_dropdown_open = True
+        else:
+            self.is_dropdown_open = False
 
     @rx.event
     def select_hei(self, hei: HEI):
         self.selected_hei = hei
         self.selected_hei_id = hei["id"]
         self.search_query = hei["name"]
-        self.search_results = []
+        self.is_dropdown_open = False
         self.is_registration_mode = False
         return rx.toast(f"Selected: {hei['name']}")
 

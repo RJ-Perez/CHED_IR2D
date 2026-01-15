@@ -159,103 +159,50 @@ def registration_form() -> rx.Component:
     )
 
 
-def hei_table_row(hei: HEI) -> rx.Component:
-    is_selected = HEIState.selected_hei_id == hei["id"]
-    return rx.el.tr(
-        rx.el.td(
+def hei_dropdown_item(hei: HEI) -> rx.Component:
+    return rx.el.button(
+        rx.el.div(
             rx.el.div(
                 rx.el.p(hei["name"], class_name="text-sm font-semibold text-gray-900"),
                 rx.el.p(f"ID: {hei['id']}", class_name="text-xs text-gray-500"),
-                class_name="flex flex-col",
+                class_name="text-left",
             ),
-            class_name="px-6 py-4 whitespace-nowrap",
-        ),
-        rx.el.td(
             rx.el.div(
-                rx.icon(
-                    "map-pin", class_name="h-4 w-4 text-gray-400 mr-2 flex-shrink-0"
-                ),
                 rx.el.span(
                     hei["address"],
-                    class_name="text-sm text-gray-600 truncate max-w-[150px]",
+                    class_name="text-xs text-gray-500 truncate block max-w-[200px]",
                 ),
-                class_name="flex items-center",
+                class_name="text-right ml-auto",
             ),
-            class_name="px-6 py-4 whitespace-nowrap",
-        ),
-        rx.el.td(
-            rx.el.span(
-                hei["type"],
-                class_name="text-xs font-semibold text-gray-600 bg-gray-100 px-2.5 py-0.5 rounded-full",
-            ),
-            class_name="px-6 py-4 whitespace-nowrap",
+            class_name="flex items-center justify-between w-full",
         ),
         on_click=lambda: HEIState.select_hei(hei),
-        class_name=rx.cond(
-            is_selected,
-            "bg-blue-50 border-l-4 border-blue-600 cursor-pointer transition-colors",
-            "hover:bg-gray-50 cursor-pointer transition-colors border-l-4 border-transparent",
-        ),
+        class_name="w-full px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-0",
     )
 
 
-def hei_selection_table() -> rx.Component:
+def hei_selection_dropdown() -> rx.Component:
     return rx.el.div(
         rx.cond(
-            HEIState.is_fetching,
+            HEIState.is_dropdown_open,
             rx.el.div(
-                rx.el.div(
-                    class_name="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
-                ),
-                rx.el.p(
-                    "Loading institutions...", class_name="text-sm text-gray-500 mt-4"
-                ),
-                class_name="flex flex-col items-center justify-center py-24 bg-white border border-gray-200 rounded-xl",
-            ),
-            rx.el.div(
-                rx.el.div(
-                    rx.el.table(
-                        rx.el.thead(
-                            rx.el.tr(
-                                rx.el.th(
-                                    "Institution",
-                                    class_name="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
-                                ),
-                                rx.el.th(
-                                    "Location",
-                                    class_name="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
-                                ),
-                                rx.el.th(
-                                    "Type",
-                                    class_name="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
-                                ),
-                                class_name="bg-gray-50 border-b border-gray-200",
-                            )
-                        ),
-                        rx.el.tbody(
-                            rx.foreach(HEIState.search_results, hei_table_row),
-                            class_name="divide-y divide-gray-200 bg-white",
-                        ),
-                        class_name="min-w-full",
-                    ),
-                    class_name="overflow-x-auto overflow-y-auto max-h-[480px] border border-gray-200 rounded-xl",
-                ),
                 rx.cond(
-                    HEIState.search_results.length() == 0,
+                    HEIState.search_results.length() > 0,
                     rx.el.div(
-                        rx.icon(
-                            "search-slash", class_name="h-8 w-8 text-gray-300 mb-2"
-                        ),
+                        rx.foreach(HEIState.search_results, hei_dropdown_item),
+                        class_name="max-h-[300px] overflow-y-auto",
+                    ),
+                    rx.el.div(
                         rx.el.p(
                             "No institutions found matching your criteria.",
-                            class_name="text-sm text-gray-500",
-                        ),
-                        class_name="flex flex-col items-center justify-center py-10 bg-gray-50 border border-dashed border-gray-300 rounded-xl mt-2",
+                            class_name="text-sm text-gray-500 p-4 text-center",
+                        )
                     ),
                 ),
+                class_name="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl animate-in fade-in slide-in-from-top-2",
             ),
         ),
-        class_name="mt-4",
+        class_name="relative",
     )
 
 
@@ -287,6 +234,11 @@ def selection_screen_content() -> rx.Component:
                             rx.el.input(
                                 placeholder="Search by name, city, or ID...",
                                 on_change=HEIState.set_search_query.debounce(500),
+                                on_focus=rx.cond(
+                                    HEIState.search_query != "",
+                                    HEIState.set_is_dropdown_open(True),
+                                    rx.noop(),
+                                ),
                                 class_name="w-full pl-12 pr-12 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow shadow-sm text-lg",
                                 default_value=HEIState.search_query,
                             ),
@@ -298,10 +250,11 @@ def selection_screen_content() -> rx.Component:
                                     class_name="absolute right-4 top-4 text-gray-400 hover:text-gray-600",
                                 ),
                             ),
-                            class_name="relative mb-6",
-                        )
+                            class_name="relative",
+                        ),
+                        hei_selection_dropdown(),
+                        class_name="relative mb-6",
                     ),
-                    hei_selection_table(),
                     rx.el.div(
                         rx.el.span(
                             "Cannot find your institution? ",
