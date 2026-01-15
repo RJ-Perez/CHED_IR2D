@@ -32,6 +32,17 @@ def hei_table_row(hei: HEI) -> rx.Component:
             ),
             class_name="px-4 py-3",
         ),
+        rx.el.td(
+            rx.el.span(
+                hei["type"],
+                class_name=rx.cond(
+                    hei["type"] == "Public",
+                    "px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-indigo-100 text-indigo-700",
+                    "px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-emerald-100 text-emerald-700",
+                ),
+            ),
+            class_name="px-4 py-3",
+        ),
         on_click=lambda: HEIState.select_hei(hei),
         class_name=rx.cond(
             is_selected,
@@ -250,6 +261,10 @@ def selection_screen_content() -> rx.Component:
                                         ),
                                         rx.el.th(
                                             "Location",
+                                            class_name="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
+                                        ),
+                                        rx.el.th(
+                                            "Type",
                                             class_name="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
                                         ),
                                         class_name="bg-gray-50 border-b border-gray-200",

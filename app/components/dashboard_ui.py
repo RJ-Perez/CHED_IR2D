@@ -19,15 +19,14 @@ def form_input(
     )
 
 
-def synced_slider_input(
+def text_input_metric(
     label: str,
     value: rx.Var,
     points: rx.Var,
     max_points: int,
     on_change: rx.event.EventType,
 ) -> rx.Component:
-    """Synced slider and number input for weighted metrics with prominent value display."""
-    intervals = list(range(101))
+    """Text box input for weighted metrics with prominent score display."""
     return rx.el.div(
         rx.el.div(
             rx.el.label(label, class_name="text-sm font-semibold text-gray-700"),
@@ -35,76 +34,23 @@ def synced_slider_input(
                 f"{points} / {max_points} pts",
                 class_name="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100",
             ),
-            class_name="flex items-center justify-between mb-2",
+            class_name="flex items-center justify-between mb-4",
         ),
         rx.el.div(
-            rx.el.span(
-                value.to_string(), class_name="text-3xl font-black text-blue-700 mb-1"
-            ),
-            class_name="flex justify-center w-full",
-        ),
-        rx.el.div(
-            rx.el.div(
-                rx.foreach(
-                    intervals,
-                    lambda i: rx.el.div(
-                        rx.cond(
-                            i % 10 == 0,
-                            rx.el.span(
-                                i.to_string(),
-                                class_name="text-[10px] text-gray-400 font-bold mb-1",
-                            ),
-                            rx.el.span("", class_name="text-[10px] mb-1 h-3"),
-                        ),
-                        rx.el.div(
-                            class_name=rx.cond(
-                                i % 10 == 0,
-                                "w-0.5 h-2 bg-gray-400",
-                                rx.cond(
-                                    i % 5 == 0,
-                                    "w-px h-1.5 bg-gray-300",
-                                    "w-px h-1 bg-gray-200",
-                                ),
-                            )
-                        ),
-                        class_name="flex flex-col items-center flex-1",
-                    ),
-                ),
-                class_name="flex justify-between px-3 w-full",
-            ),
             rx.el.input(
-                type="range",
-                key=value.to_string(),
-                default_value=value.to_string(),
-                on_change=on_change.throttle(500),
+                type="number",
                 min=0,
                 max=100,
-                step=1,
-                class_name="""
-                    w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer 
-                    accent-blue-700 hover:accent-blue-800 transition-all
-                    [&::-webkit-slider-thumb]:appearance-none 
-                    [&::-webkit-slider-thumb]:w-5 
-                    [&::-webkit-slider-thumb]:h-5
-                    [&::-webkit-slider-thumb]:bg-blue-700
-                    [&::-webkit-slider-thumb]:rounded-full
-                    [&::-webkit-slider-thumb]:border-2
-                    [&::-webkit-slider-thumb]:border-white
-                    [&::-webkit-slider-thumb]:shadow-md
-                    [&::-webkit-slider-thumb]:cursor-pointer
-                    [&::-moz-range-thumb]:appearance-none
-                    [&::-moz-range-thumb]:w-5 
-                    [&::-moz-range-thumb]:h-5
-                    [&::-moz-range-thumb]:bg-blue-700
-                    [&::-moz-range-thumb]:rounded-full
-                    [&::-moz-range-thumb]:border-2
-                    [&::-moz-range-thumb]:border-white
-                    [&::-moz-range-thumb]:shadow-md
-                    [&::-moz-range-thumb]:cursor-pointer
-                    [&::-moz-range-thumb]:border-none
-                """,
+                placeholder="0-100",
+                default_value=value.to_string(),
+                on_change=on_change.debounce(300),
+                class_name="w-full text-center text-3xl font-black text-blue-700 bg-gray-50 border border-gray-200 rounded-xl py-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all",
             ),
-            class_name="flex flex-col gap-1 items-center px-2 py-2",
+            class_name="relative",
+        ),
+        rx.el.p(
+            "Enter a value between 0 and 100",
+            class_name="text-[10px] text-gray-400 mt-2 text-center font-medium",
         ),
         class_name="mb-6 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm",
     )
@@ -321,14 +267,14 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    synced_slider_input(
+                    text_input_metric(
                         "Academic Reputation",
                         DashboardState.academic_reputation,
                         DashboardState.academic_reputation_points,
                         30,
                         DashboardState.set_academic_reputation,
                     ),
-                    synced_slider_input(
+                    text_input_metric(
                         "Citations per Faculty",
                         DashboardState.citations_per_faculty,
                         DashboardState.citations_per_faculty_points,
@@ -392,14 +338,14 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    synced_slider_input(
+                    text_input_metric(
                         "Employer Reputation",
                         DashboardState.employer_reputation,
                         DashboardState.employer_reputation_points,
                         15,
                         DashboardState.set_employer_reputation,
                     ),
-                    synced_slider_input(
+                    text_input_metric(
                         "Employment Outcomes",
                         DashboardState.employment_outcomes,
                         DashboardState.employment_outcomes_points,
@@ -463,21 +409,21 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    synced_slider_input(
+                    text_input_metric(
                         "International Research Network",
                         DashboardState.international_research_network,
                         DashboardState.international_research_network_points,
                         5,
                         DashboardState.set_international_research_network,
                     ),
-                    synced_slider_input(
+                    text_input_metric(
                         "International Faculty Ratio",
                         DashboardState.international_faculty_ratio,
                         DashboardState.international_faculty_ratio_points,
                         5,
                         DashboardState.set_international_faculty_ratio,
                     ),
-                    synced_slider_input(
+                    text_input_metric(
                         "International Student Ratio",
                         DashboardState.international_student_ratio,
                         DashboardState.international_student_ratio_points,
@@ -547,7 +493,7 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    synced_slider_input(
+                    text_input_metric(
                         "Faculty-Student Ratio",
                         DashboardState.faculty_student_ratio,
                         DashboardState.faculty_student_ratio_points,
@@ -610,7 +556,7 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    synced_slider_input(
+                    text_input_metric(
                         "Sustainability Metrics Score",
                         DashboardState.sustainability_metrics,
                         DashboardState.sustainability_metrics_points,

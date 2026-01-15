@@ -9,6 +9,7 @@ class HEI(TypedDict):
     id: str
     name: str
     address: str
+    type: str
 
 
 class HEIState(rx.State):
@@ -17,7 +18,6 @@ class HEIState(rx.State):
     """
 
     hei_database: list[HEI] = []
-    search_results: list[HEI] = []
     search_query: str = ""
     selected_hei_id: str = ""
     selected_hei: Optional[HEI] = None
@@ -226,6 +226,21 @@ class HEIState(rx.State):
         return ", ".join([p for p in parts if p])
 
     @rx.var
+    def search_results(self) -> list[HEI]:
+        """Computed property for filter-as-you-type functionality."""
+        if not self.search_query.strip():
+            return self.hei_database
+        query = self.search_query.lower()
+        return [
+            hei
+            for hei in self.hei_database
+            if query in hei["name"].lower()
+            or query in hei["address"].lower()
+            or query in hei["id"].lower()
+            or (query in hei["type"].lower())
+        ]
+
+    @rx.var
     def is_form_valid(self) -> bool:
         if self.is_registration_mode:
             return (
@@ -245,42 +260,6 @@ class HEIState(rx.State):
         self.search_query = query
         if self.selected_hei and self.selected_hei["name"] != query:
             self.selected_hei = None
-        if not query.strip():
-            self.search_results = []
-            return
-        return HEIState.search_institutions
-
-    @rx.event(background=True)
-    async def search_institutions(self):
-        async with self:
-            if not self.search_query.strip():
-                self.search_results = []
-                self.is_searching = False
-                return
-            self.is_searching = True
-            query_str = self.search_query
-        async with rx.asession() as session:
-            result = await session.execute(
-                text("""
-                SELECT id, institution_name, street_address, city_municipality 
-                FROM institutions 
-                WHERE LOWER(institution_name) LIKE LOWER(:term)
-                ORDER BY institution_name ASC
-                LIMIT 10
-                """),
-                {"term": f"%{query_str}%"},
-            )
-            rows = result.all()
-            async with self:
-                self.search_results = [
-                    {
-                        "id": str(row[0]),
-                        "name": row[1],
-                        "address": f"{row[2]}, {row[3]}",
-                    }
-                    for row in rows
-                ]
-                self.is_searching = False
 
     @rx.event
     def select_hei(self, hei: HEI):
@@ -337,7 +316,7 @@ class HEIState(rx.State):
         async with rx.asession() as session:
             result = await session.execute(
                 text(
-                    "SELECT id, institution_name, street_address, city_municipality FROM institutions ORDER BY institution_name ASC"
+                    "SELECT id, institution_name, street_address, city_municipality, COALESCE(institution_type, 'Private') FROM institutions ORDER BY institution_name ASC"
                 )
             )
             rows = result.all()
@@ -347,6 +326,7 @@ class HEIState(rx.State):
                         "id": str(row[0]),
                         "name": row[1],
                         "address": f"{row[2]}, {row[3]}",
+                        "type": row[4],
                     }
                     for row in rows
                 ]
