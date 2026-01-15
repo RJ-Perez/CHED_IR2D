@@ -25,8 +25,10 @@ def text_input_metric(
     points: rx.Var,
     max_points: int,
     on_change: rx.event.EventType,
+    error_msg: rx.Var = "",
 ) -> rx.Component:
-    """Text box input for weighted metrics with prominent score display."""
+    """Text box input for weighted metrics with prominent score display and validation."""
+    has_error = error_msg != ""
     return rx.el.div(
         rx.el.div(
             rx.el.label(label, class_name="text-sm font-semibold text-gray-700"),
@@ -56,13 +58,25 @@ def text_input_metric(
                     rx.event.prevent_default,
                     rx.noop(),
                 ),
-                class_name="w-full text-center text-3xl font-black text-blue-700 bg-gray-50 border border-gray-200 rounded-xl py-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all",
+                class_name=rx.cond(
+                    has_error,
+                    "w-full text-center text-3xl font-black text-red-700 bg-red-50 border-2 border-red-500 rounded-xl py-4 focus:ring-2 focus:ring-red-500 outline-none transition-all animate-pulse",
+                    "w-full text-center text-3xl font-black text-blue-700 bg-gray-50 border border-gray-200 rounded-xl py-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all",
+                ),
             ),
             class_name="relative",
         ),
-        rx.el.p(
-            "Enter an integer between 0 and 100",
-            class_name="text-[10px] text-gray-400 mt-2 text-center font-medium",
+        rx.cond(
+            has_error,
+            rx.el.div(
+                rx.icon("triangle-alert", class_name="h-3 w-3 mr-1"),
+                rx.el.span(error_msg),
+                class_name="text-[10px] text-red-600 mt-2 flex items-center justify-center font-bold uppercase tracking-wider",
+            ),
+            rx.el.p(
+                "Enter an integer between 0 and 100",
+                class_name="text-[10px] text-gray-400 mt-2 text-center font-medium",
+            ),
         ),
         class_name="mb-6 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm",
     )
@@ -250,8 +264,13 @@ def bottom_action_bar() -> rx.Component:
                     ),
                 ),
                 on_click=DashboardState.save_progress,
-                disabled=DashboardState.is_saving,
-                class_name="flex items-center px-6 py-2.5 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-70 font-semibold",
+                disabled=DashboardState.is_saving
+                | DashboardState.has_validation_errors,
+                class_name=rx.cond(
+                    DashboardState.has_validation_errors,
+                    "flex items-center px-6 py-2.5 bg-gray-400 text-white rounded-lg shadow-md cursor-not-allowed transition-colors font-semibold",
+                    "flex items-center px-6 py-2.5 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-70 font-semibold",
+                ),
             ),
             class_name="flex items-center gap-8",
         ),
@@ -285,6 +304,7 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.academic_reputation_points,
                         30,
                         DashboardState.set_academic_reputation,
+                        DashboardState.academic_reputation_error,
                     ),
                     text_input_metric(
                         "Citations per Faculty",
@@ -292,6 +312,7 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.citations_per_faculty_points,
                         20,
                         DashboardState.set_citations_per_faculty,
+                        DashboardState.citations_per_faculty_error,
                     ),
                     rx.el.div(
                         rx.el.div(
@@ -356,6 +377,7 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.employer_reputation_points,
                         15,
                         DashboardState.set_employer_reputation,
+                        DashboardState.employer_reputation_error,
                     ),
                     text_input_metric(
                         "Employment Outcomes",
@@ -363,6 +385,7 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.employment_outcomes_points,
                         5,
                         DashboardState.set_employment_outcomes,
+                        DashboardState.employment_outcomes_error,
                     ),
                     rx.el.div(
                         rx.el.div(
@@ -427,6 +450,7 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.international_research_network_points,
                         5,
                         DashboardState.set_international_research_network,
+                        DashboardState.international_research_network_error,
                     ),
                     text_input_metric(
                         "International Faculty Ratio",
@@ -434,6 +458,7 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.international_faculty_ratio_points,
                         5,
                         DashboardState.set_international_faculty_ratio,
+                        DashboardState.international_faculty_ratio_error,
                     ),
                     text_input_metric(
                         "International Student Ratio",
@@ -441,6 +466,7 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.international_student_ratio_points,
                         5,
                         DashboardState.set_international_student_ratio,
+                        DashboardState.international_student_ratio_error,
                     ),
                     form_input(
                         "International Student Diversity (Countries)",
@@ -511,6 +537,7 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.faculty_student_ratio_points,
                         10,
                         DashboardState.set_faculty_student_ratio,
+                        DashboardState.faculty_student_ratio_error,
                     ),
                     rx.el.div(
                         rx.el.div(
@@ -574,6 +601,7 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.sustainability_metrics_points,
                         5,
                         DashboardState.set_sustainability_metrics,
+                        DashboardState.sustainability_metrics_error,
                     ),
                     rx.el.div(
                         rx.el.div(

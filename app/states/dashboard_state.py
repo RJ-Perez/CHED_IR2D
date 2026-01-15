@@ -32,6 +32,29 @@ class DashboardState(rx.State):
     is_uploading_global_engagement: bool = False
     is_uploading_learning_experience: bool = False
     is_uploading_sustainability: bool = False
+    academic_reputation_error: str = ""
+    citations_per_faculty_error: str = ""
+    employer_reputation_error: str = ""
+    employment_outcomes_error: str = ""
+    international_research_network_error: str = ""
+    international_faculty_ratio_error: str = ""
+    international_student_ratio_error: str = ""
+    faculty_student_ratio_error: str = ""
+    sustainability_metrics_error: str = ""
+
+    @rx.var
+    def has_validation_errors(self) -> bool:
+        return (
+            self.academic_reputation_error != ""
+            or self.citations_per_faculty_error != ""
+            or self.employer_reputation_error != ""
+            or (self.employment_outcomes_error != "")
+            or (self.international_research_network_error != "")
+            or (self.international_faculty_ratio_error != "")
+            or (self.international_student_ratio_error != "")
+            or (self.faculty_student_ratio_error != "")
+            or (self.sustainability_metrics_error != "")
+        )
 
     @rx.var
     def academic_reputation_points(self) -> float:
@@ -116,50 +139,64 @@ class DashboardState(rx.State):
         total_fields = 9
         return int(filled_count / total_fields * 100)
 
-    def _validate_score(self, value: str | int) -> int:
-        """Internal helper to sanitize and clamp scores to [0, 100]."""
+    def _check_and_clamp(self, value: str, field_name: str) -> int:
+        """Validates range and returns clamped value while setting errors."""
         try:
-            if isinstance(value, str):
-                import re
+            if not value.strip():
+                self.setvar(f"{field_name}_error", "")
+                return 0
+            import re
 
-                clean_val = re.sub("[^0-9]", "", value)
-                if not clean_val:
-                    return 0
-                parsed_val = int(clean_val)
+            clean_val = re.sub("[^0-9-]", "", value)
+            if not clean_val or clean_val == "-":
+                self.setvar(f"{field_name}_error", "Please enter a valid number")
+                return 0
+            num = int(clean_val)
+            if num < 0 or num > 100:
+                self.setvar(f"{field_name}_error", "Value must be between 0 and 100")
             else:
-                parsed_val = int(value)
-            return max(0, min(100, parsed_val))
+                self.setvar(f"{field_name}_error", "")
+            return max(0, min(100, num))
         except (ValueError, TypeError) as e:
-            logging.exception(f"Error validating score: {e}")
+            logging.exception(f"Error validating input for {field_name}: {e}")
+            self.setvar(f"{field_name}_error", "Invalid format")
             return 0
 
     @rx.event
     def set_academic_reputation(self, value: str):
-        self.academic_reputation = self._validate_score(value)
+        self.academic_reputation = self._check_and_clamp(value, "academic_reputation")
 
     @rx.event
     def set_citations_per_faculty(self, value: str):
-        self.citations_per_faculty = self._validate_score(value)
+        self.citations_per_faculty = self._check_and_clamp(
+            value, "citations_per_faculty"
+        )
 
     @rx.event
     def set_employer_reputation(self, value: str):
-        self.employer_reputation = self._validate_score(value)
+        self.employer_reputation = self._check_and_clamp(value, "employer_reputation")
 
     @rx.event
     def set_employment_outcomes(self, value: str):
-        self.employment_outcomes = self._validate_score(value)
+        self.employment_outcomes = self._check_and_clamp(value, "employment_outcomes")
 
     @rx.event
     def set_international_research_network(self, value: str):
-        self.international_research_network = self._validate_score(value)
+        self.international_research_network = self._check_and_clamp(
+            value, "international_research_network"
+        )
 
     @rx.event
     def set_international_faculty_ratio(self, value: str):
-        self.international_faculty_ratio = self._validate_score(value)
+        self.international_faculty_ratio = self._check_and_clamp(
+            value, "international_faculty_ratio"
+        )
 
     @rx.event
     def set_international_student_ratio(self, value: str):
-        self.international_student_ratio = self._validate_score(value)
+        self.international_student_ratio = self._check_and_clamp(
+            value, "international_student_ratio"
+        )
 
     @rx.event
     def set_international_student_diversity(self, value: str):
@@ -167,11 +204,15 @@ class DashboardState(rx.State):
 
     @rx.event
     def set_faculty_student_ratio(self, value: str):
-        self.faculty_student_ratio = self._validate_score(value)
+        self.faculty_student_ratio = self._check_and_clamp(
+            value, "faculty_student_ratio"
+        )
 
     @rx.event
     def set_sustainability_metrics(self, value: str):
-        self.sustainability_metrics = self._validate_score(value)
+        self.sustainability_metrics = self._check_and_clamp(
+            value, "sustainability_metrics"
+        )
 
     async def _save_uploaded_file(
         self, file: rx.UploadFile, category: str
@@ -486,6 +527,11 @@ class DashboardState(rx.State):
     async def save_progress(self):
         """Save current dashboard state to the database, tracking the submitting user."""
         async with self:
+            if self.has_validation_errors:
+                yield rx.toast.error(
+                    "Please correct the validation errors before saving."
+                )
+                return
             self.is_saving = True
         async with rx.asession() as session:
             async with self:
