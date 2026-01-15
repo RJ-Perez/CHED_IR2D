@@ -3,22 +3,6 @@ from app.states.dashboard_state import DashboardState
 from app.states.hei_state import HEIState
 
 
-def form_input(
-    label: str, placeholder: str, value: rx.Var, on_change: rx.event.EventType
-) -> rx.Component:
-    """Standard form input for assessment."""
-    return rx.el.div(
-        rx.el.label(label, class_name="block text-sm font-medium text-gray-700 mb-1"),
-        rx.el.input(
-            placeholder=placeholder,
-            default_value=value,
-            on_change=on_change,
-            class_name="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-sm",
-        ),
-        class_name="mb-4",
-    )
-
-
 def text_input_metric(
     label: str,
     value: rx.Var,
@@ -86,6 +70,44 @@ def text_input_metric(
                 ),
                 class_name="w-full bg-slate-100 h-1 rounded-full mt-4 overflow-hidden flex",
             ),
+        ),
+        class_name="group mb-6 p-6 bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300",
+    )
+
+
+def text_metric_card(
+    label: str, placeholder: str, value: rx.Var, on_change: rx.event.EventType
+) -> rx.Component:
+    """Styled text input card used for qualitative/tracked metrics (0% weight)."""
+    return rx.el.div(
+        rx.el.div(
+            rx.el.label(
+                label, class_name="text-sm font-bold text-gray-800 tracking-tight"
+            ),
+            rx.el.div(
+                rx.el.span(
+                    "Tracked",
+                    class_name="text-[10px] font-bold text-gray-400 uppercase tracking-widest",
+                ),
+                class_name="px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-100",
+            ),
+            class_name="flex items-center justify-between mb-5",
+        ),
+        rx.el.div(
+            rx.el.input(
+                type="text",
+                placeholder=placeholder,
+                default_value=value,
+                on_change=on_change.debounce(300),
+                class_name="w-full text-center text-lg font-bold text-slate-800 bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all shadow-inner hover:border-slate-300",
+            ),
+            class_name="relative",
+        ),
+        rx.el.div(
+            rx.el.p(
+                "Note: This data is for institutional tracking and does not affect the readiness score.",
+                class_name="text-[10px] text-gray-400 italic text-center mt-3",
+            )
         ),
         class_name="group mb-6 p-6 bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300",
     )
@@ -291,7 +313,7 @@ def dashboard_header() -> rx.Component:
 
 
 def bottom_action_bar() -> rx.Component:
-    """Sticky-ready bottom bar containing progress and save functionality with a floating design."""
+    """Sticky-ready bottom bar containing progress and save functionality with a horizontal floating design."""
     return rx.el.div(
         rx.el.div(
             rx.el.div(
@@ -315,7 +337,7 @@ def bottom_action_bar() -> rx.Component:
                         class_name="flex flex-col mr-8 shrink-0",
                     ),
                     progress_tracker(),
-                    class_name="flex items-center w-full mb-6",
+                    class_name="flex items-center flex-1",
                 ),
                 rx.el.div(
                     rx.el.button(
@@ -339,8 +361,8 @@ def bottom_action_bar() -> rx.Component:
                         | DashboardState.has_validation_errors,
                         class_name=rx.cond(
                             DashboardState.has_validation_errors,
-                            "flex items-center justify-center w-full px-8 py-4 bg-slate-200 text-slate-400 rounded-2xl shadow-lg cursor-not-allowed transition-all font-bold text-sm",
-                            "flex items-center justify-center w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-xl hover:shadow-blue-200 hover:scale-[1.01] active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-70 font-bold text-sm",
+                            "flex items-center justify-center px-6 py-3 bg-slate-200 text-slate-400 rounded-2xl shadow-lg cursor-not-allowed transition-all font-bold text-sm whitespace-nowrap",
+                            "flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-xl hover:shadow-blue-200 hover:scale-[1.01] active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-70 font-bold text-sm whitespace-nowrap",
                         ),
                     ),
                     rx.cond(
@@ -348,18 +370,18 @@ def bottom_action_bar() -> rx.Component:
                         rx.el.button(
                             rx.el.div(
                                 rx.icon("bar-chart-2", class_name="h-5 w-5 mr-3"),
-                                "View Assessment Results",
+                                "View Results",
                                 class_name="flex items-center",
                             ),
                             on_click=rx.redirect("/analytics"),
-                            class_name="flex items-center justify-center w-full px-8 py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl shadow-xl hover:shadow-emerald-200 hover:scale-[1.01] active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-emerald-100 transition-all font-bold text-sm",
+                            class_name="flex items-center justify-center px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl shadow-xl hover:shadow-emerald-200 hover:scale-[1.01] active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-emerald-100 transition-all font-bold text-sm whitespace-nowrap",
                         ),
                     ),
-                    class_name="flex flex-col gap-4 w-full",
+                    class_name="flex items-center gap-4",
                 ),
-                class_name="flex flex-col w-full",
+                class_name="flex items-center justify-between w-full gap-10",
             ),
-            class_name="max-w-4xl mx-auto px-10 py-8",
+            class_name="max-w-7xl mx-auto px-10 py-6",
         ),
         class_name="bg-white/90 backdrop-blur-xl border border-white/20 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] mt-12 sticky bottom-6 rounded-[2rem] mx-8 z-[40]",
     )
@@ -555,9 +577,9 @@ def data_entry_forms() -> rx.Component:
                         DashboardState.set_international_student_ratio,
                         DashboardState.international_student_ratio_error,
                     ),
-                    form_input(
-                        "International Student Diversity (Countries)",
-                        "e.g. 45 countries (Tracked, 0% weight)",
+                    text_metric_card(
+                        "International Student Diversity",
+                        "e.g. 45 countries (Count and Origin)",
                         DashboardState.international_student_diversity,
                         DashboardState.set_international_student_diversity,
                     ),
