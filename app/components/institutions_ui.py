@@ -60,7 +60,6 @@ def hei_table_row(hei: HEI) -> rx.Component:
         rx.el.td(
             rx.el.div(
                 rx.el.p(hei["name"], class_name="text-sm font-medium text-gray-900"),
-                rx.el.p(f"ID: {hei['id']}", class_name="text-xs text-gray-500"),
                 class_name="flex flex-col",
             ),
             class_name="px-6 py-4 whitespace-nowrap",

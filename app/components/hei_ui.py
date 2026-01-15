@@ -164,7 +164,6 @@ def hei_dropdown_item(hei: HEI) -> rx.Component:
         rx.el.div(
             rx.el.div(
                 rx.el.p(hei["name"], class_name="text-sm font-semibold text-gray-900"),
-                rx.el.p(f"ID: {hei['id']}", class_name="text-xs text-gray-500"),
                 class_name="text-left",
             ),
             rx.el.div(
@@ -208,17 +207,6 @@ def selected_hei_card() -> rx.Component:
                         class_name="flex flex-col",
                     ),
                     rx.el.div(
-                        rx.el.div(
-                            rx.el.p(
-                                "Institution ID",
-                                class_name="text-[10px] font-bold text-gray-400 uppercase",
-                            ),
-                            rx.el.p(
-                                HEIState.selected_hei["id"],
-                                class_name="text-sm font-medium text-gray-700",
-                            ),
-                            class_name="mr-8",
-                        ),
                         rx.el.div(
                             rx.el.p(
                                 "Type",

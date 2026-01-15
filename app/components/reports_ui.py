@@ -137,7 +137,6 @@ def report_table_row(report: ReportItem) -> rx.Component:
         rx.el.td(
             rx.el.div(
                 rx.el.p(report["name"], class_name="text-sm font-medium text-gray-900"),
-                rx.el.p(f"ID: {report['id']}", class_name="text-xs text-gray-500"),
                 evidence_list_section(report["evidence_files"]),
                 class_name="flex flex-col",
             ),
