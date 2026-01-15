@@ -216,7 +216,9 @@ def auth_form() -> rx.Component:
         ),
         google_oauth_provider(
             rx.el.div(
-                google_login(on_success=AuthState.on_google_login),
+                google_login(
+                    on_success=lambda token: AuthState.on_google_auth_success(token)
+                ),
                 class_name="w-full flex justify-center",
             )
         ),

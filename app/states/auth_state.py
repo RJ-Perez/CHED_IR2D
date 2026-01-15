@@ -245,24 +245,27 @@ class AuthState(GoogleAuthState):
                     yield rx.redirect("/hei-selection")
 
     @rx.event(background=True)
-    async def on_google_login(self, token_data: dict):
-        """Triggered after Google sign-in. Verifies user in database or creates new record."""
+    async def on_google_auth_success(self, _token: dict):
+        """Triggered after Google sign-in component finishes decoding the credential.
+        We use self.tokeninfo which is automatically populated by the parent GoogleAuthState class.
+        """
         async with self:
             self.is_loading = True
             self.error_message = ""
-        info = self.tokeninfo if self.tokeninfo else token_data
+        await asyncio.sleep(0.5)
+        info = self.tokeninfo
         user_email = info.get("email")
         google_id = info.get("sub")
         first_name = info.get("given_name", "")
         last_name = info.get("family_name", "")
         if not user_email or not google_id:
             logging.warning(
-                f"Google login failed: Missing critical data. Email: {user_email}, Sub: {google_id}"
+                f"Google auth failed: Missing critical data in tokeninfo. Email: {user_email}, Sub: {google_id}"
             )
             async with self:
                 self.is_loading = False
             yield rx.toast(
-                "Authentication failed: No email address returned from Google.",
+                "Authentication failed: Google profile information could not be retrieved.",
                 duration=5000,
             )
             return
@@ -341,10 +344,12 @@ class AuthState(GoogleAuthState):
             yield rx.redirect("/hei-selection")
         else:
             async with self:
-                self.error_message = "Authentication failed during database sync."
+                self.error_message = (
+                    "Authentication failed during account verification."
+                )
                 self.is_loading = False
             yield rx.toast(
-                "An error occurred during account creation. Please try again.",
+                "An error occurred during account synchronization. Please try again.",
                 duration=5000,
             )
 
