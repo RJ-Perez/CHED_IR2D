@@ -237,7 +237,7 @@ class HEIState(rx.State):
             for hei in self.hei_database
             if query in hei["name"].lower()
             or query in hei["address"].lower()
-            or query in hei["id"].lower()
+            or query in str(hei["id"]).lower()
             or (query in hei["type"].lower())
         ]
 
@@ -259,8 +259,8 @@ class HEIState(rx.State):
     @rx.event
     def set_search_query(self, query: str):
         self.search_query = query
-        if self.selected_hei and self.selected_hei["name"] != query:
-            self.selected_hei = None
+        if not query.strip():
+            pass
 
     @rx.event
     def select_hei(self, hei: HEI):
