@@ -317,18 +317,6 @@ def bottom_action_bar() -> rx.Component:
                     progress_tracker(),
                     class_name="flex flex-1 items-center",
                 ),
-                rx.cond(
-                    DashboardState.save_successful,
-                    rx.el.button(
-                        rx.el.div(
-                            rx.icon("bar-chart-2", class_name="h-5 w-5 mr-3"),
-                            "View Assessment Results",
-                            class_name="flex items-center",
-                        ),
-                        on_click=rx.redirect("/analytics"),
-                        class_name="flex items-center px-8 py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl shadow-xl hover:shadow-emerald-200 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-emerald-100 transition-all font-bold text-sm",
-                    ),
-                ),
                 rx.el.button(
                     rx.cond(
                         DashboardState.is_saving,
@@ -352,6 +340,18 @@ def bottom_action_bar() -> rx.Component:
                         DashboardState.has_validation_errors,
                         "flex items-center px-8 py-4 bg-slate-200 text-slate-400 rounded-2xl shadow-lg cursor-not-allowed transition-all font-bold text-sm",
                         "flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-xl hover:shadow-blue-200 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-70 font-bold text-sm",
+                    ),
+                ),
+                rx.cond(
+                    DashboardState.save_successful,
+                    rx.el.button(
+                        rx.el.div(
+                            rx.icon("bar-chart-2", class_name="h-5 w-5 mr-3"),
+                            "View Assessment Results",
+                            class_name="flex items-center",
+                        ),
+                        on_click=rx.redirect("/analytics"),
+                        class_name="flex items-center px-8 py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl shadow-xl hover:shadow-emerald-200 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-emerald-100 transition-all font-bold text-sm",
                     ),
                 ),
                 class_name="flex items-center gap-10",
