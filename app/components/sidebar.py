@@ -38,6 +38,10 @@ def sidebar(current_page: str) -> rx.Component:
             class_name="flex items-center h-20 px-6 border-b border-gray-100 shrink-0",
         ),
         rx.el.nav(
+            rx.el.p(
+                "HEI Modules",
+                class_name="px-4 pt-6 pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest",
+            ),
             sidebar_item(
                 "Assessment",
                 "layout-dashboard",
@@ -49,6 +53,10 @@ def sidebar(current_page: str) -> rx.Component:
                 "bar-chart-3",
                 "/analytics",
                 is_active=current_page == "analytics",
+            ),
+            rx.el.p(
+                "CHED Modules",
+                class_name="px-4 pt-8 pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest",
             ),
             sidebar_item(
                 "Institutions",
