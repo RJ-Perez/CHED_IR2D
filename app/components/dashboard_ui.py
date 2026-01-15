@@ -724,27 +724,6 @@ def dashboard_stat_cards() -> rx.Component:
         rx.el.div(
             rx.el.div(
                 rx.el.div(
-                    rx.icon("target", class_name="h-6 w-6 text-purple-600"),
-                    class_name="p-3 bg-purple-50 rounded-2xl",
-                ),
-                rx.el.div(
-                    rx.el.p(
-                        "Section Performance",
-                        class_name="text-xs font-bold text-gray-400 uppercase tracking-widest",
-                    ),
-                    rx.el.h3(
-                        f"{DashboardState.research_section_total + DashboardState.employability_section_total + DashboardState.global_engagement_section_total + DashboardState.learning_experience_section_total + DashboardState.sustainability_section_total} / 100",
-                        class_name="text-2xl font-black text-slate-900 mt-1",
-                    ),
-                    class_name="ml-4",
-                ),
-                class_name="flex items-center",
-            ),
-            class_name="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm",
-        ),
-        rx.el.div(
-            rx.el.div(
-                rx.el.div(
                     rx.icon("circle_check", class_name="h-6 w-6 text-emerald-600"),
                     class_name="p-3 bg-emerald-50 rounded-2xl",
                 ),
@@ -784,7 +763,7 @@ def dashboard_stat_cards() -> rx.Component:
             ),
             class_name="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm",
         ),
-        class_name="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10",
+        class_name="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10",
     )
 
 
