@@ -275,6 +275,13 @@ class HEIState(rx.State):
         return rx.toast(f"Selected: {hei['name']}")
 
     @rx.event
+    def deselect_hei(self):
+        self.selected_hei = None
+        self.selected_hei_id = ""
+        self.search_query = ""
+        self.ranking_framework = ""
+
+    @rx.event
     def set_ranking_framework(self, framework: str):
         self.ranking_framework = framework
 

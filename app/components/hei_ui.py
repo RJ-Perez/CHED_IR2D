@@ -181,6 +181,82 @@ def hei_dropdown_item(hei: HEI) -> rx.Component:
     )
 
 
+def selected_hei_card() -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.el.div(
+                rx.el.div(
+                    rx.icon("building-2", class_name="h-8 w-8 text-blue-600"),
+                    class_name="p-3 bg-blue-50 rounded-xl mr-4",
+                ),
+                rx.el.div(
+                    rx.el.div(
+                        rx.el.h3(
+                            HEIState.selected_hei["name"],
+                            class_name="text-xl font-bold text-gray-900",
+                        ),
+                        rx.el.div(
+                            rx.icon(
+                                "circle_check", class_name="h-4 w-4 text-green-500 mr-1"
+                            ),
+                            rx.el.span(
+                                "Verified Institution",
+                                class_name="text-xs font-semibold text-green-600 uppercase tracking-wider",
+                            ),
+                            class_name="flex items-center mt-0.5",
+                        ),
+                        class_name="flex flex-col",
+                    ),
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.p(
+                                "Institution ID",
+                                class_name="text-[10px] font-bold text-gray-400 uppercase",
+                            ),
+                            rx.el.p(
+                                HEIState.selected_hei["id"],
+                                class_name="text-sm font-medium text-gray-700",
+                            ),
+                            class_name="mr-8",
+                        ),
+                        rx.el.div(
+                            rx.el.p(
+                                "Type",
+                                class_name="text-[10px] font-bold text-gray-400 uppercase",
+                            ),
+                            rx.el.p(
+                                HEIState.selected_hei["type"],
+                                class_name="text-sm font-medium text-gray-700",
+                            ),
+                        ),
+                        class_name="flex mt-3",
+                    ),
+                    rx.el.div(
+                        rx.icon(
+                            "map-pin",
+                            class_name="h-3.5 w-3.5 text-gray-400 mr-1.5 mt-0.5 flex-shrink-0",
+                        ),
+                        rx.el.p(
+                            HEIState.selected_hei["address"],
+                            class_name="text-sm text-gray-600 leading-relaxed",
+                        ),
+                        class_name="flex items-start mt-3 pt-3 border-t border-gray-100",
+                    ),
+                    class_name="flex-1",
+                ),
+                rx.el.button(
+                    "Change Selection",
+                    on_click=HEIState.deselect_hei,
+                    class_name="ml-4 px-4 py-2 text-sm font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors shrink-0",
+                ),
+                class_name="flex items-start",
+            ),
+            class_name="p-6",
+        ),
+        class_name="bg-white rounded-2xl border border-gray-200 border-l-4 border-l-blue-600 shadow-sm mb-8 animate-in fade-in slide-in-from-bottom-4 duration-300",
+    )
+
+
 def hei_selection_dropdown() -> rx.Component:
     return rx.el.div(
         rx.cond(
@@ -219,54 +295,62 @@ def selection_screen_content() -> rx.Component:
             rx.cond(
                 ~HEIState.is_registration_mode,
                 rx.el.div(
-                    rx.el.div(
+                    rx.cond(
+                        HEIState.selected_hei,
+                        selected_hei_card(),
                         rx.el.div(
-                            rx.cond(
-                                HEIState.is_searching,
+                            rx.el.div(
                                 rx.el.div(
-                                    class_name="absolute left-4 top-3.5 h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
+                                    rx.cond(
+                                        HEIState.is_searching,
+                                        rx.el.div(
+                                            class_name="absolute left-4 top-3.5 h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
+                                        ),
+                                        rx.icon(
+                                            "search",
+                                            class_name="absolute left-4 top-3.5 text-gray-400 h-5 w-5",
+                                        ),
+                                    ),
+                                    rx.el.input(
+                                        placeholder="Search by name, city, or ID...",
+                                        on_change=HEIState.set_search_query.debounce(
+                                            500
+                                        ),
+                                        on_focus=rx.cond(
+                                            HEIState.search_query != "",
+                                            HEIState.set_is_dropdown_open(True),
+                                            rx.noop(),
+                                        ),
+                                        class_name="w-full pl-12 pr-12 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow shadow-sm text-lg",
+                                        default_value=HEIState.search_query,
+                                    ),
+                                    rx.cond(
+                                        HEIState.search_query.length() > 0,
+                                        rx.el.button(
+                                            rx.icon("x", class_name="h-4 w-4"),
+                                            on_click=HEIState.set_search_query(""),
+                                            class_name="absolute right-4 top-4 text-gray-400 hover:text-gray-600",
+                                        ),
+                                    ),
+                                    class_name="relative",
                                 ),
-                                rx.icon(
-                                    "search",
-                                    class_name="absolute left-4 top-3.5 text-gray-400 h-5 w-5",
-                                ),
+                                hei_selection_dropdown(),
+                                class_name="relative mb-6",
                             ),
-                            rx.el.input(
-                                placeholder="Search by name, city, or ID...",
-                                on_change=HEIState.set_search_query.debounce(500),
-                                on_focus=rx.cond(
-                                    HEIState.search_query != "",
-                                    HEIState.set_is_dropdown_open(True),
-                                    rx.noop(),
+                            rx.el.div(
+                                rx.el.span(
+                                    "Cannot find your institution? ",
+                                    class_name="text-sm text-gray-600",
                                 ),
-                                class_name="w-full pl-12 pr-12 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow shadow-sm text-lg",
-                                default_value=HEIState.search_query,
-                            ),
-                            rx.cond(
-                                HEIState.search_query.length() > 0,
                                 rx.el.button(
-                                    rx.icon("x", class_name="h-4 w-4"),
-                                    on_click=HEIState.set_search_query(""),
-                                    class_name="absolute right-4 top-4 text-gray-400 hover:text-gray-600",
+                                    "Register HEI Account",
+                                    on_click=HEIState.toggle_registration_mode,
+                                    class_name="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline",
                                 ),
+                                class_name="mt-4 flex items-center justify-center",
                             ),
-                            class_name="relative",
                         ),
-                        hei_selection_dropdown(),
-                        class_name="relative mb-6",
-                    ),
-                    rx.el.div(
-                        rx.el.span(
-                            "Cannot find your institution? ",
-                            class_name="text-sm text-gray-600",
-                        ),
-                        rx.el.button(
-                            "Register HEI Account",
-                            on_click=HEIState.toggle_registration_mode,
-                            class_name="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline",
-                        ),
-                        class_name="mt-4 flex items-center justify-center",
-                    ),
+                    )
                 ),
                 rx.el.div(
                     rx.el.button(
