@@ -247,21 +247,29 @@ class AuthState(GoogleAuthState):
     @rx.event(background=True)
     async def on_google_login(self, token_data: dict):
         """Triggered after Google sign-in. Verifies user in database or creates new record."""
-        for _ in range(20):
-            if self.token_is_valid:
-                break
-            await asyncio.sleep(0.5)
-        if not self.token_is_valid and (not token_data):
-            logging.warning("Google token validation failed or timed out.")
-            return
         async with self:
-            info = token_data if token_data else self.tokeninfo
-            user_email = info.get("email")
-            google_id = info.get("sub")
-            first_name = info.get("given_name", "")
-            last_name = info.get("family_name", "")
+            self.is_loading = True
+            self.error_message = ""
+        if not token_data:
+            if self.token_is_valid:
+                token_data = self.tokeninfo
+            if not token_data:
+                logging.warning("Google login failed: No token data received.")
+                async with self:
+                    self.is_loading = False
+                yield rx.toast(
+                    "Authentication failed: No data received from Google.",
+                    duration=5000,
+                )
+                return
+        user_email = token_data.get("email")
+        google_id = token_data.get("sub")
+        first_name = token_data.get("given_name", "")
+        last_name = token_data.get("family_name", "")
         if not user_email:
             logging.warning("Google login failed: No email provided in token data.")
+            async with self:
+                self.is_loading = False
             yield rx.toast(
                 "Authentication failed: No email address returned from Google.",
                 duration=5000,
@@ -329,17 +337,21 @@ class AuthState(GoogleAuthState):
                 await asession.commit()
         except Exception as e:
             logging.exception(f"Database error during Google login sync: {e}")
+            async with self:
+                self.is_loading = False
             yield rx.toast("Database synchronization failed.", duration=3000)
             return
         if user_id:
             async with self:
                 self.authenticated_user_id = user_id
                 self.error_message = ""
+                self.is_loading = False
             yield rx.toast(f"Welcome, {first_name}!", duration=3000)
             yield rx.redirect("/hei-selection")
         else:
             async with self:
                 self.error_message = "Authentication failed during database sync."
+                self.is_loading = False
             yield rx.toast(
                 "An error occurred during account creation. Please try again.",
                 duration=5000,
