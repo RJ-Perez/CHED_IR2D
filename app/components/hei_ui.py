@@ -159,6 +159,108 @@ def registration_form() -> rx.Component:
     )
 
 
+def hei_table_row(hei: HEI) -> rx.Component:
+    is_selected = HEIState.selected_hei_id == hei["id"]
+    return rx.el.tr(
+        rx.el.td(
+            rx.el.div(
+                rx.el.p(hei["name"], class_name="text-sm font-semibold text-gray-900"),
+                rx.el.p(f"ID: {hei['id']}", class_name="text-xs text-gray-500"),
+                class_name="flex flex-col",
+            ),
+            class_name="px-6 py-4 whitespace-nowrap",
+        ),
+        rx.el.td(
+            rx.el.div(
+                rx.icon(
+                    "map-pin", class_name="h-4 w-4 text-gray-400 mr-2 flex-shrink-0"
+                ),
+                rx.el.span(
+                    hei["address"],
+                    class_name="text-sm text-gray-600 truncate max-w-[150px]",
+                ),
+                class_name="flex items-center",
+            ),
+            class_name="px-6 py-4 whitespace-nowrap",
+        ),
+        rx.el.td(
+            rx.el.span(
+                hei["type"],
+                class_name="text-xs font-semibold text-gray-600 bg-gray-100 px-2.5 py-0.5 rounded-full",
+            ),
+            class_name="px-6 py-4 whitespace-nowrap",
+        ),
+        rx.el.td(
+            rx.el.div(
+                rx.el.button(
+                    rx.cond(is_selected, "Selected", "Select"),
+                    on_click=lambda: HEIState.select_hei(hei),
+                    class_name=rx.cond(
+                        is_selected,
+                        "px-4 py-2 bg-green-600 text-white rounded-lg text-xs font-bold shadow-sm w-24",
+                        "px-4 py-2 border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold transition-all w-24",
+                    ),
+                ),
+                class_name="flex justify-end",
+            ),
+            class_name="px-6 py-4 whitespace-nowrap text-right",
+        ),
+        class_name=rx.cond(
+            is_selected,
+            "bg-blue-50 border-l-4 border-blue-600",
+            "hover:bg-gray-50 transition-colors border-l-4 border-transparent",
+        ),
+    )
+
+
+def hei_selection_table() -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.el.table(
+                rx.el.thead(
+                    rx.el.tr(
+                        rx.el.th(
+                            "Institution",
+                            class_name="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
+                        ),
+                        rx.el.th(
+                            "Location",
+                            class_name="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
+                        ),
+                        rx.el.th(
+                            "Type",
+                            class_name="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
+                        ),
+                        rx.el.th(
+                            "Action",
+                            class_name="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider",
+                        ),
+                        class_name="bg-gray-50 border-b border-gray-200",
+                    )
+                ),
+                rx.el.tbody(
+                    rx.foreach(HEIState.search_results, hei_table_row),
+                    class_name="divide-y divide-gray-200 bg-white",
+                ),
+                class_name="min-w-full",
+            ),
+            class_name="overflow-x-auto overflow-y-auto max-h-[480px] border border-gray-200 rounded-xl",
+        ),
+        rx.cond(
+            HEIState.search_results.length() == 0,
+            rx.el.div(
+                rx.icon("search-slash", class_name="h-8 w-8 text-gray-300 mb-2"),
+                rx.el.p(
+                    "No institutions found matching your criteria.",
+                    class_name="text-sm text-gray-500",
+                ),
+                class_name="flex flex-col items-center justify-center py-10 bg-gray-50 border border-dashed border-gray-300 rounded-xl mt-2",
+            ),
+        ),
+        class_name="mt-4",
+    )
+
+
 def selection_screen_content() -> rx.Component:
     return rx.el.div(
         rx.el.div(
@@ -201,6 +303,7 @@ def selection_screen_content() -> rx.Component:
                             class_name="relative mb-6",
                         )
                     ),
+                    hei_selection_table(),
                     rx.el.div(
                         rx.el.span(
                             "Cannot find your institution? ",
@@ -280,5 +383,5 @@ def selection_screen_content() -> rx.Component:
                 ),
             ),
         ),
-        class_name="max-w-2xl mx-auto w-full",
+        class_name="max-w-4xl mx-auto w-full",
     )
