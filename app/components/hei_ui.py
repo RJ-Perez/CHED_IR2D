@@ -190,25 +190,11 @@ def hei_table_row(hei: HEI) -> rx.Component:
             ),
             class_name="px-6 py-4 whitespace-nowrap",
         ),
-        rx.el.td(
-            rx.el.div(
-                rx.el.button(
-                    rx.cond(is_selected, "Selected", "Select"),
-                    on_click=lambda: HEIState.select_hei(hei),
-                    class_name=rx.cond(
-                        is_selected,
-                        "px-4 py-2 bg-green-600 text-white rounded-lg text-xs font-bold shadow-sm w-24",
-                        "px-4 py-2 border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold transition-all w-24",
-                    ),
-                ),
-                class_name="flex justify-end",
-            ),
-            class_name="px-6 py-4 whitespace-nowrap text-right",
-        ),
+        on_click=lambda: HEIState.select_hei(hei),
         class_name=rx.cond(
             is_selected,
-            "bg-blue-50 border-l-4 border-blue-600",
-            "hover:bg-gray-50 transition-colors border-l-4 border-transparent",
+            "bg-blue-50 border-l-4 border-blue-600 cursor-pointer transition-colors",
+            "hover:bg-gray-50 cursor-pointer transition-colors border-l-4 border-transparent",
         ),
     )
 
@@ -230,10 +216,6 @@ def hei_selection_table() -> rx.Component:
                         rx.el.th(
                             "Type",
                             class_name="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
-                        ),
-                        rx.el.th(
-                            "Action",
-                            class_name="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider",
                         ),
                         class_name="bg-gray-50 border-b border-gray-200",
                     )
