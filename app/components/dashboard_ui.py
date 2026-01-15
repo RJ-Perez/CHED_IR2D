@@ -312,53 +312,56 @@ def bottom_action_bar() -> rx.Component:
                                 class_name="text-xs font-bold text-emerald-500",
                             ),
                         ),
-                        class_name="flex flex-col mr-8",
+                        class_name="flex flex-col mr-8 shrink-0",
                     ),
                     progress_tracker(),
-                    class_name="flex flex-1 items-center",
+                    class_name="flex items-center w-full mb-6",
                 ),
-                rx.el.button(
-                    rx.cond(
-                        DashboardState.is_saving,
-                        rx.el.div(
-                            rx.el.div(
-                                class_name="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"
-                            ),
-                            "Syncing Data...",
-                            class_name="flex items-center",
-                        ),
-                        rx.el.div(
-                            rx.icon("cloud-upload", class_name="h-5 w-5 mr-3"),
-                            "Submit & Save",
-                            class_name="flex items-center",
-                        ),
-                    ),
-                    on_click=DashboardState.save_progress,
-                    disabled=DashboardState.is_saving
-                    | DashboardState.has_validation_errors,
-                    class_name=rx.cond(
-                        DashboardState.has_validation_errors,
-                        "flex items-center px-8 py-4 bg-slate-200 text-slate-400 rounded-2xl shadow-lg cursor-not-allowed transition-all font-bold text-sm",
-                        "flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-xl hover:shadow-blue-200 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-70 font-bold text-sm",
-                    ),
-                ),
-                rx.cond(
-                    DashboardState.save_successful,
+                rx.el.div(
                     rx.el.button(
-                        rx.el.div(
-                            rx.icon("bar-chart-2", class_name="h-5 w-5 mr-3"),
-                            "View Assessment Results",
-                            class_name="flex items-center",
+                        rx.cond(
+                            DashboardState.is_saving,
+                            rx.el.div(
+                                rx.el.div(
+                                    class_name="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"
+                                ),
+                                "Syncing Data...",
+                                class_name="flex items-center",
+                            ),
+                            rx.el.div(
+                                rx.icon("cloud-upload", class_name="h-5 w-5 mr-3"),
+                                "Submit & Save",
+                                class_name="flex items-center",
+                            ),
                         ),
-                        on_click=rx.redirect("/analytics"),
-                        class_name="flex items-center px-8 py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl shadow-xl hover:shadow-emerald-200 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-emerald-100 transition-all font-bold text-sm",
+                        on_click=DashboardState.save_progress,
+                        disabled=DashboardState.is_saving
+                        | DashboardState.has_validation_errors,
+                        class_name=rx.cond(
+                            DashboardState.has_validation_errors,
+                            "flex items-center justify-center w-full px-8 py-4 bg-slate-200 text-slate-400 rounded-2xl shadow-lg cursor-not-allowed transition-all font-bold text-sm",
+                            "flex items-center justify-center w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-xl hover:shadow-blue-200 hover:scale-[1.01] active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all disabled:opacity-70 font-bold text-sm",
+                        ),
                     ),
+                    rx.cond(
+                        DashboardState.save_successful,
+                        rx.el.button(
+                            rx.el.div(
+                                rx.icon("bar-chart-2", class_name="h-5 w-5 mr-3"),
+                                "View Assessment Results",
+                                class_name="flex items-center",
+                            ),
+                            on_click=rx.redirect("/analytics"),
+                            class_name="flex items-center justify-center w-full px-8 py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl shadow-xl hover:shadow-emerald-200 hover:scale-[1.01] active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-emerald-100 transition-all font-bold text-sm",
+                        ),
+                    ),
+                    class_name="flex flex-col gap-4 w-full",
                 ),
-                class_name="flex items-center gap-10",
+                class_name="flex flex-col w-full",
             ),
-            class_name="max-w-7xl mx-auto px-6 py-5",
+            class_name="max-w-4xl mx-auto px-10 py-8",
         ),
-        class_name="bg-white/90 backdrop-blur-xl border border-white/20 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] mt-12 sticky bottom-6 rounded-3xl mx-8 z-[40]",
+        class_name="bg-white/90 backdrop-blur-xl border border-white/20 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] mt-12 sticky bottom-6 rounded-[2rem] mx-8 z-[40]",
     )
 
 
