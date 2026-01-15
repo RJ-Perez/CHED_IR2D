@@ -53,7 +53,15 @@ def branding_section() -> rx.Component:
                         ),
                         class_name="flex items-center bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm",
                     ),
-                    class_name="mt-8 flex space-x-4",
+                    rx.el.div(
+                        rx.icon("award", class_name="h-6 w-6 text-blue-200"),
+                        rx.el.span(
+                            "Institutional Excellence",
+                            class_name="text-white font-medium ml-2",
+                        ),
+                        class_name="flex items-center bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm",
+                    ),
+                    class_name="mt-8 flex flex-wrap gap-4",
                 ),
                 rx.el.div(
                     rx.el.div(
