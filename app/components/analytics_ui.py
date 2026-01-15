@@ -16,18 +16,18 @@ TOOLTIP_PROPS = {
 
 def performance_pie_card(title: str, score: int, color: str, icon: str) -> rx.Component:
     """
-    Renders a donut chart for a specific metric with the score centered.
+    Renders a donut chart for a specific metric with the score centered, using standardized tokens.
     """
     chart_data = [
         {"name": "Score", "value": score, "fill": color},
-        {"name": "Remaining", "value": 100 - score, "fill": "#f1f5f9"},
+        {"name": "Remaining", "value": 100 - score, "fill": "#f8fafc"},
     ]
     return rx.el.div(
         rx.el.div(
             rx.el.div(
-                rx.icon(icon, class_name=f"h-5 w-5", style={"color": color}),
+                rx.icon(icon, class_name=f"h-5 w-5", style={"stroke": color}),
                 rx.el.span(
-                    title, class_name="text-sm font-semibold text-gray-600 ml-2"
+                    title, class_name="text-sm font-semibold text-slate-800 ml-2"
                 ),
                 class_name="flex items-center mb-2",
             ),
@@ -52,13 +52,14 @@ def performance_pie_card(title: str, score: int, color: str, icon: str) -> rx.Co
                 ),
                 rx.el.div(
                     rx.el.span(
-                        f"{score}%", class_name="text-2xl font-bold text-gray-900"
+                        f"{score}%",
+                        class_name="text-2xl font-black text-slate-900 tracking-tight",
                     ),
                     class_name="absolute inset-0 flex items-center justify-center pt-4",
                 ),
                 class_name="relative",
             ),
-            class_name="p-5",
+            class_name="p-6",
         ),
         class_name="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden",
     )

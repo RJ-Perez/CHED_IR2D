@@ -11,22 +11,22 @@ def text_input_metric(
     on_change: rx.event.EventType,
     error_msg: rx.Var = "",
 ) -> rx.Component:
-    """Text box input for weighted metrics with modernized scoring visualization."""
+    """Text box input for weighted metrics with standardized design tokens."""
     has_error = error_msg != ""
     return rx.el.div(
         rx.el.div(
             rx.el.label(
-                label, class_name="text-sm font-bold text-gray-800 tracking-tight"
+                label, class_name="text-sm font-semibold text-gray-800 tracking-tight"
             ),
             rx.el.div(
-                rx.el.span(points, class_name="text-sm font-black text-blue-700"),
+                rx.el.span(points, class_name="text-sm font-bold text-blue-700"),
                 rx.el.span(
                     f" / {max_points} pts",
-                    class_name="text-[10px] font-bold text-gray-400 uppercase ml-1",
+                    class_name="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1",
                 ),
-                class_name="px-2.5 py-1 bg-blue-50 rounded-lg border border-blue-100 flex items-baseline",
+                class_name="px-2 py-0.5 bg-blue-50 rounded-md border border-blue-100 flex items-baseline",
             ),
-            class_name="flex items-center justify-between mb-5",
+            class_name="flex items-center justify-between mb-4",
         ),
         rx.el.div(
             rx.el.input(
@@ -50,8 +50,8 @@ def text_input_metric(
                 ),
                 class_name=rx.cond(
                     has_error,
-                    "w-full text-center text-base font-bold text-red-700 bg-red-50 border border-red-300 rounded-lg py-2.5 focus:ring-4 focus:ring-red-100 outline-none transition-all shadow-inner",
-                    "w-full text-center text-base font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg py-2.5 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all shadow-inner hover:border-slate-300",
+                    "w-full text-center text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg py-2.5 focus:ring-2 focus:ring-red-500 outline-none transition-all",
+                    "w-full text-center text-sm font-medium text-slate-900 bg-gray-50 border border-gray-200 rounded-lg py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all hover:border-gray-300",
                 ),
             ),
             class_name="relative",
@@ -59,19 +59,19 @@ def text_input_metric(
         rx.cond(
             has_error,
             rx.el.div(
-                rx.icon("triangle-alert", class_name="h-4 w-4 mr-2"),
+                rx.icon("triangle-alert", class_name="h-4 w-4 stroke-red-500 mr-2"),
                 rx.el.span(error_msg),
-                class_name="text-xs text-red-600 mt-3 flex items-center justify-center font-bold bg-red-50 py-2 rounded-lg",
+                class_name="text-xs text-red-600 mt-2 flex items-center justify-center font-medium bg-red-50 py-2 rounded-lg",
             ),
             rx.el.div(
                 rx.el.div(
-                    class_name=rx.cond(value > 0, "bg-blue-500", "bg-slate-200"),
+                    class_name=rx.cond(value > 0, "bg-emerald-500", "bg-gray-200"),
                     style={"width": f"{value}%", "height": "4px"},
                 ),
-                class_name="w-full bg-slate-100 h-1 rounded-full mt-4 overflow-hidden flex",
+                class_name="w-full bg-gray-100 h-1 rounded-full mt-4 overflow-hidden flex",
             ),
         ),
-        class_name="group mb-6 p-6 bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300",
+        class_name="group p-6 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow transition-all duration-300",
     )
 
 

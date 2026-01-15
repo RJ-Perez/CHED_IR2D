@@ -4,16 +4,25 @@ from app.states.hei_state import HEI
 
 
 def stat_card(title: str, value: int, icon: str, color_class: str) -> rx.Component:
-    """Display a statistic in a card."""
+    """Display a statistic in a card with consistent design tokens."""
     return rx.el.div(
         rx.el.div(
             rx.el.div(
-                rx.el.p(title, class_name="text-sm font-medium text-gray-500"),
-                rx.el.h3(value, class_name="text-2xl font-bold text-gray-900 mt-1"),
+                rx.el.p(
+                    title,
+                    class_name="text-xs font-bold text-gray-500 uppercase tracking-widest",
+                ),
+                rx.el.h3(
+                    value,
+                    class_name="text-2xl font-black text-slate-900 mt-2 tracking-tight",
+                ),
             ),
             rx.el.div(
-                rx.icon(icon, class_name=f"h-6 w-6 {color_class}"),
-                class_name="p-3 bg-gray-50 rounded-lg",
+                rx.icon(
+                    icon,
+                    class_name=f"h-6 w-6 stroke-{color_class.split('-')[-2]}-{color_class.split('-')[-1]}",
+                ),
+                class_name="p-3 bg-gray-50 rounded-xl",
             ),
             class_name="flex justify-between items-start",
         ),

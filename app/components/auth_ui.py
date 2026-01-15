@@ -13,9 +13,7 @@ def input_field(
 ) -> rx.Component:
     """Reusable input field component with label and icon."""
     return rx.el.div(
-        rx.el.label(
-            label, class_name="block text-sm font-semibold text-gray-700 mb-1.5"
-        ),
+        rx.el.label(label, class_name="block text-sm font-medium text-gray-700 mb-1.5"),
         rx.el.div(
             rx.icon(
                 icon,
@@ -25,7 +23,7 @@ def input_field(
                 type=type_,
                 placeholder=placeholder,
                 on_change=on_change,
-                class_name="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all duration-200 text-gray-900 placeholder-gray-400",
+                class_name="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 text-sm text-gray-900 placeholder-gray-400",
                 default_value=value,
             ),
             class_name="relative",

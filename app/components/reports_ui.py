@@ -121,13 +121,13 @@ def evidence_list_section(files: list[str]) -> rx.Component:
 
 
 def dimension_score_row(label: str, score: int) -> rx.Component:
-    """Helper component to render a single dimension row with aligned label and badge."""
+    """Helper component to render a single dimension row with aligned label and badge using standard tokens."""
     return rx.el.div(
-        rx.el.span(label, class_name="text-xs font-medium text-gray-600 min-w-[200px]"),
+        rx.el.span(label, class_name="text-xs font-medium text-gray-700 min-w-[200px]"),
         rx.el.div(
             score_badge(score), class_name="flex-1 flex justify-end min-w-[60px]"
         ),
-        class_name="flex items-center justify-between gap-4 py-1",
+        class_name="flex items-center justify-between gap-4 py-1.5 border-b border-gray-50 last:border-0",
     )
 
 
