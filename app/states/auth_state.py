@@ -2,6 +2,7 @@ import reflex as rx
 import asyncio
 from reflex_google_auth import GoogleAuthState
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 import logging
 import bcrypt
 import datetime
@@ -32,14 +33,31 @@ class AuthState(GoogleAuthState):
             if self.token_is_valid:
                 return self.tokeninfo.get("name", "User")
             return "Guest User"
-        async with rx.asession() as session:
-            result = await session.execute(
-                text("SELECT first_name, last_name FROM users WHERE id = :id"),
-                {"id": self.authenticated_user_id},
-            )
-            row = result.first()
-            if row:
-                return f"{row[0]} {row[1]}"
+        retries = 3
+        for attempt in range(retries):
+            try:
+                async with rx.asession() as session:
+                    result = await session.execute(
+                        text("SELECT first_name, last_name FROM users WHERE id = :id"),
+                        {"id": self.authenticated_user_id},
+                    )
+                    row = result.first()
+                    if row:
+                        return f"{row[0]} {row[1]}"
+                return "User"
+            except OperationalError as e:
+                if attempt < retries - 1:
+                    logging.warning(
+                        f"Database connection error in user_display_name (attempt {attempt + 1}/{retries}): {e}"
+                    )
+                    await asyncio.sleep(0.5 * 2**attempt)
+                else:
+                    logging.exception(
+                        f"Failed to fetch user display name after {retries} attempts: {e}"
+                    )
+            except Exception as e:
+                logging.exception(f"Unexpected error fetching user display name: {e}")
+                break
         return "User"
 
     @rx.var
@@ -49,14 +67,31 @@ class AuthState(GoogleAuthState):
             if self.token_is_valid:
                 return self.tokeninfo.get("email", "")
             return ""
-        async with rx.asession() as session:
-            result = await session.execute(
-                text("SELECT email FROM users WHERE id = :id"),
-                {"id": self.authenticated_user_id},
-            )
-            row = result.first()
-            if row:
-                return row[0]
+        retries = 3
+        for attempt in range(retries):
+            try:
+                async with rx.asession() as session:
+                    result = await session.execute(
+                        text("SELECT email FROM users WHERE id = :id"),
+                        {"id": self.authenticated_user_id},
+                    )
+                    row = result.first()
+                    if row:
+                        return row[0]
+                return ""
+            except OperationalError as e:
+                if attempt < retries - 1:
+                    logging.warning(
+                        f"Database connection error in user_email_address (attempt {attempt + 1}/{retries}): {e}"
+                    )
+                    await asyncio.sleep(0.5 * 2**attempt)
+                else:
+                    logging.exception(
+                        f"Failed to fetch user email address after {retries} attempts: {e}"
+                    )
+            except Exception as e:
+                logging.exception(f"Unexpected error fetching user email address: {e}")
+                break
         return ""
 
     @rx.event
