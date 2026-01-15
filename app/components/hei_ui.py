@@ -302,16 +302,6 @@ def selection_screen_content() -> rx.Component:
                                 "Institution Selection",
                                 class_name="text-4xl font-black text-white tracking-tighter",
                             ),
-                            rx.el.div(
-                                rx.el.div(
-                                    class_name="h-1.5 w-12 bg-white/40 rounded-full mr-2"
-                                ),
-                                rx.el.span(
-                                    "Step 1 of 2: Setup Workspace",
-                                    class_name="text-xs font-bold text-blue-100 uppercase tracking-widest",
-                                ),
-                                class_name="flex items-center mt-2",
-                            ),
                             class_name="flex-1",
                         ),
                         class_name="flex items-center",
@@ -376,13 +366,14 @@ def selection_screen_content() -> rx.Component:
                                         rx.icon(
                                             "circle_plus", class_name="h-4 w-4 mr-2"
                                         ),
-                                        "Register New Account",
+                                        "Register NEW HEI",
                                         on_click=HEIState.toggle_registration_mode,
                                         class_name="flex items-center px-6 py-2.5 bg-slate-50 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-full text-sm font-bold border border-slate-200 transition-all",
                                     ),
+                                    class_name="flex flex-col items-center gap-4",
                                 ),
                                 rx.el.div(class_name="h-px flex-1 bg-slate-100"),
-                                class_name="flex items-center gap-4 mb-12",
+                                class_name="flex items-center justify-center gap-4 mb-12",
                             ),
                         ),
                     )
