@@ -250,24 +250,15 @@ class AuthState(GoogleAuthState):
         async with self:
             self.is_loading = True
             self.error_message = ""
-        if not token_data:
-            if self.token_is_valid:
-                token_data = self.tokeninfo
-            if not token_data:
-                logging.warning("Google login failed: No token data received.")
-                async with self:
-                    self.is_loading = False
-                yield rx.toast(
-                    "Authentication failed: No data received from Google.",
-                    duration=5000,
-                )
-                return
-        user_email = token_data.get("email")
-        google_id = token_data.get("sub")
-        first_name = token_data.get("given_name", "")
-        last_name = token_data.get("family_name", "")
-        if not user_email:
-            logging.warning("Google login failed: No email provided in token data.")
+        info = self.tokeninfo if self.tokeninfo else token_data
+        user_email = info.get("email")
+        google_id = info.get("sub")
+        first_name = info.get("given_name", "")
+        last_name = info.get("family_name", "")
+        if not user_email or not google_id:
+            logging.warning(
+                f"Google login failed: Missing critical data. Email: {user_email}, Sub: {google_id}"
+            )
             async with self:
                 self.is_loading = False
             yield rx.toast(
