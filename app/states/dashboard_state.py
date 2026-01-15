@@ -32,6 +32,7 @@ class DashboardState(rx.State):
     is_uploading_global_engagement: bool = False
     is_uploading_learning_experience: bool = False
     is_uploading_sustainability: bool = False
+    save_successful: bool = False
     academic_reputation_error: str = ""
     citations_per_faculty_error: str = ""
     employer_reputation_error: str = ""
@@ -608,6 +609,7 @@ class DashboardState(rx.State):
             await session.commit()
         async with self:
             self.is_saving = False
+            self.save_successful = True
             yield rx.toast(
                 "Assessment data saved successfully.",
                 duration=3000,
