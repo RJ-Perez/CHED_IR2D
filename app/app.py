@@ -213,7 +213,9 @@ def settings_page() -> rx.Component:
 
 
 app.add_page(assessment_page, route="/dashboard", on_load=DashboardState.on_load)
-app.add_page(institutions_page, route="/institutions")
+app.add_page(
+    institutions_page, route="/institutions", on_load=HEIState.fetch_institutions
+)
 app.add_page(analytics_page, route="/analytics")
 app.add_page(reports_page, route="/reports")
 app.add_page(settings_page, route="/settings")
