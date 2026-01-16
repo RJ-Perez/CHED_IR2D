@@ -7,7 +7,7 @@ def input_field(
     label: str,
     placeholder: str,
     type_: str,
-    value: str,
+    value: rx.Var,
     on_change: rx.event.EventType,
     icon: str = "type",
 ) -> rx.Component:
