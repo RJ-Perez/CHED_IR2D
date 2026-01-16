@@ -38,6 +38,7 @@ class AnalyticsState(rx.State):
     global_engagement_comparison_data: list[dict[str, str | int | float]] = []
     learning_experience_comparison_data: list[dict[str, str | int | float]] = []
     sustainability_comparison_data: list[dict[str, str | int | float]] = []
+    performance_summary: list[dict[str, str | int | float]] = []
     ai_recommendations: list[dict[str, str]] = []
     is_generating_recommendations: bool = False
     ncr_average_color: str = "#94a3b8"
@@ -51,6 +52,11 @@ class AnalyticsState(rx.State):
         except ValueError as e:
             logging.exception(f"Error parsing float: {e}")
             return 0.0
+
+    def _calculate_component_score(self, value: float, benchmark: float) -> float:
+        if not benchmark:
+            return 0.0
+        return min(100.0, value / benchmark * 100.0)
 
     @rx.event(background=True)
     async def on_load(self):
@@ -69,6 +75,17 @@ class AnalyticsState(rx.State):
         int_student_ratio = 0.0
         faculty_student_ratio = 0.0
         sustainability = 0.0
+        ncr_avg_map = {
+            "academic_reputation": 0.0,
+            "citations_per_faculty": 0.0,
+            "employer_reputation": 0.0,
+            "employment_outcomes": 0.0,
+            "international_research_network": 0.0,
+            "international_faculty_ratio": 0.0,
+            "international_student_ratio": 0.0,
+            "faculty_student_ratio": 0.0,
+            "sustainability_metrics": 0.0,
+        }
         async with rx.asession() as session:
             result = await session.execute(
                 text("""
@@ -81,26 +98,44 @@ class AnalyticsState(rx.State):
                 """),
                 {"inst_id": institution_id},
             )
-        rows = result.all()
+            rows = result.all()
+            avg_result = await session.execute(
+                text("""
+                SELECT 
+                    i.code, 
+                    AVG(CAST(NULLIF(regexp_replace(s.value, '[^0-9.]', '', 'g'), '') AS FLOAT)) as avg_val
+                FROM institution_scores s
+                JOIN ranking_indicators i ON s.indicator_id = i.id
+                JOIN institutions inst ON s.institution_id = inst.id
+                WHERE s.ranking_year = 2025 
+                  AND (inst.region LIKE '%NCR%' OR inst.region = 'NCR (National Capital Region)')
+                GROUP BY i.code
+                """)
+            )
+            avg_rows = avg_result.all()
         for code, val in rows:
+            val_float = self._parse_float(val)
             if code == "academic_reputation":
-                academic_rep = self._parse_float(val)
+                academic_rep = val_float
             elif code == "citations_per_faculty":
-                citations = self._parse_float(val)
+                citations = val_float
             elif code == "employer_reputation":
-                emp_rep = self._parse_float(val)
+                emp_rep = val_float
             elif code == "employment_outcomes":
-                emp_outcomes = self._parse_float(val)
+                emp_outcomes = val_float
             elif code == "international_research_network":
-                int_research_net = self._parse_float(val)
+                int_research_net = val_float
             elif code == "international_faculty_ratio":
-                int_faculty_ratio = self._parse_float(val)
+                int_faculty_ratio = val_float
             elif code == "international_student_ratio":
-                int_student_ratio = self._parse_float(val)
+                int_student_ratio = val_float
             elif code == "faculty_student_ratio":
-                faculty_student_ratio = self._parse_float(val)
+                faculty_student_ratio = val_float
             elif code == "sustainability_metrics":
-                sustainability = self._parse_float(val)
+                sustainability = val_float
+        for code, avg_val in avg_rows:
+            if avg_val is not None:
+                ncr_avg_map[code] = float(avg_val)
         b_academic_rep = 90.0
         b_citations = 20.0
         b_emp_rep = 90.0
@@ -110,32 +145,22 @@ class AnalyticsState(rx.State):
         b_int_student_ratio = 10.0
         b_faculty_student_ratio = 12.0
         b_sustainability = 85.0
-        s_academic_rep = (
-            min(100, academic_rep / b_academic_rep * 100) if b_academic_rep else 0
+        s_academic_rep = self._calculate_component_score(academic_rep, b_academic_rep)
+        s_citations = self._calculate_component_score(citations, b_citations)
+        s_emp_rep = self._calculate_component_score(emp_rep, b_emp_rep)
+        s_emp_outcomes = self._calculate_component_score(emp_outcomes, b_emp_outcomes)
+        s_int_research_net = self._calculate_component_score(
+            int_research_net, b_int_research_net
         )
-        s_citations = min(100, citations / b_citations * 100) if b_citations else 0
-        s_emp_rep = min(100, emp_rep / b_emp_rep * 100) if b_emp_rep else 0
-        s_emp_outcomes = (
-            min(100, emp_outcomes / b_emp_outcomes * 100) if b_emp_outcomes else 0
+        s_int_faculty_ratio = self._calculate_component_score(
+            int_faculty_ratio, b_int_faculty_ratio
         )
-        s_int_research_net = (
-            min(100, int_research_net / b_int_research_net * 100)
-            if b_int_research_net
-            else 0
-        )
-        s_int_faculty_ratio = (
-            min(100, int_faculty_ratio / b_int_faculty_ratio * 100)
-            if b_int_faculty_ratio
-            else 0
-        )
-        s_int_student_ratio = (
-            min(100, int_student_ratio / b_int_student_ratio * 100)
-            if b_int_student_ratio
-            else 0
+        s_int_student_ratio = self._calculate_component_score(
+            int_student_ratio, b_int_student_ratio
         )
         s_faculty_student = min(100, faculty_student_ratio)
-        s_sustainability = (
-            min(100, sustainability / b_sustainability * 100) if b_sustainability else 0
+        s_sustainability = self._calculate_component_score(
+            sustainability, b_sustainability
         )
         research_score = int(s_academic_rep * 0.6 + s_citations * 0.4)
         employability_score = int(s_emp_rep * 0.75 + s_emp_outcomes * 0.25)
@@ -151,6 +176,46 @@ class AnalyticsState(rx.State):
             + learning_experience_score * 0.1
             + sustainability_score * 0.05
         )
+        ncr_s_academic_rep = self._calculate_component_score(
+            ncr_avg_map["academic_reputation"], b_academic_rep
+        )
+        ncr_s_citations = self._calculate_component_score(
+            ncr_avg_map["citations_per_faculty"], b_citations
+        )
+        ncr_s_emp_rep = self._calculate_component_score(
+            ncr_avg_map["employer_reputation"], b_emp_rep
+        )
+        ncr_s_emp_outcomes = self._calculate_component_score(
+            ncr_avg_map["employment_outcomes"], b_emp_outcomes
+        )
+        ncr_s_int_research_net = self._calculate_component_score(
+            ncr_avg_map["international_research_network"], b_int_research_net
+        )
+        ncr_s_int_faculty_ratio = self._calculate_component_score(
+            ncr_avg_map["international_faculty_ratio"], b_int_faculty_ratio
+        )
+        ncr_s_int_student_ratio = self._calculate_component_score(
+            ncr_avg_map["international_student_ratio"], b_int_student_ratio
+        )
+        ncr_s_faculty_student = min(100, ncr_avg_map["faculty_student_ratio"])
+        ncr_s_sustainability = self._calculate_component_score(
+            ncr_avg_map["sustainability_metrics"], b_sustainability
+        )
+        ncr_research_score = int(ncr_s_academic_rep * 0.6 + ncr_s_citations * 0.4)
+        ncr_employability_score = int(ncr_s_emp_rep * 0.75 + ncr_s_emp_outcomes * 0.25)
+        ncr_global_engagement_score = int(
+            (ncr_s_int_research_net + ncr_s_int_faculty_ratio + ncr_s_int_student_ratio)
+            / 3
+        )
+        ncr_learning_experience_score = int(ncr_s_faculty_student)
+        ncr_sustainability_score = int(ncr_s_sustainability)
+        ncr_overall_score = int(
+            ncr_research_score * 0.5
+            + ncr_employability_score * 0.2
+            + ncr_global_engagement_score * 0.15
+            + ncr_learning_experience_score * 0.1
+            + ncr_sustainability_score * 0.05
+        )
         async with self:
             self.research_score = research_score
             self.employability_score = employability_score
@@ -158,17 +223,68 @@ class AnalyticsState(rx.State):
             self.learning_experience_score = learning_experience_score
             self.sustainability_score = sustainability_score
             self.overall_score = overall_score
+            self.performance_summary = [
+                {
+                    "category": "Overall Readiness",
+                    "score": overall_score,
+                    "ncr_avg": ncr_overall_score,
+                    "target": 100,
+                    "variance": overall_score - ncr_overall_score,
+                    "weight": "100%",
+                },
+                {
+                    "category": "Research & Discovery",
+                    "score": research_score,
+                    "ncr_avg": ncr_research_score,
+                    "target": 100,
+                    "variance": research_score - ncr_research_score,
+                    "weight": "50%",
+                },
+                {
+                    "category": "Employability",
+                    "score": employability_score,
+                    "ncr_avg": ncr_employability_score,
+                    "target": 100,
+                    "variance": employability_score - ncr_employability_score,
+                    "weight": "20%",
+                },
+                {
+                    "category": "Global Engagement",
+                    "score": global_engagement_score,
+                    "ncr_avg": ncr_global_engagement_score,
+                    "target": 100,
+                    "variance": global_engagement_score - ncr_global_engagement_score,
+                    "weight": "15%",
+                },
+                {
+                    "category": "Learning Experience",
+                    "score": learning_experience_score,
+                    "ncr_avg": ncr_learning_experience_score,
+                    "target": 100,
+                    "variance": learning_experience_score
+                    - ncr_learning_experience_score,
+                    "weight": "10%",
+                },
+                {
+                    "category": "Sustainability",
+                    "score": sustainability_score,
+                    "ncr_avg": ncr_sustainability_score,
+                    "target": 100,
+                    "variance": sustainability_score - ncr_sustainability_score,
+                    "weight": "5%",
+                },
+            ]
             self.research_comparison_data = [
                 {
                     "metric": "Academic Rep.",
                     "You": academic_rep,
-                    "NCR Avg": 65.0,
+                    "NCR Avg": round(ncr_avg_map["academic_reputation"], 1),
                     "Target": b_academic_rep,
                 },
                 {
                     "metric": "Citations/Faculty",
                     "You": citations,
-                    "NCR Avg": 8.5,
+                    "NCR Avg": round(ncr_avg_map["citations_per_faculty"], 1),
                     "Target": b_citations,
                 },
             ]
@@ -176,13 +292,13 @@ class AnalyticsState(rx.State):
                 {
                     "metric": "Emp. Reputation",
                     "You": emp_rep,
-                    "NCR Avg": 65.0,
+                    "NCR Avg": round(ncr_avg_map["employer_reputation"], 1),
                     "Target": b_emp_rep,
                 },
                 {
                     "metric": "Emp. Outcomes",
                     "You": emp_outcomes,
-                    "NCR Avg": 82.0,
+                    "NCR Avg": round(ncr_avg_map["employment_outcomes"], 1),
                     "Target": b_emp_outcomes,
                 },
             ]
@@ -190,19 +306,19 @@ class AnalyticsState(rx.State):
                 {
                     "metric": "Research Network",
                     "You": int_research_net,
-                    "NCR Avg": 55.0,
+                    "NCR Avg": round(ncr_avg_map["international_research_network"], 1),
                     "Target": b_int_research_net,
                 },
                 {
                     "metric": "Int. Faculty %",
                     "You": int_faculty_ratio,
-                    "NCR Avg": 8.0,
+                    "NCR Avg": round(ncr_avg_map["international_faculty_ratio"], 1),
                     "Target": b_int_faculty_ratio,
                 },
                 {
                     "metric": "Int. Student %",
                     "You": int_student_ratio,
-                    "NCR Avg": 5.5,
+                    "NCR Avg": round(ncr_avg_map["international_student_ratio"], 1),
                     "Target": b_int_student_ratio,
                 },
             ]
@@ -210,7 +326,7 @@ class AnalyticsState(rx.State):
                 {
                     "metric": "Faculty:Student",
                     "You": faculty_student_ratio,
-                    "NCR Avg": 18.0,
+                    "NCR Avg": round(ncr_avg_map["faculty_student_ratio"], 1),
                     "Target": b_faculty_student_ratio,
                 }
             ]
@@ -218,7 +334,7 @@ class AnalyticsState(rx.State):
                 {
                     "metric": "Sustainability",
                     "You": sustainability,
-                    "NCR Avg": 60.0,
+                    "NCR Avg": round(ncr_avg_map["sustainability_metrics"], 1),
                     "Target": b_sustainability,
                 }
             ]
