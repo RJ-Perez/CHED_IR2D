@@ -347,20 +347,20 @@ def sustainability_chart() -> rx.Component:
     )
 
 
-def variance_badge(variance: int) -> rx.Component:
+def variance_badge(variance: rx.Var) -> rx.Component:
     """Displays a badge showing variance from average."""
     return rx.cond(
         variance.to(int) > 0,
         rx.el.div(
             rx.icon("trending-up", class_name="h-3 w-3 mr-1"),
-            rx.el.span(f"+{variance}%", class_name="text-xs font-bold"),
+            rx.el.span("+", variance.to_string(), "%", class_name="text-xs font-bold"),
             class_name="flex items-center px-2 py-0.5 rounded-full bg-green-100 text-green-700",
         ),
         rx.cond(
             variance.to(int) < 0,
             rx.el.div(
                 rx.icon("trending-down", class_name="h-3 w-3 mr-1"),
-                rx.el.span(f"{variance}%", class_name="text-xs font-bold"),
+                rx.el.span(variance.to_string(), "%", class_name="text-xs font-bold"),
                 class_name="flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700",
             ),
             rx.el.div(
