@@ -191,9 +191,13 @@ class ChatbotState(rx.State):
                             break
                     except Exception as e:
                         error_str = str(e)
-                        if (
-                            "429" in error_str or "RESOURCE_EXHAUSTED" in error_str
-                        ) and attempt < max_retries - 1:
+                        is_retriable = (
+                            "429" in error_str
+                            or "RESOURCE_EXHAUSTED" in error_str
+                            or "503" in error_str
+                            or ("UNAVAILABLE" in error_str)
+                        )
+                        if is_retriable and attempt < max_retries - 1:
                             wait_time = 2.0 * 2**attempt
                             retry_match = re.search(
                                 "retry in (\\d+(\\.\\d+)?)s", error_str
@@ -202,7 +206,7 @@ class ChatbotState(rx.State):
                                 wait_time = float(retry_match.group(1)) + 1.0
                             wait_time = min(wait_time, 60.0)
                             logging.warning(
-                                f"Chatbot rate limit. Retrying in {wait_time:.2f}s"
+                                f"Chatbot AI error (Rate limit or Unavailable). Retrying in {wait_time:.2f}s"
                             )
                             await asyncio.sleep(wait_time)
                         else:

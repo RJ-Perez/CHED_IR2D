@@ -428,10 +428,13 @@ class ReportsState(rx.State):
                         )
                 except Exception as e:
                     error_str = str(e)
-                    is_rate_limit = (
-                        "429" in error_str or "RESOURCE_EXHAUSTED" in error_str
+                    is_retriable = (
+                        "429" in error_str
+                        or "RESOURCE_EXHAUSTED" in error_str
+                        or "503" in error_str
+                        or ("UNAVAILABLE" in error_str)
                     )
-                    if is_rate_limit:
+                    if is_retriable:
                         if attempt == max_retries - 1:
                             logging.error(
                                 "Google AI quota exhausted after all retries."
@@ -443,7 +446,7 @@ class ReportsState(rx.State):
                             wait_time = float(retry_match.group(1)) + 1.0
                         wait_time = min(wait_time, 60.0)
                         logging.warning(
-                            f"Rate limit hit. Retrying in {wait_time:.2f}s (Attempt {attempt + 1}/{max_retries})"
+                            f"Google AI error (Rate limit or Unavailable). Retrying in {wait_time:.2f}s (Attempt {attempt + 1}/{max_retries})"
                         )
                         await asyncio.sleep(wait_time)
                     else:
