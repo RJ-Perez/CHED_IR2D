@@ -30,27 +30,18 @@ def stat_card(title: str, value: int, icon: str, color_class: str) -> rx.Compone
     )
 
 
-def status_badge(status: str) -> rx.Component:
-    """Displays status badge based on institutional status."""
-    return rx.match(
-        status,
-        (
+def status_badge(hei_id: str) -> rx.Component:
+    """Mock status badge based on ID parity for variety."""
+    is_active = rx.cond(hei_id.to(int) % 2 == 0, True, False)
+    return rx.cond(
+        is_active,
+        rx.el.span(
             "Active",
-            rx.el.span(
-                "Active",
-                class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800",
-            ),
-        ),
-        (
-            "Pending Review",
-            rx.el.span(
-                "Pending Review",
-                class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800",
-            ),
+            class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800",
         ),
         rx.el.span(
-            status,
-            class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800",
+            "Pending Review",
+            class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800",
         ),
     )
 
@@ -94,7 +85,7 @@ def hei_table_row(hei: HEI) -> rx.Component:
             ),
             class_name="px-6 py-4 whitespace-nowrap",
         ),
-        rx.el.td(status_badge(hei["status"]), class_name="px-6 py-4 whitespace-nowrap"),
+        rx.el.td(status_badge(hei["id"]), class_name="px-6 py-4 whitespace-nowrap"),
         rx.el.td(
             rx.el.div(
                 action_button(

@@ -13,7 +13,6 @@ class HEI(TypedDict):
     admin_name: str
     street: str
     city: str
-    status: str
 
 
 class HEIState(rx.State):
@@ -333,7 +332,7 @@ class HEIState(rx.State):
         async with rx.asession() as session:
             result = await session.execute(
                 text(
-                    "SELECT id, institution_name, street_address, city_municipality, 'Private', admin_name, COALESCE(status, 'Pending') FROM institutions ORDER BY institution_name ASC"
+                    "SELECT id, institution_name, street_address, city_municipality, 'Private', admin_name FROM institutions ORDER BY institution_name ASC"
                 )
             )
             rows = result.all()
@@ -347,7 +346,6 @@ class HEIState(rx.State):
                         "street": row[2],
                         "city": row[3],
                         "admin_name": row[5] if row[5] else "Not Assigned",
-                        "status": str(row[6]),
                     }
                     for row in rows
                 ]
@@ -369,8 +367,7 @@ class HEIState(rx.State):
                         city_municipality, 
                         region, 
                         zip_code, 
-                        ranking_framework, 
-                        status
+                        ranking_framework
                     )
                     VALUES (
                         :name, 
@@ -380,10 +377,9 @@ class HEIState(rx.State):
                         :city, 
                         :region, 
                         :zip, 
-                        :framework, 
-                        'Active'
+                        :framework
                     )
-                    RETURNING id, institution_name, street_address, city_municipality, status
+                    RETURNING id, institution_name, street_address, city_municipality
                     """),
                     {
                         "name": self.reg_name,
@@ -404,7 +400,6 @@ class HEIState(rx.State):
                             "id": str(new_hei[0]),
                             "name": new_hei[1],
                             "address": f"{new_hei[2]}, {new_hei[3]}",
-                            "status": str(new_hei[4]),
                         }
         async with self:
             self.is_loading = False

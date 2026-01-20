@@ -223,87 +223,6 @@ def notifications_section() -> rx.Component:
     )
 
 
-def reset_scores_modal() -> rx.Component:
-    """Confirmation modal for resetting institution scores."""
-    return rx.cond(
-        SettingsState.show_reset_modal,
-        rx.el.div(
-            rx.el.div(
-                rx.el.div(
-                    rx.el.div(
-                        rx.el.div(
-                            rx.icon(
-                                "triangle_alert",
-                                class_name="h-12 w-12 text-red-600 mx-auto mb-4",
-                            ),
-                            rx.el.h3(
-                                "Reset Institution Scores",
-                                class_name="text-lg font-semibold text-gray-900 mb-2",
-                            ),
-                            rx.el.p(
-                                "Are you sure you want to clear all assessment data for this institution? This action will permanently remove all dimension scores and nullify the overall readiness score. Evidence files will be preserved.",
-                                class_name="text-sm text-gray-600 mb-6",
-                            ),
-                            rx.el.div(
-                                rx.el.button(
-                                    "Cancel",
-                                    on_click=SettingsState.cancel_reset_scores,
-                                    class_name="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors",
-                                ),
-                                rx.el.button(
-                                    rx.cond(
-                                        SettingsState.is_resetting_scores,
-                                        "Resetting...",
-                                        "Confirm Reset",
-                                    ),
-                                    on_click=SettingsState.reset_institution_scores,
-                                    disabled=SettingsState.is_resetting_scores,
-                                    class_name="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors",
-                                ),
-                                class_name="flex items-center justify-end gap-3",
-                            ),
-                            class_name="text-center",
-                        ),
-                        class_name="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4",
-                    ),
-                    class_name="flex items-start justify-center min-h-screen p-4 pt-24",
-                ),
-                class_name="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-start justify-center",
-                on_click=SettingsState.cancel_reset_scores,
-            )
-        ),
-    )
-
-
-def reset_scores_section() -> rx.Component:
-    return rx.el.div(
-        section_header(
-            "Danger Zone",
-            "Destructive actions for your assessment data.",
-            "triangle_alert",
-        ),
-        rx.el.div(
-            rx.el.div(
-                rx.el.p(
-                    "Resetting scores will clear all dimension data (Research, Employability, etc.) for your selected institution. This action is irreversible.",
-                    class_name="text-sm text-gray-600 mb-4",
-                ),
-                rx.el.button(
-                    rx.el.div(
-                        rx.icon("rotate-ccw", class_name="h-4 w-4 mr-2"),
-                        "Reset All Assessment Scores",
-                        class_name="flex items-center",
-                    ),
-                    on_click=SettingsState.confirm_reset_scores,
-                    class_name="px-4 py-2 border border-red-200 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors",
-                ),
-                class_name="p-4 bg-red-50/30 border border-red-100 rounded-xl",
-            )
-        ),
-        class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm",
-    )
-
-
 def assessment_preferences_section() -> rx.Component:
     return rx.el.div(
         section_header(
@@ -369,7 +288,6 @@ def assessment_preferences_section() -> rx.Component:
 def settings_content() -> rx.Component:
     """Main settings page layout."""
     return rx.el.div(
-        reset_scores_modal(),
         rx.el.div(
             rx.el.h1(
                 "Settings & Preferences", class_name="text-2xl font-bold text-gray-900"
@@ -389,7 +307,6 @@ def settings_content() -> rx.Component:
             rx.el.div(
                 institution_profile_section(),
                 assessment_preferences_section(),
-                reset_scores_section(),
                 class_name="space-y-6",
             ),
             class_name="grid grid-cols-1 xl:grid-cols-2 gap-6",

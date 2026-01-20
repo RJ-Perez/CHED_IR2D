@@ -347,116 +347,6 @@ def sustainability_chart() -> rx.Component:
     )
 
 
-def variance_badge(variance: rx.Var) -> rx.Component:
-    """Displays a badge showing variance from average."""
-    return rx.cond(
-        variance.to(int) > 0,
-        rx.el.div(
-            rx.icon("trending-up", class_name="h-3 w-3 mr-1"),
-            rx.el.span("+", variance.to_string(), "%", class_name="text-xs font-bold"),
-            class_name="flex items-center px-2 py-0.5 rounded-full bg-green-100 text-green-700",
-        ),
-        rx.cond(
-            variance.to(int) < 0,
-            rx.el.div(
-                rx.icon("trending-down", class_name="h-3 w-3 mr-1"),
-                rx.el.span(variance.to_string(), "%", class_name="text-xs font-bold"),
-                class_name="flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700",
-            ),
-            rx.el.div(
-                rx.el.span("Avg", class_name="text-xs font-bold"),
-                class_name="flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-600",
-            ),
-        ),
-    )
-
-
-def summary_row(item: dict[str, str | int | float]) -> rx.Component:
-    return rx.el.tr(
-        rx.el.td(
-            rx.el.div(
-                rx.el.span(item["category"], class_name="font-medium text-gray-900"),
-                rx.el.span(
-                    f"Weight: {item['weight']}", class_name="text-xs text-gray-500 ml-2"
-                ),
-            ),
-            class_name="px-6 py-4 whitespace-nowrap",
-        ),
-        rx.el.td(
-            rx.el.span(
-                item["score"],
-                class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-bold bg-blue-50 text-blue-700",
-            ),
-            class_name="px-6 py-4 whitespace-nowrap text-center",
-        ),
-        rx.el.td(
-            rx.el.span(item["ncr_avg"], class_name="text-sm text-gray-600 font-medium"),
-            class_name="px-6 py-4 whitespace-nowrap text-center",
-        ),
-        rx.el.td(
-            rx.el.span(item["target"], class_name="text-sm text-gray-600 font-medium"),
-            class_name="px-6 py-4 whitespace-nowrap text-center",
-        ),
-        rx.el.td(
-            variance_badge(item["variance"]),
-            class_name="px-6 py-4 whitespace-nowrap flex justify-center",
-        ),
-        class_name="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0",
-    )
-
-
-def performance_summary_table() -> rx.Component:
-    return rx.el.div(
-        rx.el.div(
-            rx.el.h3(
-                "Comparative Performance Summary",
-                class_name="text-lg font-bold text-gray-900",
-            ),
-            rx.el.p(
-                "Benchmarking against aggregated NCR averages.",
-                class_name="text-sm text-gray-500",
-            ),
-            class_name="px-6 py-4 border-b border-gray-200",
-        ),
-        rx.el.div(
-            rx.el.table(
-                rx.el.thead(
-                    rx.el.tr(
-                        rx.el.th(
-                            "Dimension Category",
-                            class_name="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider",
-                        ),
-                        rx.el.th(
-                            "Your Score",
-                            class_name="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider",
-                        ),
-                        rx.el.th(
-                            "NCR Avg",
-                            class_name="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider",
-                        ),
-                        rx.el.th(
-                            "Target",
-                            class_name="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider",
-                        ),
-                        rx.el.th(
-                            "Variance",
-                            class_name="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider",
-                        ),
-                    ),
-                    class_name="bg-gray-50",
-                ),
-                rx.el.tbody(
-                    rx.foreach(AnalyticsState.performance_summary, summary_row),
-                    class_name="divide-y divide-gray-200",
-                ),
-                class_name="min-w-full divide-y divide-gray-200",
-            ),
-            class_name="overflow-x-auto",
-        ),
-        class_name="bg-white rounded-xl border border-gray-200 shadow-sm mb-8",
-    )
-
-
 def analytics_content_ui() -> rx.Component:
     """The main visualization layout for institution performance.
     Combines score cards, comparison charts, and AI-powered advice.
@@ -510,11 +400,6 @@ def analytics_content_ui() -> rx.Component:
                 "leaf",
             ),
             class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8",
-        ),
-        performance_summary_table(),
-        rx.el.h3(
-            "Detailed Metric Comparisons",
-            class_name="text-lg font-bold text-gray-900 mb-4",
         ),
         rx.el.div(
             rx.el.div(research_chart(), class_name="w-full"),

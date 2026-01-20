@@ -21,13 +21,13 @@ def branding_section() -> rx.Component:
                 rx.el.div(
                     rx.image(
                         src="https://chedcar.com/wp-content/uploads/2020/09/Commission_on_Higher_Education_CHEd.svg_.png",
-                        class_name="h-20 w-20s object-contain mb-6",
+                        class_name="h-16 w-16 object-contain mb-6",
                         alt="CHED Logo",
                     ),
-                    class_name="bg-white/15 w-fit p-4 rounded-2x2 backdrop-blur-sm",
+                    class_name="bg-white/20 w-fit p-4 rounded-2xl backdrop-blur-sm",
                 ),
                 rx.el.h1(
-                    "Commission on Higher Education",
+                    "CHED",
                     class_name="text-4xl lg:text-5xl font-bold text-white mb-2 tracking-tight",
                 ),
                 rx.el.h2(
@@ -42,9 +42,9 @@ def branding_section() -> rx.Component:
                     rx.el.div(
                         rx.icon("bar-chart-2", class_name="h-6 w-6 text-blue-200"),
                         rx.el.span(
-                            "Analytics Driven", class_name="text-white font-medium ml-2"
+                            "Analytics Driven", class_name="text-white font-medium"
                         ),
-                        class_name="flex items-center bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm",
+                        class_name="flex flex-col items-start bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm",
                     ),
                     rx.el.div(
                         rx.icon("globe", class_name="h-6 w-6 text-blue-200"),
@@ -53,15 +53,7 @@ def branding_section() -> rx.Component:
                         ),
                         class_name="flex items-center bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm",
                     ),
-                    rx.el.div(
-                        rx.icon("award", class_name="h-6 w-6 text-blue-200"),
-                        rx.el.span(
-                            "Institutional Excellence",
-                            class_name="text-white font-medium ml-2",
-                        ),
-                        class_name="flex items-center bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm",
-                    ),
-                    class_name="mt-8 flex flex-wrap gap-4",
+                    class_name="mt-8 flex space-x-4",
                 ),
                 rx.el.div(
                     rx.el.div(
@@ -213,9 +205,7 @@ def settings_page() -> rx.Component:
 
 
 app.add_page(assessment_page, route="/dashboard", on_load=DashboardState.on_load)
-app.add_page(
-    institutions_page, route="/institutions", on_load=HEIState.fetch_institutions
-)
+app.add_page(institutions_page, route="/institutions")
 app.add_page(analytics_page, route="/analytics")
 app.add_page(reports_page, route="/reports")
 app.add_page(settings_page, route="/settings")

@@ -2,7 +2,6 @@ import reflex as rx
 import asyncio
 from reflex_google_auth import GoogleAuthState
 from sqlalchemy import text
-from sqlalchemy.exc import OperationalError
 import logging
 import bcrypt
 import datetime
@@ -33,31 +32,14 @@ class AuthState(GoogleAuthState):
             if self.token_is_valid:
                 return self.tokeninfo.get("name", "User")
             return "Guest User"
-        retries = 3
-        for attempt in range(retries):
-            try:
-                async with rx.asession() as session:
-                    result = await session.execute(
-                        text("SELECT first_name, last_name FROM users WHERE id = :id"),
-                        {"id": self.authenticated_user_id},
-                    )
-                    row = result.first()
-                    if row:
-                        return f"{row[0]} {row[1]}"
-                return "User"
-            except OperationalError as e:
-                if attempt < retries - 1:
-                    logging.warning(
-                        f"Database connection error in user_display_name (attempt {attempt + 1}/{retries}): {e}"
-                    )
-                    await asyncio.sleep(0.5 * 2**attempt)
-                else:
-                    logging.exception(
-                        f"Failed to fetch user display name after {retries} attempts: {e}"
-                    )
-            except Exception as e:
-                logging.exception(f"Unexpected error fetching user display name: {e}")
-                break
+        async with rx.asession() as session:
+            result = await session.execute(
+                text("SELECT first_name, last_name FROM users WHERE id = :id"),
+                {"id": self.authenticated_user_id},
+            )
+            row = result.first()
+            if row:
+                return f"{row[0]} {row[1]}"
         return "User"
 
     @rx.var
@@ -67,31 +49,14 @@ class AuthState(GoogleAuthState):
             if self.token_is_valid:
                 return self.tokeninfo.get("email", "")
             return ""
-        retries = 3
-        for attempt in range(retries):
-            try:
-                async with rx.asession() as session:
-                    result = await session.execute(
-                        text("SELECT email FROM users WHERE id = :id"),
-                        {"id": self.authenticated_user_id},
-                    )
-                    row = result.first()
-                    if row:
-                        return row[0]
-                return ""
-            except OperationalError as e:
-                if attempt < retries - 1:
-                    logging.warning(
-                        f"Database connection error in user_email_address (attempt {attempt + 1}/{retries}): {e}"
-                    )
-                    await asyncio.sleep(0.5 * 2**attempt)
-                else:
-                    logging.exception(
-                        f"Failed to fetch user email address after {retries} attempts: {e}"
-                    )
-            except Exception as e:
-                logging.exception(f"Unexpected error fetching user email address: {e}")
-                break
+        async with rx.asession() as session:
+            result = await session.execute(
+                text("SELECT email FROM users WHERE id = :id"),
+                {"id": self.authenticated_user_id},
+            )
+            row = result.first()
+            if row:
+                return row[0]
         return ""
 
     @rx.event
@@ -245,31 +210,29 @@ class AuthState(GoogleAuthState):
                     yield rx.redirect("/hei-selection")
 
     @rx.event(background=True)
-    async def on_google_auth_success(self, token: dict):
-        """Triggered after Google sign-in component finishes decoding the credential.
-        We must first call the parent on_success to process the token, then perform database sync.
-        """
+    async def on_google_login(self, token_data: dict):
+        """Triggered after Google sign-in. Verifies user in database or creates new record."""
+        for _ in range(20):
+            if self.token_is_valid:
+                break
+            await asyncio.sleep(0.5)
+        if not self.token_is_valid and (not token_data):
+            logging.warning("Google token validation failed or timed out.")
+            return
         async with self:
-            self.is_loading = True
-            self.error_message = ""
-        await self.on_success(token)
-        await asyncio.sleep(1.0)
-        async with self:
-            info = self.tokeninfo
+            info = token_data if token_data else self.tokeninfo
             user_email = info.get("email")
             google_id = info.get("sub")
             first_name = info.get("given_name", "")
             last_name = info.get("family_name", "")
-            if not user_email or not google_id:
-                logging.warning(
-                    f"Google auth failed: Missing critical data in tokeninfo. Email: {user_email}, Sub: {google_id}"
-                )
-                self.is_loading = False
-                yield rx.toast(
-                    "Authentication failed: Google profile information could not be retrieved.",
-                    duration=5000,
-                )
-                return
+        if not user_email:
+            logging.warning("Google login failed: Email missing from token data.")
+            async with self:
+                self.error_message = "Google login failed: Email missing."
+            yield rx.toast(
+                "Google login failed: Email not provided by Google.", duration=5000
+            )
+            return
         user_id = None
         try:
             async with rx.asession() as asession:
@@ -332,25 +295,19 @@ class AuthState(GoogleAuthState):
                 await asession.commit()
         except Exception as e:
             logging.exception(f"Database error during Google login sync: {e}")
-            async with self:
-                self.is_loading = False
             yield rx.toast("Database synchronization failed.", duration=3000)
             return
         if user_id:
             async with self:
                 self.authenticated_user_id = user_id
                 self.error_message = ""
-                self.is_loading = False
             yield rx.toast(f"Welcome, {first_name}!", duration=3000)
             yield rx.redirect("/hei-selection")
         else:
             async with self:
-                self.error_message = (
-                    "Authentication failed during account verification."
-                )
-                self.is_loading = False
+                self.error_message = "Authentication failed during database sync."
             yield rx.toast(
-                "An error occurred during account synchronization. Please try again.",
+                "An error occurred during account creation. Please try again.",
                 duration=5000,
             )
 

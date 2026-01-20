@@ -23,8 +23,6 @@ class SettingsState(rx.State):
     is_saving_account: bool = False
     is_saving_profile: bool = False
     is_saving_framework: bool = False
-    show_reset_modal: bool = False
-    is_resetting_scores: bool = False
 
     @rx.event
     async def on_load(self):
@@ -104,43 +102,6 @@ class SettingsState(rx.State):
     @rx.event
     def set_ranking_framework(self, value: str):
         self.ranking_framework = value
-
-    @rx.event
-    def confirm_reset_scores(self):
-        self.show_reset_modal = True
-
-    @rx.event
-    def cancel_reset_scores(self):
-        self.show_reset_modal = False
-
-    @rx.event(background=True)
-    async def reset_institution_scores(self):
-        async with self:
-            self.is_resetting_scores = True
-            from app.states.hei_state import HEIState
-
-            hei_state = await self.get_state(HEIState)
-            if not hei_state.selected_hei:
-                self.is_resetting_scores = False
-                self.show_reset_modal = False
-                yield rx.toast("No institution selected to reset.", duration=3000)
-                return
-            inst_id = int(hei_state.selected_hei["id"])
-            inst_name = hei_state.selected_hei["name"]
-        from sqlalchemy import text
-
-        async with rx.asession() as session:
-            await session.execute(
-                text("DELETE FROM institution_scores WHERE institution_id = :id"),
-                {"id": inst_id},
-            )
-            await session.commit()
-        async with self:
-            self.is_resetting_scores = False
-            self.show_reset_modal = False
-            yield rx.toast(
-                f"Scores for {inst_name} have been reset successfully.", duration=5000
-            )
 
     @rx.event(background=True)
     async def save_account_settings(self):

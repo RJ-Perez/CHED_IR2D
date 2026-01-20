@@ -7,7 +7,7 @@ def input_field(
     label: str,
     placeholder: str,
     type_: str,
-    value: rx.Var,
+    value: str,
     on_change: rx.event.EventType,
     icon: str = "type",
 ) -> rx.Component:
@@ -32,39 +32,9 @@ def input_field(
     )
 
 
-def loading_overlay() -> rx.Component:
-    """Full-screen loading overlay for authentication processes."""
-    return rx.cond(
-        AuthState.is_loading,
-        rx.el.div(
-            rx.el.div(
-                rx.el.div(
-                    class_name="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-white mb-6"
-                ),
-                rx.el.h3(
-                    rx.cond(
-                        AuthState.is_sign_up,
-                        "Creating your account...",
-                        "Signing you in...",
-                    ),
-                    class_name="text-white text-xl font-semibold animate-pulse",
-                ),
-                rx.el.p(
-                    "Please wait while we verify your credentials",
-                    class_name="text-blue-100 text-sm mt-2 opacity-80",
-                ),
-                class_name="flex flex-col items-center",
-            ),
-            class_name="fixed inset-0 z-[1000] flex items-center justify-center bg-blue-900/80 backdrop-blur-md transition-all duration-300 animate-in fade-in",
-        ),
-        rx.fragment(),
-    )
-
-
 def auth_form() -> rx.Component:
     """Main Authentication Form Component."""
     return rx.el.div(
-        loading_overlay(),
         rx.el.div(
             rx.el.h2(
                 rx.cond(
@@ -188,7 +158,7 @@ def auth_form() -> rx.Component:
         ),
         rx.el.button(
             rx.cond(
-                AuthState.is_loading,
+                AuthState.is_sign_up,
                 rx.el.div(
                     rx.el.div(
                         class_name="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"
@@ -216,7 +186,7 @@ def auth_form() -> rx.Component:
         ),
         google_oauth_provider(
             rx.el.div(
-                google_login(on_success=AuthState.on_google_auth_success),
+                google_login(on_success=lambda token: AuthState.on_google_login(token)),
                 class_name="w-full flex justify-center",
             )
         ),
