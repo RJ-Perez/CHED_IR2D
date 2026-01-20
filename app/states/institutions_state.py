@@ -10,7 +10,7 @@ class InstitutionsState(rx.State):
     delete_confirm_name: str = ""
     show_delete_modal: bool = False
 
-    @rx.var
+    @rx.var(cache=True)
     async def stats(self) -> dict[str, int]:
         """Calculate statistics based on the HEI database."""
         hei_state = await self.get_state(HEIState)
@@ -21,7 +21,7 @@ class InstitutionsState(rx.State):
             "pending": int(total * 0.35),
         }
 
-    @rx.var
+    @rx.var(cache=True)
     async def filtered_heis(self) -> list[HEI]:
         """Filter HEIs based on search query (Name, Address, or ID)."""
         hei_state = await self.get_state(HEIState)

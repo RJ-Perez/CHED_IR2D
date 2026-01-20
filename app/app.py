@@ -2,6 +2,11 @@ import reflex as rx
 from app.components.auth_ui import auth_form
 from app.states.auth_state import AuthState
 from app.components.chatbot import chatbot_component
+from app.states.hei_state import HEIState
+from app.states.settings_state import SettingsState
+from app.states.dashboard_state import DashboardState
+from app.states.analytics_state import AnalyticsState
+from app.states.reports_state import ReportsState
 
 
 def branding_section() -> rx.Component:
@@ -101,11 +106,11 @@ app = rx.App(
     ],
 )
 app.add_page(landing_page, route="/")
-from app.components.hei_ui import selection_screen_content
-from app.states.hei_state import HEIState
 
 
 def hei_selection_page() -> rx.Component:
+    from app.components.hei_ui import selection_screen_content
+
     return rx.el.div(
         rx.el.header(
             rx.el.div(
@@ -138,14 +143,11 @@ app.add_page(
     hei_selection_page, route="/hei-selection", on_load=HEIState.fetch_institutions
 )
 from app.components.sidebar import sidebar
-from app.components.dashboard_ui import dashboard_content
-from app.components.placeholder_pages import institutions_content, reports_content
-from app.components.settings_ui import settings_content
-from app.states.settings_state import SettingsState
-from app.states.dashboard_state import DashboardState
 
 
 def assessment_page() -> rx.Component:
+    from app.components.dashboard_ui import dashboard_content
+
     return rx.el.div(
         sidebar(current_page="dashboard"),
         rx.el.main(dashboard_content(), class_name="flex-1 p-8 overflow-y-auto h-full"),
@@ -155,6 +157,8 @@ def assessment_page() -> rx.Component:
 
 
 def institutions_page() -> rx.Component:
+    from app.components.placeholder_pages import institutions_content
+
     return rx.el.div(
         sidebar(current_page="institutions"),
         rx.el.main(
@@ -165,11 +169,9 @@ def institutions_page() -> rx.Component:
     )
 
 
-from app.components.analytics_ui import analytics_content_ui
-from app.states.analytics_state import AnalyticsState
-
-
 def analytics_page() -> rx.Component:
+    from app.components.analytics_ui import analytics_content_ui
+
     return rx.el.div(
         sidebar(current_page="analytics"),
         rx.el.main(
@@ -181,10 +183,9 @@ def analytics_page() -> rx.Component:
     )
 
 
-from app.states.reports_state import ReportsState
-
-
 def reports_page() -> rx.Component:
+    from app.components.placeholder_pages import reports_content
+
     return rx.el.div(
         sidebar(current_page="reports"),
         rx.el.main(reports_content(), class_name="flex-1 p-8 overflow-y-auto h-full"),
@@ -195,6 +196,8 @@ def reports_page() -> rx.Component:
 
 
 def settings_page() -> rx.Component:
+    from app.components.settings_ui import settings_content
+
     return rx.el.div(
         sidebar(current_page="settings"),
         rx.el.main(settings_content(), class_name="flex-1 p-8 overflow-y-auto h-full"),

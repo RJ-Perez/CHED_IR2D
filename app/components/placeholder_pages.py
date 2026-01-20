@@ -23,15 +23,15 @@ def simple_header(title: str, subtitle: str) -> rx.Component:
     )
 
 
-from app.components.institutions_ui import institutions_dashboard_ui
-from app.components.reports_ui import reports_dashboard_ui
-
-
 def institutions_content() -> rx.Component:
+    from app.components.institutions_ui import institutions_dashboard_ui
+
     return institutions_dashboard_ui()
 
 
 def reports_content() -> rx.Component:
+    from app.components.reports_ui import reports_dashboard_ui
+
     return reports_dashboard_ui()
 
 

@@ -53,7 +53,7 @@ class DashboardState(rx.State):
     faculty_student_ratio_error: str = ""
     sustainability_metrics_error: str = ""
 
-    @rx.var
+    @rx.var(cache=True)
     def has_validation_errors(self) -> bool:
         return (
             self.academic_reputation_error != ""
@@ -67,47 +67,47 @@ class DashboardState(rx.State):
             or (self.sustainability_metrics_error != "")
         )
 
-    @rx.var
+    @rx.var(cache=True)
     def academic_reputation_points(self) -> float:
         return round(float(self.academic_reputation) * 0.3, 1)
 
-    @rx.var
+    @rx.var(cache=True)
     def citations_per_faculty_points(self) -> float:
         return round(float(self.citations_per_faculty) * 0.2, 1)
 
-    @rx.var
+    @rx.var(cache=True)
     def research_section_total(self) -> float:
         return round(
             self.academic_reputation_points + self.citations_per_faculty_points, 1
         )
 
-    @rx.var
+    @rx.var(cache=True)
     def employer_reputation_points(self) -> float:
         return round(float(self.employer_reputation) * 0.15, 1)
 
-    @rx.var
+    @rx.var(cache=True)
     def employment_outcomes_points(self) -> float:
         return round(float(self.employment_outcomes) * 0.05, 1)
 
-    @rx.var
+    @rx.var(cache=True)
     def employability_section_total(self) -> float:
         return round(
             self.employer_reputation_points + self.employment_outcomes_points, 1
         )
 
-    @rx.var
+    @rx.var(cache=True)
     def international_research_network_points(self) -> float:
         return round(float(self.international_research_network) * 0.05, 1)
 
-    @rx.var
+    @rx.var(cache=True)
     def international_faculty_ratio_points(self) -> float:
         return round(float(self.international_faculty_ratio) * 0.05, 1)
 
-    @rx.var
+    @rx.var(cache=True)
     def international_student_ratio_points(self) -> float:
         return round(float(self.international_student_ratio) * 0.05, 1)
 
-    @rx.var
+    @rx.var(cache=True)
     def global_engagement_section_total(self) -> float:
         return round(
             self.international_research_network_points
@@ -116,23 +116,23 @@ class DashboardState(rx.State):
             1,
         )
 
-    @rx.var
+    @rx.var(cache=True)
     def faculty_student_ratio_points(self) -> float:
         return round(float(self.faculty_student_ratio) * 0.1, 1)
 
-    @rx.var
+    @rx.var(cache=True)
     def learning_experience_section_total(self) -> float:
         return self.faculty_student_ratio_points
 
-    @rx.var
+    @rx.var(cache=True)
     def sustainability_metrics_points(self) -> float:
         return round(float(self.sustainability_metrics) * 0.05, 1)
 
-    @rx.var
+    @rx.var(cache=True)
     def sustainability_section_total(self) -> float:
         return self.sustainability_metrics_points
 
-    @rx.var
+    @rx.var(cache=True)
     def progress(self) -> int:
         """Calculate completion progress based on filled fields."""
         metrics = [

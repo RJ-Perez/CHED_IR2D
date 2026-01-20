@@ -25,7 +25,7 @@ class AuthState(GoogleAuthState):
     is_loading: bool = False
     error_message: str = ""
 
-    @rx.var
+    @rx.var(cache=True)
     async def user_display_name(self) -> str:
         """Fetches the user's full name from the database based on session ID."""
         if self.authenticated_user_id is None:
@@ -42,7 +42,7 @@ class AuthState(GoogleAuthState):
                 return f"{row[0]} {row[1]}"
         return "User"
 
-    @rx.var
+    @rx.var(cache=True)
     async def user_email_address(self) -> str:
         """Fetches the user's email from the database or OAuth info."""
         if self.authenticated_user_id is None:

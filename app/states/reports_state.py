@@ -225,22 +225,22 @@ class ReportsState(rx.State):
             async with self:
                 self.reports = processed_reports
 
-    @rx.var
+    @rx.var(cache=True)
     def filtered_reports(self) -> list[ReportItem]:
         if not self.search_query:
             return self.reports
         query = self.search_query.lower()
         return [r for r in self.reports if query in r["name"].lower()]
 
-    @rx.var
+    @rx.var(cache=True)
     def total_reports(self) -> int:
         return len(self.reports)
 
-    @rx.var
+    @rx.var(cache=True)
     def completed_count(self) -> int:
         return len([r for r in self.reports if r["status"] == "Completed"])
 
-    @rx.var
+    @rx.var(cache=True)
     def pending_count(self) -> int:
         return len([r for r in self.reports if r["status"] != "Completed"])
 

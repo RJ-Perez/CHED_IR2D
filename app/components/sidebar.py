@@ -23,6 +23,7 @@ def sidebar_item(
     )
 
 
+@rx.memo
 def sidebar(current_page: str) -> rx.Component:
     """Main application navigation sidebar.
     Displays links to all main modules and shows the currently logged-in user info.
