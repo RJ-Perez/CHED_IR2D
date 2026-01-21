@@ -140,7 +140,9 @@ def file_upload_section(
                                 rx.el.div(
                                     rx.el.div(
                                         class_name="bg-emerald-500 h-2.5 rounded-full transition-all duration-300",
-                                        style={"width": f"{progress_var}%"},
+                                        style={
+                                            "width": str(progress_var).join(["", "%"])
+                                        },
                                     ),
                                     class_name="w-48 bg-gray-200 rounded-full h-2.5 mb-4",
                                 ),
@@ -150,7 +152,7 @@ def file_upload_section(
                                 ),
                                 class_name="flex flex-col items-center justify-center",
                             ),
-                            class_name="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-10 rounded-xl",
+                            class_name="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-50 rounded-xl",
                         ),
                         None,
                     ),
@@ -179,6 +181,7 @@ def file_upload_section(
                 multiple=True,
                 max_files=5,
                 on_drop=handle_upload_event(rx.upload_files(upload_id=upload_id)),
+                key=is_uploading.to_string(),
                 class_name="w-full",
             ),
             class_name="mb-4 relative",

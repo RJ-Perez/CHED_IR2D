@@ -182,15 +182,24 @@ class DashboardState(rx.State):
         relative_dir = f"institution_{inst_id}/{category}"
         upload_dir = rx.get_upload_dir() / relative_dir
         upload_dir.mkdir(parents=True, exist_ok=True)
+        import random, string
+
+        unique_name = (
+            "".join(random.choices(string.ascii_letters + string.digits, k=6))
+            + "_"
+            + file.name
+        )
         upload_data = await file.read()
-        file_path = upload_dir / file.name
+        file_path = upload_dir / unique_name
         with file_path.open("wb") as f:
             f.write(upload_data)
-        return f"{relative_dir}/{file.name}"
+        return f"{relative_dir}/{unique_name}"
 
     @rx.event
     async def handle_research_upload(self, files: list[rx.UploadFile]):
         """Handle file upload for Research section with unique directory."""
+        if not files:
+            return
         self.is_uploading_research = True
         self.upload_progress_research = 0
         total = len(files)
@@ -202,11 +211,13 @@ class DashboardState(rx.State):
             self.upload_progress_research = int((i + 1) / total * 100)
             yield
         self.is_uploading_research = False
-        yield rx.toast.success(f"Uploaded {len(files)} file(s) to Research")
+        yield rx.clear_selected_files("upload_research")
 
     @rx.event
     async def handle_employability_upload(self, files: list[rx.UploadFile]):
         """Handle file upload for Employability section with unique directory."""
+        if not files:
+            return
         self.is_uploading_employability = True
         self.upload_progress_employability = 0
         total = len(files)
@@ -218,11 +229,13 @@ class DashboardState(rx.State):
             self.upload_progress_employability = int((i + 1) / total * 100)
             yield
         self.is_uploading_employability = False
-        yield rx.toast.success(f"Uploaded {len(files)} file(s) to Employability")
+        yield rx.clear_selected_files("upload_employability")
 
     @rx.event
     async def handle_global_engagement_upload(self, files: list[rx.UploadFile]):
         """Handle file upload for Global Engagement section with unique directory."""
+        if not files:
+            return
         self.is_uploading_global_engagement = True
         self.upload_progress_global_engagement = 0
         total = len(files)
@@ -234,11 +247,13 @@ class DashboardState(rx.State):
             self.upload_progress_global_engagement = int((i + 1) / total * 100)
             yield
         self.is_uploading_global_engagement = False
-        yield rx.toast.success(f"Uploaded {len(files)} file(s) to Global Engagement")
+        yield rx.clear_selected_files("upload_global_engagement")
 
     @rx.event
     async def handle_learning_experience_upload(self, files: list[rx.UploadFile]):
         """Handle file upload for Learning Experience section with unique directory."""
+        if not files:
+            return
         self.is_uploading_learning_experience = True
         self.upload_progress_learning_experience = 0
         total = len(files)
@@ -250,11 +265,13 @@ class DashboardState(rx.State):
             self.upload_progress_learning_experience = int((i + 1) / total * 100)
             yield
         self.is_uploading_learning_experience = False
-        yield rx.toast.success(f"Uploaded {len(files)} file(s) to Learning Experience")
+        yield rx.clear_selected_files("upload_learning_experience")
 
     @rx.event
     async def handle_sustainability_upload(self, files: list[rx.UploadFile]):
         """Handle file upload for Sustainability section with unique directory."""
+        if not files:
+            return
         self.is_uploading_sustainability = True
         self.upload_progress_sustainability = 0
         total = len(files)
@@ -266,7 +283,7 @@ class DashboardState(rx.State):
             self.upload_progress_sustainability = int((i + 1) / total * 100)
             yield
         self.is_uploading_sustainability = False
-        yield rx.toast.success(f"Uploaded {len(files)} file(s) to Sustainability")
+        yield rx.clear_selected_files("upload_sustainability")
 
     @rx.event
     def delete_research_file(self, filename: str):
