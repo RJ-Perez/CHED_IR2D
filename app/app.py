@@ -47,9 +47,9 @@ def branding_section() -> rx.Component:
                     rx.el.div(
                         rx.icon("bar-chart-2", class_name="h-6 w-6 text-blue-200"),
                         rx.el.span(
-                            "Analytics Driven", class_name="text-white font-medium"
+                            "Analytics Driven", class_name="text-white font-medium ml-2"
                         ),
-                        class_name="flex flex-col items-start bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm",
+                        class_name="flex items-center bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm",
                     ),
                     rx.el.div(
                         rx.icon("globe", class_name="h-6 w-6 text-blue-200"),
