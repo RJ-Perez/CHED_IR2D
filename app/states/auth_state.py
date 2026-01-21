@@ -216,7 +216,10 @@ class AuthState(GoogleAuthState):
             retries += 1
         if not self.token_is_valid:
             logging.warning("Google login failed: Token validation timed out.")
-            yield rx.toast("Google login timed out. Please try again.", duration=3000)
+            async with self:
+                yield rx.toast(
+                    "Google login timed out. Please try again.", duration=3000
+                )
             return
         user_info = self.tokeninfo
         user_email = user_info.get("email")
@@ -292,23 +295,26 @@ class AuthState(GoogleAuthState):
                 await asession.commit()
         except Exception as e:
             logging.exception(f"Database error during Google login sync: {e}")
-            yield rx.toast(
-                "Database synchronization failed. Please contact support.",
-                duration=5000,
-            )
+            async with self:
+                yield rx.toast(
+                    "Database synchronization failed. Please contact support.",
+                    duration=5000,
+                )
             return
         if user_id:
             async with self:
                 self.authenticated_user_id = user_id
                 self.error_message = ""
-            yield rx.toast(f"Successfully signed in as {first_name}!", duration=3000)
-            yield rx.redirect("/hei-selection")
+                yield rx.toast(
+                    f"Successfully signed in as {first_name}!", duration=3000
+                )
+                yield rx.redirect("/hei-selection")
         else:
             async with self:
                 self.error_message = (
                     "Authentication failed during user profile synchronization."
                 )
-            yield rx.toast("Could not finalize your login session.", duration=5000)
+                yield rx.toast("Could not finalize your login session.", duration=5000)
 
     @rx.event
     def logout(self):
