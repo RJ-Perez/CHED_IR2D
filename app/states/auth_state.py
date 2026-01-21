@@ -212,19 +212,14 @@ class AuthState(GoogleAuthState):
     @rx.event(background=True)
     async def on_google_login(self, token_data: dict):
         """Triggered after Google sign-in. Verifies user in database or creates new record."""
-        for _ in range(20):
-            if self.token_is_valid:
-                break
-            await asyncio.sleep(0.5)
-        if not self.token_is_valid and (not token_data):
-            logging.warning("Google token validation failed or timed out.")
+        if not token_data:
+            logging.warning("Google login failed: No token data received.")
+            yield rx.toast("Google login failed. Please try again.", duration=3000)
             return
-        async with self:
-            info = token_data if token_data else self.tokeninfo
-            user_email = info.get("email")
-            google_id = info.get("sub")
-            first_name = info.get("given_name", "")
-            last_name = info.get("family_name", "")
+        user_email = token_data.get("email")
+        google_id = token_data.get("sub")
+        first_name = token_data.get("given_name", "")
+        last_name = token_data.get("family_name", "")
         if not user_email:
             logging.warning("Google login failed: Email missing from token data.")
             async with self:

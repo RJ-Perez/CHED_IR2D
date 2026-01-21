@@ -6,3 +6,4 @@ reflex-google-auth
 reflex
 google-genai
 resend
+psycopg[binary]
