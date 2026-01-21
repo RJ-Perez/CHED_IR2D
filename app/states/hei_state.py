@@ -21,6 +21,7 @@ class HEIState(rx.State):
     """
 
     hei_database: list[HEI] = []
+    search_results: list[HEI] = []
     search_query: str = ""
     selected_hei_id: str = ""
     selected_hei: Optional[HEI] = None
@@ -231,21 +232,6 @@ class HEIState(rx.State):
         return ", ".join([p for p in parts if p])
 
     @rx.var
-    def search_results(self) -> list[HEI]:
-        """Computed property for filter-as-you-type functionality."""
-        if not self.search_query.strip():
-            return self.hei_database
-        query = self.search_query.lower()
-        return [
-            hei
-            for hei in self.hei_database
-            if query in hei["name"].lower()
-            or query in hei["address"].lower()
-            or query in str(hei["id"]).lower()
-            or (query in hei["type"].lower())
-        ]
-
-    @rx.var
     def is_form_valid(self) -> bool:
         if self.is_registration_mode:
             return (
@@ -265,8 +251,67 @@ class HEIState(rx.State):
         self.search_query = query
         if query.strip():
             self.is_dropdown_open = True
+            return HEIState.perform_search
         else:
             self.is_dropdown_open = False
+            self.search_results = []
+            self.is_searching = False
+
+    @rx.event
+    def clear_search(self):
+        self.search_query = ""
+        self.selected_hei = None
+        self.selected_hei_id = ""
+        self.search_results = []
+        self.is_dropdown_open = False
+        self.ranking_framework = ""
+
+    @rx.event(background=True)
+    async def perform_search(self):
+        """Search institutions in the database based on query."""
+        async with self:
+            if not self.search_query.strip():
+                self.is_searching = False
+                self.search_results = []
+                return
+            self.is_searching = True
+        query_text = f"%{self.search_query.strip()}%"
+        async with rx.asession() as session:
+            try:
+                result = await session.execute(
+                    text("""
+                        SELECT id, institution_name, street_address, city_municipality, 'Private', admin_name 
+                        FROM institutions 
+                        WHERE institution_name ILIKE :query 
+                           OR street_address ILIKE :query 
+                           OR city_municipality ILIKE :query
+                        LIMIT 10
+                    """),
+                    {"query": query_text},
+                )
+                rows = result.all()
+                results = [
+                    {
+                        "id": str(row[0]),
+                        "name": row[1],
+                        "address": f"{row[2]}, {row[3]}",
+                        "type": row[4],
+                        "street": row[2],
+                        "city": row[3],
+                        "admin_name": row[5] if row[5] else "Not Assigned",
+                    }
+                    for row in rows
+                ]
+            except Exception as e:
+                logging.exception(f"Search error: {e}")
+                results = []
+        async with self:
+            self.search_results = results
+            self.is_searching = False
+
+    @rx.event
+    def set_is_dropdown_open(self, value: bool):
+        self.is_dropdown_open = value
 
     @rx.event
     def select_hei(self, hei: HEI):
@@ -326,7 +371,7 @@ class HEIState(rx.State):
 
     @rx.event(background=True)
     async def fetch_institutions(self):
-        """Loads all institutions from the database."""
+        """Loads all institutions from the database. Kept for Institutions page."""
         async with self:
             self.is_fetching = True
         async with rx.asession() as session:

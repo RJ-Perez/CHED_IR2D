@@ -273,11 +273,14 @@ def hei_selection_dropdown() -> rx.Component:
                         rx.foreach(HEIState.search_results, hei_dropdown_item),
                         class_name="max-h-[300px] overflow-y-auto",
                     ),
-                    rx.el.div(
-                        rx.el.p(
-                            "No institutions found matching your criteria.",
-                            class_name="text-sm text-gray-500 p-4 text-center",
-                        )
+                    rx.cond(
+                        ~HEIState.is_searching,
+                        rx.el.div(
+                            rx.el.p(
+                                "No institutions found matching your criteria.",
+                                class_name="text-sm text-gray-500 p-4 text-center",
+                            )
+                        ),
                     ),
                 ),
                 class_name="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl animate-in fade-in slide-in-from-top-2",
@@ -346,7 +349,7 @@ def selection_screen_content() -> rx.Component:
                                         HEIState.search_query.length() > 0,
                                         rx.el.button(
                                             rx.icon("x", class_name="h-5 w-5"),
-                                            on_click=HEIState.set_search_query(""),
+                                            on_click=HEIState.clear_search,
                                             class_name="absolute right-6 top-5 text-slate-400 hover:text-slate-600 transition-colors",
                                         ),
                                     ),
