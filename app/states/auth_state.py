@@ -28,35 +28,33 @@ class AuthState(GoogleAuthState):
     @rx.var(cache=True)
     async def user_display_name(self) -> str:
         """Fetches the user's full name from the database based on session ID."""
-        if self.authenticated_user_id is None:
-            if self.token_is_valid:
-                return self.tokeninfo.get("name", "User")
-            return "Guest User"
-        async with rx.asession() as session:
-            result = await session.execute(
-                text("SELECT first_name, last_name FROM users WHERE id = :id"),
-                {"id": self.authenticated_user_id},
-            )
-            row = result.first()
-            if row:
-                return f"{row[0]} {row[1]}"
-        return "User"
+        if self.authenticated_user_id is not None:
+            async with rx.asession() as session:
+                result = await session.execute(
+                    text("SELECT first_name, last_name FROM users WHERE id = :id"),
+                    {"id": self.authenticated_user_id},
+                )
+                row = result.first()
+                if row:
+                    return f"{row[0]} {row[1]}"
+        if self.token_is_valid:
+            return self.tokeninfo.get("name", "Google User")
+        return "Guest User"
 
     @rx.var(cache=True)
     async def user_email_address(self) -> str:
         """Fetches the user's email from the database or OAuth info."""
-        if self.authenticated_user_id is None:
-            if self.token_is_valid:
-                return self.tokeninfo.get("email", "")
-            return ""
-        async with rx.asession() as session:
-            result = await session.execute(
-                text("SELECT email FROM users WHERE id = :id"),
-                {"id": self.authenticated_user_id},
-            )
-            row = result.first()
-            if row:
-                return row[0]
+        if self.authenticated_user_id is not None:
+            async with rx.asession() as session:
+                result = await session.execute(
+                    text("SELECT email FROM users WHERE id = :id"),
+                    {"id": self.authenticated_user_id},
+                )
+                row = result.first()
+                if row:
+                    return row[0]
+        if self.token_is_valid:
+            return self.tokeninfo.get("email", "")
         return ""
 
     @rx.event
@@ -213,28 +211,24 @@ class AuthState(GoogleAuthState):
     async def on_google_login(self, token_data: dict):
         """Triggered after Google sign-in. Verifies user in database or creates new record."""
         retries = 0
-        while not self.token_is_valid and retries < 5:
+        while not self.token_is_valid and retries < 15:
             await asyncio.sleep(0.5)
             retries += 1
         if not self.token_is_valid:
-            logging.warning(
-                "Google login failed: Token validation timed out or failed."
-            )
-            yield rx.toast(
-                "Google login validation failed. Please try again.", duration=3000
-            )
+            logging.warning("Google login failed: Token validation timed out.")
+            yield rx.toast("Google login timed out. Please try again.", duration=3000)
             return
-        user_email = self.tokeninfo.get("email")
-        google_id = self.tokeninfo.get("sub")
-        first_name = self.tokeninfo.get("given_name", "")
-        last_name = self.tokeninfo.get("family_name", "")
+        user_info = self.tokeninfo
+        user_email = user_info.get("email")
+        google_id = user_info.get("sub")
+        first_name = user_info.get("given_name", "")
+        last_name = user_info.get("family_name", "")
         if not user_email:
-            logging.warning("Google login failed: Email missing from token data.")
+            logging.warning("Google login failed: Email missing from tokeninfo.")
             async with self:
-                self.error_message = "Google login failed: Email missing."
-            yield rx.toast(
-                "Google login failed: Email not provided by Google.", duration=5000
-            )
+                self.error_message = (
+                    "Google login failed: Email missing from Google account."
+                )
             return
         user_id = None
         try:
@@ -276,8 +270,8 @@ class AuthState(GoogleAuthState):
                         VALUES (
                             :first_name, 
                             :last_name, 
-                            '', 
-                            '', 
+                            'HEI Administrator', 
+                            'Google Verified', 
                             :email, 
                             :google_id, 
                             'google', 
@@ -298,21 +292,23 @@ class AuthState(GoogleAuthState):
                 await asession.commit()
         except Exception as e:
             logging.exception(f"Database error during Google login sync: {e}")
-            yield rx.toast("Database synchronization failed.", duration=3000)
+            yield rx.toast(
+                "Database synchronization failed. Please contact support.",
+                duration=5000,
+            )
             return
         if user_id:
             async with self:
                 self.authenticated_user_id = user_id
                 self.error_message = ""
-            yield rx.toast(f"Welcome, {first_name}!", duration=3000)
+            yield rx.toast(f"Successfully signed in as {first_name}!", duration=3000)
             yield rx.redirect("/hei-selection")
         else:
             async with self:
-                self.error_message = "Authentication failed during database sync."
-            yield rx.toast(
-                "An error occurred during account creation. Please try again.",
-                duration=5000,
-            )
+                self.error_message = (
+                    "Authentication failed during user profile synchronization."
+                )
+            yield rx.toast("Could not finalize your login session.", duration=5000)
 
     @rx.event
     def logout(self):
