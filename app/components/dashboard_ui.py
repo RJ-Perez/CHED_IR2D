@@ -3,16 +3,14 @@ from app.states.dashboard_state import DashboardState
 from app.states.hei_state import HEIState
 
 
-def text_input_metric(
+def slider_input_metric(
     label: str,
     value: rx.Var,
     points: rx.Var,
     max_points: int,
     on_change: rx.event.EventType,
-    error_msg: rx.Var = "",
 ) -> rx.Component:
-    """Text box input for weighted metrics with standardized design tokens."""
-    has_error = error_msg != ""
+    """Slider input for weighted metrics with real-time feedback and standardized design tokens."""
     return rx.el.div(
         rx.el.div(
             rx.el.label(
@@ -29,47 +27,34 @@ def text_input_metric(
             class_name="flex items-center justify-between mb-4",
         ),
         rx.el.div(
-            rx.el.input(
-                type="number",
-                min=0,
-                max=100,
-                step=1,
-                pattern="[0-9]*",
-                input_mode="numeric",
-                placeholder="0 - 100",
-                default_value=rx.cond(value == 0, "", value.to_string()),
-                on_change=on_change.debounce(300),
-                on_key_down=lambda key: rx.cond(
-                    (key == ".")
-                    | (key == "e")
-                    | (key == "E")
-                    | (key == "+")
-                    | (key == "-"),
-                    rx.event.prevent_default,
-                    rx.noop(),
-                ),
-                class_name=rx.cond(
-                    has_error,
-                    "w-full text-center text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg py-2.5 focus:ring-2 focus:ring-red-500 outline-none transition-all",
-                    "w-full text-center text-sm font-medium text-slate-900 bg-gray-50 border border-gray-200 rounded-lg py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all hover:border-gray-300",
-                ),
-            ),
-            class_name="relative",
-        ),
-        rx.cond(
-            has_error,
             rx.el.div(
-                rx.icon("triangle-alert", class_name="h-4 w-4 stroke-red-500 mr-2"),
-                rx.el.span(error_msg),
-                class_name="text-xs text-red-600 mt-2 flex items-center justify-center font-medium bg-red-50 py-2 rounded-lg",
+                rx.el.input(
+                    type="range",
+                    key=value.to_string(),
+                    default_value=value.to_string(),
+                    on_change=on_change.throttle(300),
+                    min="0",
+                    max="100",
+                    step="1",
+                    class_name="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600",
+                ),
+                class_name="relative flex items-center h-10",
             ),
             rx.el.div(
                 rx.el.div(
                     class_name=rx.cond(value > 0, "bg-emerald-500", "bg-gray-200"),
                     style={"width": f"{value}%", "height": "4px"},
                 ),
-                class_name="w-full bg-gray-100 h-1 rounded-full mt-4 overflow-hidden flex",
+                class_name="w-full bg-gray-100 h-1 rounded-full mt-2 overflow-hidden flex",
             ),
+            class_name="space-y-2",
+        ),
+        rx.el.div(
+            rx.el.span(
+                f"{value}%",
+                class_name="text-xs font-bold text-gray-500 tracking-widest",
+            ),
+            class_name="flex justify-center mt-2",
         ),
         class_name="group p-6 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow transition-all duration-300",
     )
@@ -436,21 +421,19 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    text_input_metric(
+                    slider_input_metric(
                         "Academic Reputation",
                         DashboardState.academic_reputation,
                         DashboardState.academic_reputation_points,
                         30,
                         DashboardState.set_academic_reputation,
-                        DashboardState.academic_reputation_error,
                     ),
-                    text_input_metric(
+                    slider_input_metric(
                         "Citations per Faculty",
                         DashboardState.citations_per_faculty,
                         DashboardState.citations_per_faculty_points,
                         20,
                         DashboardState.set_citations_per_faculty,
-                        DashboardState.citations_per_faculty_error,
                     ),
                     rx.el.div(
                         rx.el.div(
@@ -509,21 +492,19 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    text_input_metric(
+                    slider_input_metric(
                         "Employer Reputation",
                         DashboardState.employer_reputation,
                         DashboardState.employer_reputation_points,
                         15,
                         DashboardState.set_employer_reputation,
-                        DashboardState.employer_reputation_error,
                     ),
-                    text_input_metric(
+                    slider_input_metric(
                         "Employment Outcomes",
                         DashboardState.employment_outcomes,
                         DashboardState.employment_outcomes_points,
                         5,
                         DashboardState.set_employment_outcomes,
-                        DashboardState.employment_outcomes_error,
                     ),
                     rx.el.div(
                         rx.el.div(
@@ -582,29 +563,26 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    text_input_metric(
+                    slider_input_metric(
                         "International Research Network",
                         DashboardState.international_research_network,
                         DashboardState.international_research_network_points,
                         5,
                         DashboardState.set_international_research_network,
-                        DashboardState.international_research_network_error,
                     ),
-                    text_input_metric(
+                    slider_input_metric(
                         "International Faculty Ratio",
                         DashboardState.international_faculty_ratio,
                         DashboardState.international_faculty_ratio_points,
                         5,
                         DashboardState.set_international_faculty_ratio,
-                        DashboardState.international_faculty_ratio_error,
                     ),
-                    text_input_metric(
+                    slider_input_metric(
                         "International Student Ratio",
                         DashboardState.international_student_ratio,
                         DashboardState.international_student_ratio_points,
                         5,
                         DashboardState.set_international_student_ratio,
-                        DashboardState.international_student_ratio_error,
                     ),
                     text_metric_card(
                         "International Student Diversity",
@@ -669,13 +647,12 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    text_input_metric(
+                    slider_input_metric(
                         "Faculty-Student Ratio",
                         DashboardState.faculty_student_ratio,
                         DashboardState.faculty_student_ratio_points,
                         10,
                         DashboardState.set_faculty_student_ratio,
-                        DashboardState.faculty_student_ratio_error,
                     ),
                     rx.el.div(
                         rx.el.div(
@@ -733,13 +710,12 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    text_input_metric(
+                    slider_input_metric(
                         "Sustainability Metrics Score",
                         DashboardState.sustainability_metrics,
                         DashboardState.sustainability_metrics_points,
                         5,
                         DashboardState.set_sustainability_metrics,
-                        DashboardState.sustainability_metrics_error,
                     ),
                     rx.el.div(
                         rx.el.div(
