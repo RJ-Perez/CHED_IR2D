@@ -169,6 +169,11 @@ class InstitutionsState(rx.State):
             admin = self.new_admin
         async with rx.asession() as session:
             await session.execute(
+                text(
+                    "SELECT setval(pg_get_serial_sequence('institutions', 'id'), COALESCE((SELECT MAX(id) FROM institutions), 0) + 1, false);"
+                )
+            )
+            await session.execute(
                 text("""
                     INSERT INTO institutions (
                         institution_name, 
