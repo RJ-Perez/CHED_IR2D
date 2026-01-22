@@ -366,6 +366,27 @@ class ReportsState(rx.State):
         """Returns count of reports that are Pending (No data entered or all zeros)."""
         return len([r for r in self.reports if r["status"] == "Pending"])
 
+    @rx.var(cache=True)
+    def status_distribution_data(self) -> list[dict[str, str | int]]:
+        """Calculates data for the status distribution pie chart."""
+        counts = {
+            "For Review": self.for_review_count,
+            "Reviewed": self.reviewed_count,
+            "In Progress": self.in_progress_count,
+            "Pending": self.pending_count,
+        }
+        colors = {
+            "For Review": "#3b82f6",
+            "Reviewed": "#10b981",
+            "In Progress": "#f59e0b",
+            "Pending": "#64748b",
+        }
+        return [
+            {"name": status, "value": count, "fill": colors.get(status, "#cbd5e1")}
+            for status, count in counts.items()
+            if count > 0 or len(self.reports) == 0
+        ]
+
     @rx.event
     def set_search_query(self, query: str):
         self.search_query = query
