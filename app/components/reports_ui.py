@@ -429,22 +429,7 @@ def reports_dashboard_ui() -> rx.Component:
                         class_name="text-gray-600 mt-1",
                     ),
                     class_name="flex-1",
-                ),
-                rx.el.div(
-                    rx.el.button(
-                        rx.icon("trash-2", class_name="h-5 w-5 mr-2"),
-                        "Reset Assessments",
-                        on_click=ReportsState.confirm_reset_assessment,
-                        class_name="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all text-sm font-bold",
-                    ),
-                    rx.el.button(
-                        rx.icon("file-down", class_name="h-5 w-5 mr-2"),
-                        "Download All Reports",
-                        on_click=ReportsState.download_all_reports,
-                        class_name="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors text-sm font-medium",
-                    ),
-                    class_name="flex items-center gap-3",
-                ),
+                )
             ),
             class_name="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4",
         ),
@@ -530,6 +515,24 @@ def reports_dashboard_ui() -> rx.Component:
                 ),
             ),
             class_name="bg-white rounded-lg shadow-md p-6",
+        ),
+        rx.el.div(
+            rx.el.div(
+                rx.el.button(
+                    rx.icon("trash-2", class_name="h-5 w-5 mr-2"),
+                    "Reset Assessments",
+                    on_click=ReportsState.confirm_reset_assessment,
+                    class_name="flex items-center px-6 py-3 bg-red-600 text-white rounded-xl shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all text-sm font-bold",
+                ),
+                rx.el.button(
+                    rx.icon("file-down", class_name="h-5 w-5 mr-2"),
+                    "Download All Reports",
+                    on_click=ReportsState.download_all_reports,
+                    class_name="flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors text-sm font-medium",
+                ),
+                class_name="flex items-center justify-center gap-4",
+            ),
+            class_name="mt-8 py-6 border-t border-gray-100",
         ),
         ai_analysis_section(),
         class_name="p-6 max-w-7xl mx-auto",
