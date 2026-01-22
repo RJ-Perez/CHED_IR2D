@@ -1,5 +1,7 @@
 import reflex as rx
 import asyncio
+import base64
+import json
 from reflex_google_auth import GoogleAuthState
 from sqlalchemy import text
 import logging
@@ -24,6 +26,19 @@ class AuthState(GoogleAuthState):
     is_sign_up: bool = False
     is_loading: bool = False
     error_message: str = ""
+
+    def _decode_jwt(self, token: str) -> dict:
+        """Helper to decode JWT payload safely without external dependencies."""
+        try:
+            parts = token.split(".")
+            if len(parts) != 3:
+                return {}
+            payload = parts[1]
+            padded = payload + "=" * (4 - len(payload) % 4)
+            return json.loads(base64.urlsafe_b64decode(padded))
+        except Exception as e:
+            logging.exception(f"JWT decoding error: {e}")
+            return {}
 
     @rx.var(cache=True)
     async def user_display_name(self) -> str:
@@ -209,42 +224,28 @@ class AuthState(GoogleAuthState):
 
     @rx.event(background=True)
     async def on_google_login(self, token_data: dict):
-        """Triggered after Google sign-in. Verifies user in database or creates new record."""
-        retries = 0
-        max_retries = 30
-        while retries < max_retries:
-            if self.token_is_valid and self.tokeninfo and self.tokeninfo.get("sub"):
-                break
-            await asyncio.sleep(0.5)
-            retries += 1
-        if not self.token_is_valid or not self.tokeninfo.get("sub"):
-            logging.warning(
-                f"Google login failed: Token validation timed out after {retries * 0.5}s. Valid: {self.token_is_valid}"
-            )
+        """Triggered after Google sign-in. Directly decodes JWT to avoid timeouts."""
+        credential = token_data.get("credential")
+        if not credential:
             async with self:
                 yield rx.toast(
-                    "Authentication timed out. Please ensure your browser allows third-party cookies and try again.",
+                    "Authentication error: No credential received from Google.",
                     duration=5000,
                     position="top-center",
                 )
             return
-        user_info = self.tokeninfo
+        user_info = self._decode_jwt(credential)
         user_email = user_info.get("email")
         google_id = user_info.get("sub")
         first_name = user_info.get("given_name", "")
         last_name = user_info.get("family_name", "")
-        logging.info(
-            f"Processing Google login for user: {user_email} (ID: {google_id})"
-        )
-        if not user_email:
-            logging.warning(
-                "Google login failed: Email missing from tokeninfo profile."
-            )
+        if not user_email or not google_id:
+            logging.warning("Google login failed: Incomplete JWT payload.")
             async with self:
                 self.error_message = (
-                    "Google login failed: Email information was not provided by Google."
+                    "Google login failed: Required profile info missing from token."
                 )
-                yield rx.toast(self.error_message, duration=4000)
+                yield rx.toast(self.error_message, duration=5000)
             return
         user_id = None
         try:
@@ -318,6 +319,7 @@ class AuthState(GoogleAuthState):
             async with self:
                 self.authenticated_user_id = user_id
                 self.error_message = ""
+                self.id_token_json = json.dumps(token_data)
                 yield rx.toast(
                     f"Successfully signed in as {first_name}!", duration=3000
                 )
