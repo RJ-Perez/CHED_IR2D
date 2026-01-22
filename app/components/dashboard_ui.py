@@ -10,7 +10,22 @@ def numeric_input_metric(
     max_points: int,
     on_change: rx.event.EventType,
 ) -> rx.Component:
-    """Numeric text input for weighted metrics with real-time feedback and standardized design tokens."""
+    """Numeric text input for weighted metrics with real-time feedback and validation warnings."""
+    field_key = rx.match(
+        label,
+        ("Academic Reputation", "academic_reputation"),
+        ("Citations per Faculty", "citations_per_faculty"),
+        ("Employer Reputation", "employer_reputation"),
+        ("Employment Outcomes", "employment_outcomes"),
+        ("International Research Network", "international_research_network"),
+        ("International Faculty Ratio", "international_faculty_ratio"),
+        ("International Student Ratio", "international_student_ratio"),
+        ("Faculty-Student Ratio", "faculty_student_ratio"),
+        ("Sustainability Metrics Score", "sustainability_metrics"),
+        "",
+    )
+    error_msg = DashboardState.validation_errors[field_key.to(str)]
+    has_error = error_msg != ""
     return rx.el.div(
         rx.el.div(
             rx.el.label(
@@ -34,12 +49,28 @@ def numeric_input_metric(
                     min=0,
                     max=100,
                     placeholder="0-100",
-                    class_name="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all text-center text-lg font-bold text-gray-900",
+                    class_name=rx.cond(
+                        has_error,
+                        "w-full px-4 py-2.5 bg-red-50 border border-red-500 rounded-lg focus:ring-4 focus:ring-red-100 outline-none transition-all text-center text-lg font-bold text-red-900",
+                        "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all text-center text-lg font-bold text-gray-900",
+                    ),
                     default_value=value.to_string(),
                 ),
                 class_name="relative",
             ),
-            class_name="space-y-2",
+            rx.cond(
+                has_error,
+                rx.el.div(
+                    rx.icon("wheat", class_name="h-3 w-3 text-red-500 mr-1.5"),
+                    rx.el.span(
+                        error_msg,
+                        class_name="text-[10px] font-bold text-red-500 uppercase",
+                    ),
+                    class_name="flex items-center mt-2 animate-in fade-in slide-in-from-top-1",
+                ),
+                None,
+            ),
+            class_name="space-y-1",
         ),
         class_name="group p-6 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow transition-all duration-300",
     )

@@ -43,9 +43,24 @@ class DashboardState(rx.State):
     upload_count_learning_experience: str = ""
     upload_count_sustainability: str = ""
     save_successful: bool = False
+    validation_errors: dict[str, str] = {
+        "academic_reputation": "",
+        "citations_per_faculty": "",
+        "employer_reputation": "",
+        "employment_outcomes": "",
+        "international_research_network": "",
+        "international_faculty_ratio": "",
+        "international_student_ratio": "",
+        "faculty_student_ratio": "",
+        "sustainability_metrics": "",
+    }
 
     @rx.var(cache=True)
     def has_validation_errors(self) -> bool:
+        """Checks if any field in validation_errors has a non-empty string."""
+        for key in self.validation_errors.keys():
+            if self.validation_errors[key]:
+                return True
         return False
 
     @rx.var(cache=True)
@@ -131,44 +146,65 @@ class DashboardState(rx.State):
         total_fields = 9
         return int(filled_count / total_fields * 100)
 
-    def _clamp_value(self, value: str) -> int:
-        """Helper to convert string to int and clamp between 0-100."""
+    def _validate_and_clamp(self, field_name: str, value: str) -> int:
+        """Helper to convert string to int, clamp values, and set validation errors."""
         try:
             if not value:
+                self.validation_errors[field_name] = ""
                 return 0
-            num = int(float(value))
+            num_float = float(value)
+            num = int(num_float)
+            if num_float < 0 or num_float > 100:
+                self.validation_errors[field_name] = "Value must be between 0 and 100"
+            else:
+                self.validation_errors[field_name] = ""
             return max(0, min(100, num))
         except (ValueError, TypeError) as e:
-            logging.exception(f"Error clamping value '{value}': {e}")
+            logging.exception(f"Validation error for {field_name}: {e}")
+            self.validation_errors[field_name] = "Please enter a valid number"
             return 0
 
     @rx.event
     def set_academic_reputation(self, value: str):
-        self.academic_reputation = self._clamp_value(value)
+        self.academic_reputation = self._validate_and_clamp(
+            "academic_reputation", value
+        )
 
     @rx.event
     def set_citations_per_faculty(self, value: str):
-        self.citations_per_faculty = self._clamp_value(value)
+        self.citations_per_faculty = self._validate_and_clamp(
+            "citations_per_faculty", value
+        )
 
     @rx.event
     def set_employer_reputation(self, value: str):
-        self.employer_reputation = self._clamp_value(value)
+        self.employer_reputation = self._validate_and_clamp(
+            "employer_reputation", value
+        )
 
     @rx.event
     def set_employment_outcomes(self, value: str):
-        self.employment_outcomes = self._clamp_value(value)
+        self.employment_outcomes = self._validate_and_clamp(
+            "employment_outcomes", value
+        )
 
     @rx.event
     def set_international_research_network(self, value: str):
-        self.international_research_network = self._clamp_value(value)
+        self.international_research_network = self._validate_and_clamp(
+            "international_research_network", value
+        )
 
     @rx.event
     def set_international_faculty_ratio(self, value: str):
-        self.international_faculty_ratio = self._clamp_value(value)
+        self.international_faculty_ratio = self._validate_and_clamp(
+            "international_faculty_ratio", value
+        )
 
     @rx.event
     def set_international_student_ratio(self, value: str):
-        self.international_student_ratio = self._clamp_value(value)
+        self.international_student_ratio = self._validate_and_clamp(
+            "international_student_ratio", value
+        )
 
     @rx.event
     def set_international_student_diversity(self, value: str):
@@ -176,11 +212,15 @@ class DashboardState(rx.State):
 
     @rx.event
     def set_faculty_student_ratio(self, value: str):
-        self.faculty_student_ratio = self._clamp_value(value)
+        self.faculty_student_ratio = self._validate_and_clamp(
+            "faculty_student_ratio", value
+        )
 
     @rx.event
     def set_sustainability_metrics(self, value: str):
-        self.sustainability_metrics = self._clamp_value(value)
+        self.sustainability_metrics = self._validate_and_clamp(
+            "sustainability_metrics", value
+        )
 
     async def _save_uploaded_file(
         self, file: rx.UploadFile, category: str
