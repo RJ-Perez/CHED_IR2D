@@ -226,6 +226,13 @@ class ReportsState(rx.State):
                 )
                 indicators_count = len(scores.keys())
                 db_status = data.get("review_status")
+                has_na_dimension = (
+                    research_score == 0
+                    or employability_score == 0
+                    or global_engagement_score == 0
+                    or (learning_experience_score == 0)
+                    or (sustainability_score == 0)
+                )
                 if db_status in ["Reviewed", "Declined"]:
                     status = db_status
                 elif (
