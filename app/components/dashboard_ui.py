@@ -54,7 +54,7 @@ def numeric_input_metric(
                         "w-full px-4 py-2.5 bg-red-50 border border-red-500 rounded-lg focus:ring-4 focus:ring-red-100 outline-none transition-all text-center text-lg font-bold text-red-900",
                         "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all text-center text-lg font-bold text-gray-900",
                     ),
-                    default_value=value.to_string(),
+                    default_value=rx.cond(value == 0, "", value.to_string()),
                 ),
                 class_name="relative",
             ),
