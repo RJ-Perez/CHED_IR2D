@@ -72,9 +72,9 @@ def report_status_badge(status: str) -> rx.Component:
             ),
         ),
         (
-            "Completed",
+            "For Review",
             rx.el.span(
-                "Completed",
+                "For Review",
                 class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 w-fit",
             ),
         ),
@@ -201,7 +201,7 @@ def report_table_row(report: ReportItem) -> rx.Component:
         rx.el.td(
             rx.el.div(
                 rx.cond(
-                    report["status"] == "Completed",
+                    report["status"] == "For Review",
                     rx.el.button(
                         rx.icon("clipboard-check", class_name="h-4 w-4 mr-1"),
                         "Review",
@@ -604,8 +604,8 @@ def reports_dashboard_ui() -> rx.Component:
                 "text-blue-600",
             ),
             report_stat_card(
-                "Reports Completed",
-                ReportsState.completed_count,
+                "For Review",
+                ReportsState.for_review_count,
                 "square_check",
                 "text-green-600",
             ),

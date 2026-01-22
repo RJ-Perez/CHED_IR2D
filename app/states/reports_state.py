@@ -78,6 +78,14 @@ class ReportsState(rx.State):
     async def on_load(self):
         """Fetches all institutions and calculates their scores from database records."""
         async with rx.asession() as session:
+            await session.execute(
+                text("""
+                UPDATE institution_scores 
+                SET review_status = 'For Review', updated_at = CURRENT_TIMESTAMP
+                WHERE review_status = 'Completed' AND ranking_year = 2025
+                """)
+            )
+            await session.commit()
             inst_result = await session.execute(
                 text(
                     "SELECT id, institution_name FROM institutions ORDER BY institution_name ASC"
@@ -222,14 +230,15 @@ class ReportsState(rx.State):
                     status = db_status
                 elif (
                     indicators_count >= 9
-                    and research_score > 0
+                    and (not has_na_dimension)
+                    and (research_score > 0)
                     and (employability_score > 0)
                     and (global_engagement_score > 0)
                     and (learning_experience_score > 0)
                     and (sustainability_score > 0)
                 ):
-                    status = "Completed"
-                elif overall_score > 0:
+                    status = "For Review"
+                elif overall_score > 0 or has_na_dimension:
                     status = "In Progress"
                 else:
                     status = "Pending"
@@ -282,8 +291,8 @@ class ReportsState(rx.State):
         return len(self.reports)
 
     @rx.var(cache=True)
-    def completed_count(self) -> int:
-        return len([r for r in self.reports if r["status"] == "Completed"])
+    def for_review_count(self) -> int:
+        return len([r for r in self.reports if r["status"] == "For Review"])
 
     @rx.var(cache=True)
     def reviewed_count(self) -> int:
