@@ -357,26 +357,94 @@ def delete_report_modal() -> rx.Component:
     )
 
 
+def reset_confirmation_modal() -> rx.Component:
+    """Global reset confirmation modal component."""
+    return rx.cond(
+        ReportsState.show_reset_modal,
+        rx.el.div(
+            rx.el.div(
+                rx.el.div(
+                    rx.el.div(
+                        rx.el.div(
+                            rx.icon(
+                                "triangle_alert",
+                                class_name="h-12 w-12 text-red-600 mx-auto mb-4",
+                            ),
+                            rx.el.h3(
+                                "Reset All Assessments",
+                                class_name="text-lg font-bold text-gray-900 mb-2",
+                            ),
+                            rx.el.p(
+                                "This will permanently delete all scores and evidence files for all institutions. This action cannot be undone.",
+                                class_name="text-sm text-gray-600 mb-6",
+                            ),
+                            rx.el.div(
+                                rx.el.button(
+                                    "Cancel",
+                                    on_click=ReportsState.cancel_reset_assessment,
+                                    class_name="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors",
+                                ),
+                                rx.el.button(
+                                    rx.cond(
+                                        ReportsState.is_resetting,
+                                        rx.el.span(
+                                            "Purging Data...",
+                                            class_name="animate-pulse",
+                                        ),
+                                        "Reset All Data",
+                                    ),
+                                    on_click=ReportsState.reset_all_assessments,
+                                    disabled=ReportsState.is_resetting,
+                                    class_name="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 disabled:opacity-50 transition-colors",
+                                ),
+                                class_name="flex items-center justify-end gap-3",
+                            ),
+                            class_name="text-center",
+                        ),
+                        class_name="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4",
+                    ),
+                    class_name="flex items-start justify-center min-h-screen p-4 pt-24",
+                ),
+                class_name="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-start justify-center",
+                on_click=ReportsState.cancel_reset_assessment,
+            )
+        ),
+    )
+
+
 def reports_dashboard_ui() -> rx.Component:
     """Main UI for the Reports page."""
     return rx.el.div(
         delete_report_modal(),
+        reset_confirmation_modal(),
         rx.el.div(
             rx.el.div(
-                rx.el.h1(
-                    "Reports & Exports", class_name="text-2xl font-bold text-gray-900"
+                rx.el.div(
+                    rx.el.h1(
+                        "Reports & Exports",
+                        class_name="text-2xl font-bold text-gray-900",
+                    ),
+                    rx.el.p(
+                        "Generate and download performance reports based on Overall Readiness Score and all 5 performance categories per school.",
+                        class_name="text-gray-600 mt-1",
+                    ),
+                    class_name="flex-1",
                 ),
-                rx.el.p(
-                    "Generate and download performance reports based on Overall Readiness Score and all 5 performance categories per school.",
-                    class_name="text-gray-600 mt-1",
+                rx.el.div(
+                    rx.el.button(
+                        rx.icon("trash-2", class_name="h-5 w-5 mr-2"),
+                        "Reset Assessments",
+                        on_click=ReportsState.confirm_reset_assessment,
+                        class_name="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all text-sm font-bold",
+                    ),
+                    rx.el.button(
+                        rx.icon("file-down", class_name="h-5 w-5 mr-2"),
+                        "Download All Reports",
+                        on_click=ReportsState.download_all_reports,
+                        class_name="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors text-sm font-medium",
+                    ),
+                    class_name="flex items-center gap-3",
                 ),
-                class_name="flex-1",
-            ),
-            rx.el.button(
-                rx.icon("file-down", class_name="h-5 w-5 mr-2"),
-                "Download All Reports",
-                on_click=ReportsState.download_all_reports,
-                class_name="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors text-sm font-medium",
             ),
             class_name="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4",
         ),

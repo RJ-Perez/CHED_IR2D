@@ -42,6 +42,8 @@ class ReportsState(rx.State):
     delete_confirm_id: str = ""
     delete_confirm_name: str = ""
     show_delete_modal: bool = False
+    show_reset_modal: bool = False
+    is_resetting: bool = False
     reports: list[ReportItem] = []
     search_query: str = ""
     selected_report_id: str = ""
@@ -354,6 +356,49 @@ class ReportsState(rx.State):
             duration=3000,
             position="top-center",
         )
+
+    @rx.event
+    def confirm_reset_assessment(self):
+        self.show_reset_modal = True
+
+    @rx.event
+    def cancel_reset_assessment(self):
+        self.show_reset_modal = False
+
+    @rx.event(background=True)
+    async def reset_all_assessments(self):
+        """Wipes all numerical scores from DB and deletes all evidence files from disk."""
+        async with self:
+            self.is_resetting = True
+        try:
+            import shutil
+
+            upload_dir = rx.get_upload_dir()
+            if upload_dir.exists():
+                for item in upload_dir.iterdir():
+                    if item.is_dir():
+                        shutil.rmtree(item)
+                    else:
+                        item.unlink()
+            async with rx.asession() as session:
+                await session.execute(text("DELETE FROM institution_scores"))
+                await session.commit()
+            yield ReportsState.on_load
+            async with self:
+                self.show_reset_modal = False
+                yield rx.toast(
+                    "System Reset Complete: All scores and evidence files have been purged.",
+                    duration=5000,
+                    position="top-center",
+                )
+        except Exception as e:
+            logging.exception(f"Error during system reset: {e}")
+            yield rx.toast(
+                "An error occurred during reset. Please check logs.", duration=5000
+            )
+        finally:
+            async with self:
+                self.is_resetting = False
 
     @rx.event(background=True)
     async def select_report_for_analysis(self, report_id: str):
