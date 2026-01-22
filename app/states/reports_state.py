@@ -217,26 +217,12 @@ class ReportsState(rx.State):
                     + sustainability_score * 0.05
                 )
                 indicators_count = len(scores.keys())
-                status = "Pending"
-                is_any_score_na = (
-                    research_score == 0
-                    or employability_score == 0
-                    or global_engagement_score == 0
-                    or (learning_experience_score == 0)
-                    or (sustainability_score == 0)
-                )
                 if data.get("review_status") in ["Reviewed", "Declined"]:
                     status = data["review_status"]
                 elif indicators_count >= 9:
                     status = "Completed"
-                elif indicators_count > 0:
+                else:
                     status = "In Progress"
-                if (
-                    is_any_score_na
-                    and indicators_count > 0
-                    and (status not in ["Reviewed", "Declined"])
-                ):
-                    status = "Incomplete"
                 last_gen = (
                     data["last_update"].strftime("%Y-%m-%d")
                     if data["last_update"]
@@ -280,14 +266,9 @@ class ReportsState(rx.State):
         return len([r for r in self.reports if r["status"] == "Reviewed"])
 
     @rx.var(cache=True)
-    def pending_count(self) -> int:
-        return len(
-            [r for r in self.reports if r["status"] not in ["Completed", "Reviewed"]]
-        )
-
-    @rx.var(cache=True)
-    def pending_count(self) -> int:
-        return len([r for r in self.reports if r["status"] != "Completed"])
+    def in_progress_count(self) -> int:
+        """Returns count of reports that are In Progress (Not Reviewed, Declined, or Completed)."""
+        return len([r for r in self.reports if r["status"] == "In Progress"])
 
     @rx.event
     def set_search_query(self, query: str):

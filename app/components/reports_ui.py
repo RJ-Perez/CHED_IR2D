@@ -93,7 +93,7 @@ def report_status_badge(status: str) -> rx.Component:
             ),
         ),
         rx.el.span(
-            "Pending",
+            "In Progress",
             class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 w-fit",
         ),
     )
@@ -606,8 +606,8 @@ def reports_dashboard_ui() -> rx.Component:
                 "Reviewed", ReportsState.reviewed_count, "languages", "text-purple-600"
             ),
             report_stat_card(
-                "Pending / In Progress",
-                ReportsState.pending_count,
+                "In Progress",
+                ReportsState.in_progress_count,
                 "clock",
                 "text-orange-600",
             ),
