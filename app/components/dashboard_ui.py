@@ -30,12 +30,12 @@ def numeric_input_metric(
             rx.el.div(
                 rx.el.input(
                     type="number",
-                    default_value=value.to_string(),
                     on_change=on_change.debounce(300),
                     min=0,
                     max=100,
                     placeholder="0-100",
                     class_name="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all text-center text-lg font-bold text-gray-900",
+                    default_value=value.to_string(),
                 ),
                 class_name="relative",
             ),
