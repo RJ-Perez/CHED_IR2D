@@ -211,14 +211,21 @@ class AuthState(GoogleAuthState):
     async def on_google_login(self, token_data: dict):
         """Triggered after Google sign-in. Verifies user in database or creates new record."""
         retries = 0
-        while not self.token_is_valid and retries < 15:
+        max_retries = 30
+        while retries < max_retries:
+            if self.token_is_valid and self.tokeninfo and self.tokeninfo.get("sub"):
+                break
             await asyncio.sleep(0.5)
             retries += 1
-        if not self.token_is_valid:
-            logging.warning("Google login failed: Token validation timed out.")
+        if not self.token_is_valid or not self.tokeninfo.get("sub"):
+            logging.warning(
+                f"Google login failed: Token validation timed out after {retries * 0.5}s. Valid: {self.token_is_valid}"
+            )
             async with self:
                 yield rx.toast(
-                    "Google login timed out. Please try again.", duration=3000
+                    "Authentication timed out. Please ensure your browser allows third-party cookies and try again.",
+                    duration=5000,
+                    position="top-center",
                 )
             return
         user_info = self.tokeninfo
@@ -226,12 +233,18 @@ class AuthState(GoogleAuthState):
         google_id = user_info.get("sub")
         first_name = user_info.get("given_name", "")
         last_name = user_info.get("family_name", "")
+        logging.info(
+            f"Processing Google login for user: {user_email} (ID: {google_id})"
+        )
         if not user_email:
-            logging.warning("Google login failed: Email missing from tokeninfo.")
+            logging.warning(
+                "Google login failed: Email missing from tokeninfo profile."
+            )
             async with self:
                 self.error_message = (
-                    "Google login failed: Email missing from Google account."
+                    "Google login failed: Email information was not provided by Google."
                 )
+                yield rx.toast(self.error_message, duration=4000)
             return
         user_id = None
         try:
