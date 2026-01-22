@@ -603,12 +603,15 @@ def reports_dashboard_ui() -> rx.Component:
                 "text-green-600",
             ),
             report_stat_card(
+                "Reviewed", ReportsState.reviewed_count, "languages", "text-purple-600"
+            ),
+            report_stat_card(
                 "Pending / In Progress",
                 ReportsState.pending_count,
                 "clock",
                 "text-orange-600",
             ),
-            class_name="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8",
+            class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8",
         ),
         rx.el.div(
             rx.el.div(

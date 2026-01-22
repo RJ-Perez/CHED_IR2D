@@ -276,6 +276,16 @@ class ReportsState(rx.State):
         return len([r for r in self.reports if r["status"] == "Completed"])
 
     @rx.var(cache=True)
+    def reviewed_count(self) -> int:
+        return len([r for r in self.reports if r["status"] == "Reviewed"])
+
+    @rx.var(cache=True)
+    def pending_count(self) -> int:
+        return len(
+            [r for r in self.reports if r["status"] not in ["Completed", "Reviewed"]]
+        )
+
+    @rx.var(cache=True)
     def pending_count(self) -> int:
         return len([r for r in self.reports if r["status"] != "Completed"])
 
