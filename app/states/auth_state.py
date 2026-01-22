@@ -337,16 +337,14 @@ class AuthState(GoogleAuthState):
                 self.authenticated_user_id = user_id
                 self.error_message = ""
                 self.id_token_json = json.dumps(token_data)
-                yield rx.toast(
-                    f"Successfully signed in as {first_name}!", duration=3000
-                )
-                yield rx.redirect("/hei-selection")
+            yield rx.toast(f"Successfully signed in as {first_name}!", duration=3000)
+            yield rx.redirect("/hei-selection")
         else:
             async with self:
                 self.error_message = (
                     "Authentication failed during user profile synchronization."
                 )
-                yield rx.toast("Could not finalize your login session.", duration=5000)
+            yield rx.toast("Could not finalize your login session.", duration=5000)
 
     @rx.event
     def logout(self):
