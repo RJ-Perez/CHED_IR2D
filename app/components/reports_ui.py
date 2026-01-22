@@ -86,6 +86,13 @@ def report_status_badge(status: str) -> rx.Component:
             ),
         ),
         (
+            "Pending",
+            rx.el.span(
+                "Pending",
+                class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 w-fit",
+            ),
+        ),
+        (
             "Incomplete",
             rx.el.span(
                 "Incomplete",
@@ -611,7 +618,10 @@ def reports_dashboard_ui() -> rx.Component:
                 "clock",
                 "text-orange-600",
             ),
-            class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8",
+            report_stat_card(
+                "Pending", ReportsState.pending_count, "hourglass", "text-slate-500"
+            ),
+            class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8",
         ),
         rx.el.div(
             rx.el.div(

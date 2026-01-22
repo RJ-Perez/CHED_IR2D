@@ -217,12 +217,29 @@ class ReportsState(rx.State):
                     + sustainability_score * 0.05
                 )
                 indicators_count = len(scores.keys())
-                if data.get("review_status") in ["Reviewed", "Declined"]:
-                    status = data["review_status"]
+                db_status = data.get("review_status")
+                if db_status in ["Reviewed", "Declined"]:
+                    status = db_status
                 elif indicators_count >= 9:
                     status = "Completed"
-                else:
+                elif overall_score > 0:
                     status = "In Progress"
+                else:
+                    status = "Pending"
+                if (
+                    indicators_count > 0
+                    and status != db_status
+                    and (db_status not in ["Reviewed", "Declined"])
+                ):
+                    await session.execute(
+                        text("""
+                        UPDATE institution_scores 
+                        SET review_status = :status, updated_at = CURRENT_TIMESTAMP 
+                        WHERE institution_id = :inst_id AND ranking_year = 2025
+                        """),
+                        {"status": status, "inst_id": int(i_id)},
+                    )
+                    await session.commit()
                 last_gen = (
                     data["last_update"].strftime("%Y-%m-%d")
                     if data["last_update"]
@@ -269,6 +286,11 @@ class ReportsState(rx.State):
     def in_progress_count(self) -> int:
         """Returns count of reports that are In Progress (Not Reviewed, Declined, or Completed)."""
         return len([r for r in self.reports if r["status"] == "In Progress"])
+
+    @rx.var(cache=True)
+    def pending_count(self) -> int:
+        """Returns count of reports that are Pending (No data entered or all zeros)."""
+        return len([r for r in self.reports if r["status"] == "Pending"])
 
     @rx.event
     def set_search_query(self, query: str):
