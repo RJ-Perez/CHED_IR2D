@@ -158,7 +158,7 @@ def auth_form() -> rx.Component:
         ),
         rx.el.button(
             rx.cond(
-                AuthState.is_sign_up,
+                AuthState.is_loading,
                 rx.el.div(
                     rx.el.div(
                         class_name="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"
