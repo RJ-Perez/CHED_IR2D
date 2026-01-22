@@ -25,6 +25,7 @@ class AuthState(GoogleAuthState):
     authenticated_user_id: int | None = None
     is_sign_up: bool = False
     is_loading: bool = False
+    is_redirecting: bool = False
     error_message: str = ""
 
     def _decode_jwt(self, token: str) -> dict:
@@ -236,6 +237,7 @@ class AuthState(GoogleAuthState):
                 async with self:
                     self.authenticated_user_id = user[0]
                     self.is_loading = False
+                    self.is_redirecting = True
                     yield rx.toast(f"Welcome back, {user[2]}!", duration=3000)
                     yield rx.redirect("/hei-selection")
 
@@ -336,6 +338,7 @@ class AuthState(GoogleAuthState):
             async with self:
                 self.authenticated_user_id = user_id
                 self.error_message = ""
+                self.is_redirecting = True
                 self.id_token_json = json.dumps(token_data)
             yield rx.toast(f"Successfully signed in as {first_name}!", duration=3000)
             yield rx.redirect("/hei-selection")

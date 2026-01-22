@@ -33,15 +33,36 @@ def input_field(
 
 
 def auth_form() -> rx.Component:
-    """Main Authentication Form Component with modern progress indicator."""
+    """Main Authentication Form Component with modern progress indicator and redirect overlay."""
     return rx.el.div(
         rx.cond(
-            AuthState.is_loading,
+            AuthState.is_loading | AuthState.is_redirecting,
             rx.el.div(
                 rx.el.div(
                     class_name="h-full w-full bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-600 animate-slide-progress"
                 ),
                 class_name="absolute top-0 left-0 w-full h-1 overflow-hidden rounded-t-2xl z-[60]",
+            ),
+        ),
+        rx.cond(
+            AuthState.is_redirecting,
+            rx.el.div(
+                rx.el.div(
+                    rx.icon(
+                        "squirrel",
+                        class_name="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4",
+                    ),
+                    rx.el.h3(
+                        "Authentication Successful",
+                        class_name="text-xl font-bold text-gray-900 mb-2",
+                    ),
+                    rx.el.p(
+                        "Redirecting to institutional selection...",
+                        class_name="text-gray-600 animate-pulse",
+                    ),
+                    class_name="text-center",
+                ),
+                class_name="fixed inset-0 bg-white/90 backdrop-blur-md z-[100] flex items-center justify-center animate-in fade-in duration-300",
             ),
         ),
         rx.cond(
