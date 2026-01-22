@@ -226,6 +226,13 @@ class ReportsState(rx.State):
                 )
                 indicators_count = len(scores.keys())
                 db_status = data.get("review_status")
+                all_dimensions_na = (
+                    research_score == 0
+                    and employability_score == 0
+                    and (global_engagement_score == 0)
+                    and (learning_experience_score == 0)
+                    and (sustainability_score == 0)
+                )
                 has_na_dimension = (
                     research_score == 0
                     or employability_score == 0
@@ -245,10 +252,10 @@ class ReportsState(rx.State):
                     and (sustainability_score > 0)
                 ):
                     status = "For Review"
-                elif overall_score > 0 or has_na_dimension:
-                    status = "In Progress"
-                else:
+                elif all_dimensions_na and overall_score == 0:
                     status = "Pending"
+                else:
+                    status = "In Progress"
                 if (
                     indicators_count > 0
                     and status != db_status
