@@ -220,7 +220,14 @@ class ReportsState(rx.State):
                 db_status = data.get("review_status")
                 if db_status in ["Reviewed", "Declined"]:
                     status = db_status
-                elif indicators_count >= 9:
+                elif (
+                    indicators_count >= 9
+                    and research_score > 0
+                    and (employability_score > 0)
+                    and (global_engagement_score > 0)
+                    and (learning_experience_score > 0)
+                    and (sustainability_score > 0)
+                ):
                     status = "Completed"
                 elif overall_score > 0:
                     status = "In Progress"
