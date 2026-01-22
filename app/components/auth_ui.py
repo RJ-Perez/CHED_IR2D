@@ -127,6 +127,46 @@ def auth_form() -> rx.Component:
                     AuthState.set_password,
                     "lock",
                 ),
+                rx.cond(
+                    AuthState.is_sign_up,
+                    rx.el.div(
+                        rx.el.p(
+                            "Password must include:",
+                            class_name="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 mt-3",
+                        ),
+                        rx.el.div(
+                            rx.el.ul(
+                                rx.el.li(
+                                    rx.icon(
+                                        "check",
+                                        class_name="h-3 w-3 text-emerald-500 mr-2",
+                                    ),
+                                    "At least 8 characters",
+                                    class_name="flex items-center",
+                                ),
+                                rx.el.li(
+                                    rx.icon(
+                                        "check",
+                                        class_name="h-3 w-3 text-emerald-500 mr-2",
+                                    ),
+                                    "Upper & Lowercase",
+                                    class_name="flex items-center",
+                                ),
+                                rx.el.li(
+                                    rx.icon(
+                                        "check",
+                                        class_name="h-3 w-3 text-emerald-500 mr-2",
+                                    ),
+                                    "Number & Special character",
+                                    class_name="flex items-center",
+                                ),
+                                class_name="grid grid-cols-1 gap-1 text-[11px] text-gray-500 font-medium",
+                            ),
+                            class_name="p-3 bg-gray-50 rounded-xl border border-gray-100",
+                        ),
+                        class_name="animate-in fade-in duration-300",
+                    ),
+                ),
                 class_name="mt-4",
             ),
             rx.cond(

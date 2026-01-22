@@ -124,6 +124,22 @@ class AuthState(GoogleAuthState):
     def set_position(self, value: str):
         self.position = value
 
+    def _validate_password(self, password: str) -> str | None:
+        """Standard password security validation."""
+        if len(password) < 8:
+            return "Password must be at least 8 characters long."
+        import re
+
+        if not re.search("[a-z]", password):
+            return "Password must contain at least one lowercase letter."
+        if not re.search("[A-Z]", password):
+            return "Password must contain at least one uppercase letter."
+        if not re.search("[0-9]", password):
+            return "Password must contain at least one digit."
+        if not re.search('[!@#$%^&*(),.?":{}|<>]', password):
+            return "Password must contain at least one special character."
+        return None
+
     @rx.event(background=True)
     async def authenticate(self):
         """Main entry point for email/password authentication.
@@ -150,8 +166,9 @@ class AuthState(GoogleAuthState):
                     self.error_message = "Passwords do not match."
                     self.is_loading = False
                     return
-                if len(self.password) < 6:
-                    self.error_message = "Password must be at least 6 characters."
+                password_error = self._validate_password(self.password)
+                if password_error:
+                    self.error_message = password_error
                     self.is_loading = False
                     return
         async with rx.asession() as session:
