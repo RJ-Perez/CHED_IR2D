@@ -95,6 +95,7 @@ def landing_page() -> rx.Component:
 
 
 app = rx.App(
+    stylesheets=["/auth_loading.css"],
     theme=rx.theme(appearance="light"),
     head_components=[
         rx.el.link(rel="preconnect", href="https://fonts.googleapis.com"),

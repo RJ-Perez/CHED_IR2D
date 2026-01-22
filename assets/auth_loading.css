@@ -1,0 +1,15 @@
+@keyframes slide-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-slide-progress {
+  animation: slide-progress 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}

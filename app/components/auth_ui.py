@@ -33,8 +33,30 @@ def input_field(
 
 
 def auth_form() -> rx.Component:
-    """Main Authentication Form Component."""
+    """Main Authentication Form Component with modern progress indicator."""
     return rx.el.div(
+        rx.cond(
+            AuthState.is_loading,
+            rx.el.div(
+                rx.el.div(
+                    class_name="h-full w-full bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-600 animate-slide-progress"
+                ),
+                class_name="absolute top-0 left-0 w-full h-1 overflow-hidden rounded-t-2xl z-[60]",
+            ),
+        ),
+        rx.cond(
+            AuthState.is_loading,
+            rx.el.div(
+                rx.el.div(
+                    rx.el.p(
+                        "Authenticating your credentials...",
+                        class_name="text-sm font-semibold text-blue-700 animate-pulse",
+                    ),
+                    class_name="absolute top-8 left-0 w-full text-center",
+                ),
+                class_name="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-50 rounded-2xl transition-all duration-300",
+            ),
+        ),
         rx.el.div(
             rx.el.h2(
                 rx.cond(
@@ -243,5 +265,5 @@ def auth_form() -> rx.Component:
             ),
             class_name="mt-6 text-center text-sm text-gray-600",
         ),
-        class_name="w-full max-w-md mx-auto bg-white p-8 rounded-2xl shadow-sm border border-gray-100",
+        class_name="relative w-full max-w-md mx-auto bg-white p-8 rounded-2xl shadow-sm border border-gray-100 overflow-hidden",
     )
