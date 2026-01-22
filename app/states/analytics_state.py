@@ -6,7 +6,10 @@ import json
 import re
 import os
 import asyncio
+import time
 
+AI_RECOMMENDATIONS_CACHE = {}
+CACHE_TTL = 3600
 try:
     from google import genai
     from google.genai import types
@@ -269,6 +272,21 @@ class AnalyticsState(rx.State):
         """Generate AI-powered strategic recommendations using Google AI."""
         async with self:
             self.is_generating_recommendations = True
+            hei_state = await self.get_state(HEIState)
+            inst_id = (
+                hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
+            )
+        now = time.time()
+        if inst_id in AI_RECOMMENDATIONS_CACHE:
+            cache_entry = AI_RECOMMENDATIONS_CACHE[inst_id]
+            if now - cache_entry["timestamp"] < CACHE_TTL:
+                logging.info(
+                    f"Using cached AI recommendations for institution {inst_id}"
+                )
+                async with self:
+                    self.ai_recommendations = cache_entry["recommendations"]
+                    self.is_generating_recommendations = False
+                return
         if not GOOGLE_AI_AVAILABLE:
             async with self:
                 self.is_generating_recommendations = False
@@ -316,8 +334,8 @@ class AnalyticsState(rx.State):
                     )
                     if is_retriable:
                         if attempt == max_retries - 1:
-                            logging.error(
-                                "Google AI quota exhausted after all retries. Falling back."
+                            logging.info(
+                                "Google AI quota exhausted after all retries. Falling back to rule-based recommendations."
                             )
                             break
                         wait_time = 2.0 * 2**attempt
@@ -420,6 +438,10 @@ class AnalyticsState(rx.State):
                         "bg_class": bg_class,
                     }
                 )
+            AI_RECOMMENDATIONS_CACHE[inst_id] = {
+                "timestamp": time.time(),
+                "recommendations": recommendations,
+            }
             async with self:
                 self.ai_recommendations = recommendations
                 self.is_generating_recommendations = False

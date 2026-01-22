@@ -8,8 +8,11 @@ import logging
 import os
 import re
 import asyncio
+import time
 from sqlalchemy import text
 
+REPORT_AI_CACHE = {}
+REPORT_CACHE_TTL = 3600
 try:
     from google import genai
     from google.genai import types
@@ -578,6 +581,18 @@ class ReportsState(rx.State):
         """Generate AI recommendations for a specific report."""
         async with self:
             self.is_generating_report_recommendations = True
+        report_id = report["id"]
+        now = time.time()
+        if report_id in REPORT_AI_CACHE:
+            cache_entry = REPORT_AI_CACHE[report_id]
+            if now - cache_entry["timestamp"] < REPORT_CACHE_TTL:
+                logging.info(f"Using cached report AI analysis for {report_id}")
+                async with self:
+                    self.selected_report_recommendations = cache_entry[
+                        "recommendations"
+                    ]
+                    self.is_generating_report_recommendations = False
+                return
         research_score = report["research_score"]
         employability_score = report["employability_score"]
         global_engagement_score = report["global_engagement_score"]
@@ -641,8 +656,8 @@ class ReportsState(rx.State):
                     )
                     if is_retriable:
                         if attempt == max_retries - 1:
-                            logging.error(
-                                "Google AI quota exhausted after all retries."
+                            logging.info(
+                                "Google AI quota exhausted after all retries. Using report fallback logic."
                             )
                             break
                         wait_time = 2.0 * 2**attempt
@@ -701,6 +716,10 @@ class ReportsState(rx.State):
                         "bg_class": bg_class,
                     }
                 )
+            REPORT_AI_CACHE[report_id] = {
+                "timestamp": time.time(),
+                "recommendations": recommendations,
+            }
             async with self:
                 self.selected_report_recommendations = recommendations
                 self.is_generating_report_recommendations = False
