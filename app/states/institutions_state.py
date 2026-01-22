@@ -15,11 +15,7 @@ class InstitutionsState(rx.State):
         """Calculate statistics based on the HEI database."""
         hei_state = await self.get_state(HEIState)
         total = len(hei_state.hei_database)
-        return {
-            "total": total,
-            "active": int(total * 0.65),
-            "pending": int(total * 0.35),
-        }
+        return {"total": total}
 
     @rx.var(cache=True)
     async def filtered_heis(self) -> list[HEI]:

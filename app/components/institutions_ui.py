@@ -30,22 +30,6 @@ def stat_card(title: str, value: int, icon: str, color_class: str) -> rx.Compone
     )
 
 
-def status_badge(hei_id: str) -> rx.Component:
-    """Mock status badge based on ID parity for variety."""
-    is_active = rx.cond(hei_id.to(int) % 2 == 0, True, False)
-    return rx.cond(
-        is_active,
-        rx.el.span(
-            "Active",
-            class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800",
-        ),
-        rx.el.span(
-            "Pending Review",
-            class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800",
-        ),
-    )
-
-
 def action_button(
     icon: str, label: str, on_click: rx.event.EventType, is_destructive: bool = False
 ) -> rx.Component:
@@ -85,7 +69,6 @@ def hei_table_row(hei: HEI) -> rx.Component:
             ),
             class_name="px-6 py-4 whitespace-nowrap",
         ),
-        rx.el.td(status_badge(hei["id"]), class_name="px-6 py-4 whitespace-nowrap"),
         rx.el.td(
             rx.el.div(
                 action_button(
@@ -187,18 +170,6 @@ def institutions_dashboard_ui() -> rx.Component:
                 "building-2",
                 "text-blue-600",
             ),
-            stat_card(
-                "Active Assessments",
-                InstitutionsState.stats["active"],
-                "activity",
-                "text-green-600",
-            ),
-            stat_card(
-                "Pending Reviews",
-                InstitutionsState.stats["pending"],
-                "clock",
-                "text-orange-600",
-            ),
             class_name="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8",
         ),
         rx.el.div(
@@ -233,10 +204,6 @@ def institutions_dashboard_ui() -> rx.Component:
                             ),
                             rx.el.th(
                                 "Address",
-                                class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
-                            ),
-                            rx.el.th(
-                                "Status",
                                 class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
                             ),
                             rx.el.th(
