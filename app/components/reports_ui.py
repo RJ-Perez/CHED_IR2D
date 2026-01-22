@@ -2,50 +2,20 @@ import reflex as rx
 from app.states.reports_state import ReportsState, ReportItem
 
 
-def report_stat_card(
-    title: str, value: int, icon: str, color_class: str
-) -> rx.Component:
-    """Display a statistic summary card for reports."""
-    return rx.el.div(
-        rx.el.div(
-            rx.el.div(
-                rx.el.p(title, class_name="text-sm font-medium text-gray-500"),
-                rx.el.h3(value, class_name="text-2xl font-bold text-gray-900 mt-1"),
-            ),
-            rx.el.div(
-                rx.icon(icon, class_name=f"h-6 w-6 {color_class}"),
-                class_name="p-3 bg-gray-50 rounded-lg",
-            ),
-            class_name="flex justify-between items-start",
-        ),
-        class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm",
-    )
-
-
 def score_badge(score: int) -> rx.Component:
     """Visual badge for scores with color coding."""
+    from app.components.design_system import ds_badge
+
     return rx.cond(
         score >= 80,
-        rx.el.span(
-            f"{score}%",
-            class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800",
-        ),
+        ds_badge(label=f"{score}%", variant="success"),
         rx.cond(
             score >= 60,
-            rx.el.span(
-                f"{score}%",
-                class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800",
-            ),
+            ds_badge(label=f"{score}%", variant="warning"),
             rx.cond(
                 score > 0,
-                rx.el.span(
-                    f"{score}%",
-                    class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800",
-                ),
-                rx.el.span(
-                    "N/A",
-                    class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500",
-                ),
+                ds_badge(label=f"{score}%", variant="error"),
+                ds_badge(label="N/A", variant="neutral"),
             ),
         ),
     )
@@ -154,6 +124,7 @@ def dimension_score_row(label: str, score: int) -> rx.Component:
     )
 
 
+@rx.memo
 def report_table_row(report: ReportItem) -> rx.Component:
     """Row component for the Reports table."""
     return rx.el.tr(
@@ -576,6 +547,8 @@ def review_report_modal() -> rx.Component:
 
 def reports_dashboard_ui() -> rx.Component:
     """Main UI for the Reports page."""
+    from app.components.design_system import ds_pagination, ds_stat_card, DS
+
     return rx.el.div(
         review_report_modal(),
         delete_report_modal(),
@@ -583,13 +556,10 @@ def reports_dashboard_ui() -> rx.Component:
         rx.el.div(
             rx.el.div(
                 rx.el.div(
-                    rx.el.h1(
-                        "Reports & Exports",
-                        class_name="text-2xl font-bold text-gray-900",
-                    ),
+                    rx.el.h1("Reports & Exports", class_name=DS.H1),
                     rx.el.p(
                         "Generate and download performance reports based on Overall Readiness Score and all 5 performance categories per school.",
-                        class_name="text-gray-600 mt-1",
+                        class_name="text-slate-600 mt-1 font-medium",
                     ),
                     class_name="flex-1",
                 )
@@ -597,29 +567,35 @@ def reports_dashboard_ui() -> rx.Component:
             class_name="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4",
         ),
         rx.el.div(
-            report_stat_card(
-                "Total Institutions",
-                ReportsState.total_reports,
-                "building-2",
-                "text-blue-600",
+            ds_stat_card(
+                title="Total Institutions",
+                value=ReportsState.total_reports,
+                icon="building-2",
+                color_variant="primary",
             ),
-            report_stat_card(
-                "For Review",
-                ReportsState.for_review_count,
-                "square_check",
-                "text-green-600",
+            ds_stat_card(
+                title="For Review",
+                value=ReportsState.for_review_count,
+                icon="square_check",
+                color_variant="success",
             ),
-            report_stat_card(
-                "Reviewed", ReportsState.reviewed_count, "languages", "text-purple-600"
+            ds_stat_card(
+                title="Reviewed",
+                value=ReportsState.reviewed_count,
+                icon="languages",
+                color_variant="primary",
             ),
-            report_stat_card(
-                "In Progress",
-                ReportsState.in_progress_count,
-                "clock",
-                "text-orange-600",
+            ds_stat_card(
+                title="In Progress",
+                value=ReportsState.in_progress_count,
+                icon="clock",
+                color_variant="warning",
             ),
-            report_stat_card(
-                "Pending", ReportsState.pending_count, "hourglass", "text-slate-500"
+            ds_stat_card(
+                title="Pending",
+                value=ReportsState.pending_count,
+                icon="hourglass",
+                color_variant="neutral",
             ),
             class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8",
         ),
@@ -636,44 +612,76 @@ def reports_dashboard_ui() -> rx.Component:
             rx.cond(
                 ReportsState.filtered_reports.length() > 0,
                 rx.el.div(
-                    rx.el.table(
-                        rx.el.thead(
-                            rx.el.tr(
-                                rx.el.th(
-                                    "Institution",
-                                    class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                    rx.el.div(
+                        rx.el.table(
+                            rx.el.thead(
+                                rx.el.tr(
+                                    rx.el.th(
+                                        "Institution",
+                                        class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                    ),
+                                    rx.el.th(
+                                        "Overall Score",
+                                        class_name="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                    ),
+                                    rx.el.th(
+                                        "Dimension Scores",
+                                        class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                    ),
+                                    rx.el.th(
+                                        "Status",
+                                        class_name="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                    ),
+                                    rx.el.th(
+                                        "Last Generated",
+                                        class_name="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                    ),
+                                    rx.el.th(
+                                        "Actions",
+                                        class_name="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                    ),
+                                    class_name="bg-gray-50 border-b border-gray-200",
                                 ),
-                                rx.el.th(
-                                    "Overall Score",
-                                    class_name="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider",
-                                ),
-                                rx.el.th(
-                                    "Dimension Scores",
-                                    class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
-                                ),
-                                rx.el.th(
-                                    "Status",
-                                    class_name="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider",
-                                ),
-                                rx.el.th(
-                                    "Last Generated",
-                                    class_name="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider",
-                                ),
-                                rx.el.th(
-                                    "Actions",
-                                    class_name="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider",
-                                ),
-                                class_name="bg-gray-50 border-b border-gray-200",
+                                class_name="bg-gray-50",
                             ),
-                            class_name="bg-gray-50",
+                            rx.el.tbody(
+                                rx.cond(
+                                    ReportsState.is_loading_page,
+                                    rx.foreach(
+                                        rx.Var.range(ReportsState.page_size),
+                                        lambda _: rx.el.tr(
+                                            rx.el.td(
+                                                rx.el.div(
+                                                    class_name="animate-pulse bg-gray-100 h-10 rounded-lg"
+                                                ),
+                                                class_name="px-6 py-4",
+                                                col_span=6,
+                                            )
+                                        ),
+                                    ),
+                                    rx.foreach(
+                                        ReportsState.paginated_reports,
+                                        lambda report: report_table_row(
+                                            report=report, key=report["id"]
+                                        ),
+                                    ),
+                                ),
+                                class_name="divide-y divide-gray-200",
+                            ),
+                            class_name="min-w-full divide-y divide-gray-200",
                         ),
-                        rx.el.tbody(
-                            rx.foreach(ReportsState.filtered_reports, report_table_row),
-                            class_name="divide-y divide-gray-200",
-                        ),
-                        class_name="min-w-full divide-y divide-gray-200",
+                        class_name="overflow-x-auto",
                     ),
-                    class_name="overflow-x-auto shadow-md rounded-lg",
+                    ds_pagination(
+                        current_page=ReportsState.current_page,
+                        total_pages=ReportsState.total_pages,
+                        on_prev=ReportsState.prev_page,
+                        on_next=ReportsState.next_page,
+                        on_page_change=rx.noop(),
+                        page_size=ReportsState.page_size,
+                        on_page_size_change=ReportsState.set_page_size,
+                    ),
+                    class_name="shadow-md rounded-lg",
                 ),
                 rx.el.div(
                     rx.el.p(

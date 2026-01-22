@@ -50,6 +50,9 @@ class ReportsState(rx.State):
     selected_report_recommendations: list[dict[str, str]] = []
     is_generating_report_recommendations: bool = False
     show_review_modal: bool = False
+    page_size: int = 10
+    current_page: int = 1
+    is_loading_page: bool = False
     selected_review_report: ReportItem = {
         "id": "",
         "name": "",
@@ -299,6 +302,44 @@ class ReportsState(rx.State):
             return self.reports
         query = self.search_query.lower()
         return [r for r in self.reports if query in r["name"].lower()]
+
+    @rx.var(cache=True)
+    def total_pages(self) -> int:
+        total = len(self.filtered_reports)
+        if total == 0:
+            return 1
+        return (total + self.page_size - 1) // self.page_size
+
+    @rx.var(cache=True)
+    def paginated_reports(self) -> list[ReportItem]:
+        start = (self.current_page - 1) * self.page_size
+        end = start + self.page_size
+        return self.filtered_reports[start:end]
+
+    @rx.event
+    def set_page_size(self, value: str):
+        self.page_size = int(value)
+        self.current_page = 1
+
+    @rx.event(background=True)
+    async def next_page(self):
+        async with self:
+            if self.current_page < self.total_pages:
+                self.current_page += 1
+                self.is_loading_page = True
+        await asyncio.sleep(0.2)
+        async with self:
+            self.is_loading_page = False
+
+    @rx.event(background=True)
+    async def prev_page(self):
+        async with self:
+            if self.current_page > 1:
+                self.current_page -= 1
+                self.is_loading_page = True
+        await asyncio.sleep(0.2)
+        async with self:
+            self.is_loading_page = False
 
     @rx.var(cache=True)
     def total_reports(self) -> int:

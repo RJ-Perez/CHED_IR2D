@@ -224,6 +224,7 @@ def action_button(
     )
 
 
+@rx.memo
 def hei_table_row(hei: HEI) -> rx.Component:
     """Row component for the HEI table."""
     return rx.el.tr(
@@ -509,6 +510,8 @@ def edit_institution_modal() -> rx.Component:
 
 def institutions_dashboard_ui() -> rx.Component:
     """Main content for the Institutions Management page."""
+    from app.components.design_system import ds_pagination
+
     return rx.el.div(
         delete_confirmation_modal(),
         view_institution_modal(),
@@ -557,38 +560,60 @@ def institutions_dashboard_ui() -> rx.Component:
                 class_name="p-5 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4",
             ),
             rx.el.div(
-                rx.el.table(
-                    rx.el.thead(
-                        rx.el.tr(
-                            rx.el.th(
-                                "Institution Name",
-                                class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
-                            ),
-                            rx.el.th(
-                                "Address",
-                                class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
-                            ),
-                            rx.el.th(
-                                "Actions",
-                                class_name="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider",
-                            ),
-                        ),
-                        class_name="bg-gray-50",
-                    ),
-                    rx.el.tbody(
-                        rx.foreach(InstitutionsState.filtered_heis, hei_table_row),
-                        class_name="bg-white divide-y divide-gray-200",
-                    ),
-                    class_name="min-w-full divide-y divide-gray-200",
-                ),
-                class_name="overflow-x-auto",
-            ),
-            rx.el.div(
                 rx.el.div(
-                    rx.el.p("Showing all results", class_name="text-sm text-gray-500"),
-                    class_name="flex-1",
+                    rx.el.table(
+                        rx.el.thead(
+                            rx.el.tr(
+                                rx.el.th(
+                                    "Institution Name",
+                                    class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                ),
+                                rx.el.th(
+                                    "Address",
+                                    class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                ),
+                                rx.el.th(
+                                    "Actions",
+                                    class_name="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                ),
+                            ),
+                            class_name="bg-gray-50",
+                        ),
+                        rx.el.tbody(
+                            rx.cond(
+                                InstitutionsState.is_loading_page,
+                                rx.foreach(
+                                    rx.Var.range(InstitutionsState.page_size),
+                                    lambda _: rx.el.tr(
+                                        rx.el.td(
+                                            rx.el.div(
+                                                class_name="animate-pulse bg-gray-100 h-10 rounded-lg"
+                                            ),
+                                            class_name="px-6 py-4",
+                                            col_span=3,
+                                        )
+                                    ),
+                                ),
+                                rx.foreach(
+                                    InstitutionsState.paginated_heis,
+                                    lambda hei: hei_table_row(hei=hei, key=hei["id"]),
+                                ),
+                            ),
+                            class_name="bg-white divide-y divide-gray-200",
+                        ),
+                        class_name="min-w-full divide-y divide-gray-200",
+                    ),
+                    class_name="overflow-x-auto",
                 ),
-                class_name="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-gray-50 rounded-b-xl",
+                ds_pagination(
+                    current_page=InstitutionsState.current_page,
+                    total_pages=InstitutionsState.total_pages,
+                    on_prev=InstitutionsState.prev_page,
+                    on_next=InstitutionsState.next_page,
+                    on_page_change=rx.noop(),
+                    page_size=InstitutionsState.page_size,
+                    on_page_size_change=InstitutionsState.set_page_size,
+                ),
             ),
             class_name="bg-white rounded-xl border border-gray-200 shadow-sm",
         ),

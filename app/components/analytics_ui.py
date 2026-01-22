@@ -1,35 +1,39 @@
 import reflex as rx
 from app.states.analytics_state import AnalyticsState
+from app.components.design_system import DS
 
 TOOLTIP_PROPS = {
     "content_style": {
         "background": "white",
         "borderColor": "#e2e8f0",
-        "borderRadius": "0.5rem",
-        "boxShadow": "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-        "padding": "0.5rem",
+        "borderRadius": "1rem",
+        "boxShadow": "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+        "padding": "0.75rem",
+        "border": "1px solid #f1f5f9",
     },
-    "item_style": {"color": "#475569", "fontSize": "0.875rem"},
-    "separator": "",
+    "item_style": {"color": "#1e293b", "fontSize": "0.875rem", "fontWeight": "600"},
+    "separator": ": ",
 }
 
 
+@rx.memo
 def performance_pie_card(title: str, score: int, color: str, icon: str) -> rx.Component:
     """
-    Renders a donut chart for a specific metric with the score centered, using standardized tokens.
+    Renders a donut chart for a specific metric with the score centered, using design system tokens.
     """
     chart_data = [
         {"name": "Score", "value": score, "fill": color},
-        {"name": "Remaining", "value": 100 - score, "fill": "#f8fafc"},
+        {"name": "Remaining", "value": 100 - score, "fill": "#f1f5f9"},
     ]
     return rx.el.div(
         rx.el.div(
             rx.el.div(
                 rx.icon(icon, class_name=f"h-5 w-5", style={"stroke": color}),
                 rx.el.span(
-                    title, class_name="text-sm font-semibold text-slate-800 ml-2"
+                    title,
+                    class_name="text-sm font-bold text-slate-800 ml-2 tracking-tight",
                 ),
-                class_name="flex items-center mb-2",
+                class_name="flex items-center mb-4",
             ),
             rx.el.div(
                 rx.recharts.pie_chart(
@@ -53,15 +57,15 @@ def performance_pie_card(title: str, score: int, color: str, icon: str) -> rx.Co
                 rx.el.div(
                     rx.el.span(
                         f"{score}%",
-                        class_name="text-2xl font-black text-slate-900 tracking-tight",
+                        class_name="text-2xl font-black text-slate-900 tracking-tighter",
                     ),
-                    class_name="absolute inset-0 flex items-center justify-center pt-4",
+                    class_name="absolute inset-0 flex items-center justify-center pt-2",
                 ),
                 class_name="relative",
             ),
             class_name="p-6",
         ),
-        class_name="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden",
+        class_name=f"bg-white {DS.RADIUS} border border-{DS.BORDER} {DS.SHADOW} overflow-hidden hover:shadow-md transition-shadow duration-300",
     )
 
 
@@ -354,50 +358,51 @@ def analytics_content_ui() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.h1(
-                "Performance Analytics", class_name="text-2xl font-bold text-gray-900"
+                "Performance Analytics",
+                class_name="text-2xl font-bold text-slate-900 tracking-tight",
             ),
             rx.el.p(
                 "Real-time readiness assessment based on your data entries against regional and international benchmarks.",
-                class_name="text-gray-600 mt-1",
+                class_name="text-sm text-slate-500 mt-1 font-medium",
             ),
             class_name="mb-8",
         ),
         rx.el.div(
             performance_pie_card(
-                "Overall Readiness",
-                AnalyticsState.overall_score,
-                "#2563eb",
-                "bar-chart-2",
+                title="Overall Readiness",
+                score=AnalyticsState.overall_score,
+                color="#1d4ed8",
+                icon="bar-chart-2",
             ),
             performance_pie_card(
-                "Research & Discovery (50%)",
-                AnalyticsState.research_score,
-                "#9333ea",
-                "microscope",
+                title="Research & Discovery (50%)",
+                score=AnalyticsState.research_score,
+                color="#7c3aed",
+                icon="microscope",
             ),
             performance_pie_card(
-                "Employability (20%)",
-                AnalyticsState.employability_score,
-                "#059669",
-                "briefcase",
+                title="Employability (20%)",
+                score=AnalyticsState.employability_score,
+                color="#059669",
+                icon="briefcase",
             ),
             performance_pie_card(
-                "Global Engagement (15%)",
-                AnalyticsState.global_engagement_score,
-                "#0284c7",
-                "globe",
+                title="Global Engagement (15%)",
+                score=AnalyticsState.global_engagement_score,
+                color="#0284c7",
+                icon="globe",
             ),
             performance_pie_card(
-                "Learning Experience (10%)",
-                AnalyticsState.learning_experience_score,
-                "#4f46e5",
-                "graduation-cap",
+                title="Learning Experience (10%)",
+                score=AnalyticsState.learning_experience_score,
+                color="#4f46e5",
+                icon="graduation-cap",
             ),
             performance_pie_card(
-                "Sustainability (5%)",
-                AnalyticsState.sustainability_score,
-                "#16a34a",
-                "leaf",
+                title="Sustainability (5%)",
+                score=AnalyticsState.sustainability_score,
+                color="#16a34a",
+                icon="leaf",
             ),
             class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8",
         ),

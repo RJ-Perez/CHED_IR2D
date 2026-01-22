@@ -13,6 +13,9 @@ class InstitutionsState(rx.State):
     show_view_modal: bool = False
     show_edit_modal: bool = False
     show_register_modal: bool = False
+    page_size: int = 10
+    current_page: int = 1
+    is_loading_page: bool = False
     selected_hei_data: HEI = {
         "id": "",
         "name": "",
@@ -235,6 +238,44 @@ class InstitutionsState(rx.State):
             or query in h["address"].lower()
             or query in str(h["id"]).lower()
         ]
+
+    @rx.var(cache=True)
+    async def total_pages(self) -> int:
+        total = len(await self.filtered_heis)
+        if total == 0:
+            return 1
+        return (total + self.page_size - 1) // self.page_size
+
+    @rx.var(cache=True)
+    async def paginated_heis(self) -> list[HEI]:
+        start = (self.current_page - 1) * self.page_size
+        end = start + self.page_size
+        return (await self.filtered_heis)[start:end]
+
+    @rx.event
+    def set_page_size(self, value: str):
+        self.page_size = int(value)
+        self.current_page = 1
+
+    @rx.event(background=True)
+    async def next_page(self):
+        async with self:
+            if self.current_page < await self.total_pages:
+                self.current_page += 1
+                self.is_loading_page = True
+        await asyncio.sleep(0.2)
+        async with self:
+            self.is_loading_page = False
+
+    @rx.event(background=True)
+    async def prev_page(self):
+        async with self:
+            if self.current_page > 1:
+                self.current_page -= 1
+                self.is_loading_page = True
+        await asyncio.sleep(0.2)
+        async with self:
+            self.is_loading_page = False
 
     @rx.event
     def set_search_query(self, query: str):
