@@ -39,21 +39,7 @@ def numeric_input_metric(
                 ),
                 class_name="relative",
             ),
-            rx.el.div(
-                rx.el.div(
-                    class_name=rx.cond(value > 0, "bg-emerald-500", "bg-gray-200"),
-                    style={"width": f"{value}%", "height": "4px"},
-                ),
-                class_name="w-full bg-gray-100 h-1 rounded-full mt-2 overflow-hidden flex",
-            ),
             class_name="space-y-2",
-        ),
-        rx.el.div(
-            rx.el.span(
-                f"{value}% completion",
-                class_name="text-[10px] font-bold text-gray-400 uppercase tracking-widest",
-            ),
-            class_name="flex justify-center mt-2",
         ),
         class_name="group p-6 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow transition-all duration-300",
     )

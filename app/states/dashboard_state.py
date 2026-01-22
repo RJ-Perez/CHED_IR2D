@@ -131,33 +131,44 @@ class DashboardState(rx.State):
         total_fields = 9
         return int(filled_count / total_fields * 100)
 
+    def _clamp_value(self, value: str) -> int:
+        """Helper to convert string to int and clamp between 0-100."""
+        try:
+            if not value:
+                return 0
+            num = int(float(value))
+            return max(0, min(100, num))
+        except (ValueError, TypeError) as e:
+            logging.exception(f"Error clamping value '{value}': {e}")
+            return 0
+
     @rx.event
     def set_academic_reputation(self, value: str):
-        self.academic_reputation = int(value)
+        self.academic_reputation = self._clamp_value(value)
 
     @rx.event
     def set_citations_per_faculty(self, value: str):
-        self.citations_per_faculty = int(value)
+        self.citations_per_faculty = self._clamp_value(value)
 
     @rx.event
     def set_employer_reputation(self, value: str):
-        self.employer_reputation = int(value)
+        self.employer_reputation = self._clamp_value(value)
 
     @rx.event
     def set_employment_outcomes(self, value: str):
-        self.employment_outcomes = int(value)
+        self.employment_outcomes = self._clamp_value(value)
 
     @rx.event
     def set_international_research_network(self, value: str):
-        self.international_research_network = int(value)
+        self.international_research_network = self._clamp_value(value)
 
     @rx.event
     def set_international_faculty_ratio(self, value: str):
-        self.international_faculty_ratio = int(value)
+        self.international_faculty_ratio = self._clamp_value(value)
 
     @rx.event
     def set_international_student_ratio(self, value: str):
-        self.international_student_ratio = int(value)
+        self.international_student_ratio = self._clamp_value(value)
 
     @rx.event
     def set_international_student_diversity(self, value: str):
@@ -165,11 +176,11 @@ class DashboardState(rx.State):
 
     @rx.event
     def set_faculty_student_ratio(self, value: str):
-        self.faculty_student_ratio = int(value)
+        self.faculty_student_ratio = self._clamp_value(value)
 
     @rx.event
     def set_sustainability_metrics(self, value: str):
-        self.sustainability_metrics = int(value)
+        self.sustainability_metrics = self._clamp_value(value)
 
     async def _save_uploaded_file(
         self, file: rx.UploadFile, category: str
