@@ -3,6 +3,183 @@ from app.states.institutions_state import InstitutionsState
 from app.states.hei_state import HEI
 
 
+def register_institution_modal() -> rx.Component:
+    return rx.radix.primitives.dialog.root(
+        rx.radix.primitives.dialog.portal(
+            rx.radix.primitives.dialog.overlay(
+                class_name="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110]"
+            ),
+            rx.radix.primitives.dialog.content(
+                rx.radix.primitives.dialog.title(
+                    "Register New HEI",
+                    class_name="text-xl font-bold text-gray-900 mb-2",
+                ),
+                rx.radix.primitives.dialog.description(
+                    "Enter the institutional details to register a new Higher Education Institution in the system.",
+                    class_name="text-sm text-gray-500 mb-6",
+                ),
+                rx.el.div(
+                    rx.el.div(
+                        rx.el.label(
+                            "Institution Name",
+                            class_name="block text-xs font-bold text-gray-500 uppercase mb-1",
+                        ),
+                        rx.el.input(
+                            placeholder="e.g. University of Santo Tomas",
+                            on_change=InstitutionsState.set_new_name,
+                            class_name="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none",
+                            default_value=InstitutionsState.new_name,
+                        ),
+                        class_name="mb-4",
+                    ),
+                    rx.el.div(
+                        rx.el.label(
+                            "Street Address",
+                            class_name="block text-xs font-bold text-gray-500 uppercase mb-1",
+                        ),
+                        rx.el.input(
+                            placeholder="e.g. España Blvd, Sampaloc",
+                            on_change=InstitutionsState.set_new_street,
+                            class_name="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none",
+                            default_value=InstitutionsState.new_street,
+                        ),
+                        class_name="mb-4",
+                    ),
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.label(
+                                "Region",
+                                class_name="block text-xs font-bold text-gray-500 uppercase mb-1",
+                            ),
+                            rx.el.div(
+                                rx.el.select(
+                                    rx.el.option(
+                                        "Select Region", value="", disabled=True
+                                    ),
+                                    rx.foreach(
+                                        InstitutionsState.regions,
+                                        lambda r: rx.el.option(r, value=r),
+                                    ),
+                                    on_change=InstitutionsState.set_new_region,
+                                    value=InstitutionsState.new_region,
+                                    class_name="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer outline-none",
+                                ),
+                                rx.icon(
+                                    "chevron-down",
+                                    class_name="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none",
+                                ),
+                                class_name="relative",
+                            ),
+                            class_name="flex-1",
+                        ),
+                        rx.el.div(
+                            rx.el.label(
+                                "City / Municipality",
+                                class_name="block text-xs font-bold text-gray-500 uppercase mb-1",
+                            ),
+                            rx.el.div(
+                                rx.el.select(
+                                    rx.el.option(
+                                        "Select City", value="", disabled=True
+                                    ),
+                                    rx.foreach(
+                                        InstitutionsState.available_register_cities,
+                                        lambda c: rx.el.option(c, value=c),
+                                    ),
+                                    on_change=InstitutionsState.set_new_city,
+                                    value=InstitutionsState.new_city,
+                                    class_name="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer outline-none",
+                                ),
+                                rx.icon(
+                                    "chevron-down",
+                                    class_name="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none",
+                                ),
+                                class_name="relative",
+                            ),
+                            class_name="flex-1",
+                        ),
+                        class_name="grid grid-cols-2 gap-4 mb-4",
+                    ),
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.label(
+                                "ZIP Code",
+                                class_name="block text-xs font-bold text-gray-500 uppercase mb-1",
+                            ),
+                            rx.el.input(
+                                placeholder="e.g. 1015",
+                                on_change=InstitutionsState.set_new_zip,
+                                class_name="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none",
+                                default_value=InstitutionsState.new_zip,
+                            ),
+                        ),
+                        rx.el.div(
+                            rx.el.label(
+                                "Contact Number",
+                                class_name="block text-xs font-bold text-gray-500 uppercase mb-1",
+                            ),
+                            rx.el.input(
+                                placeholder="e.g. 02-8731-3101",
+                                on_change=InstitutionsState.set_new_contact,
+                                class_name="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none",
+                                default_value=InstitutionsState.new_contact,
+                            ),
+                        ),
+                        class_name="grid grid-cols-2 gap-4 mb-4",
+                    ),
+                    rx.el.div(
+                        rx.el.label(
+                            "Authorized Administrator",
+                            class_name="block text-xs font-bold text-gray-500 uppercase mb-1",
+                        ),
+                        rx.el.input(
+                            placeholder="e.g. Dr. Richard G. Gonzales",
+                            on_change=InstitutionsState.set_new_admin,
+                            class_name="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none",
+                            default_value=InstitutionsState.new_admin,
+                        ),
+                        class_name="mb-6",
+                    ),
+                    class_name="flex flex-col",
+                ),
+                rx.el.div(
+                    rx.radix.primitives.dialog.close(
+                        rx.el.button(
+                            "Cancel",
+                            class_name="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors",
+                        )
+                    ),
+                    rx.el.button(
+                        rx.cond(
+                            InstitutionsState.is_registering,
+                            rx.el.div(
+                                rx.el.div(
+                                    class_name="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                                ),
+                                "Registering...",
+                                class_name="flex items-center",
+                            ),
+                            "Register Institution",
+                        ),
+                        on_click=InstitutionsState.register_new_institution,
+                        disabled=~InstitutionsState.is_register_form_valid
+                        | InstitutionsState.is_registering,
+                        class_name=rx.cond(
+                            InstitutionsState.is_register_form_valid,
+                            "px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-md transition-all",
+                            "px-6 py-2 bg-gray-200 text-gray-400 rounded-lg text-sm font-bold cursor-not-allowed",
+                        ),
+                    ),
+                    class_name="flex justify-end items-center gap-3 pt-4 border-t border-gray-100",
+                ),
+                class_name="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg z-[120]",
+            ),
+        ),
+        open=InstitutionsState.show_register_modal,
+        on_open_change=InstitutionsState.set_show_register_modal,
+    )
+
+
 def stat_card(title: str, value: int, icon: str, color_class: str) -> rx.Component:
     """Display a statistic in a card with consistent design tokens."""
     return rx.el.div(
@@ -336,6 +513,7 @@ def institutions_dashboard_ui() -> rx.Component:
         delete_confirmation_modal(),
         view_institution_modal(),
         edit_institution_modal(),
+        register_institution_modal(),
         rx.el.div(
             rx.el.h1(
                 "Institutions Management", class_name="text-2xl font-bold text-gray-900"
@@ -373,6 +551,7 @@ def institutions_dashboard_ui() -> rx.Component:
                 rx.el.button(
                     rx.icon("plus", class_name="h-4 w-4 mr-2"),
                     "Add Institution",
+                    on_click=InstitutionsState.open_register_modal,
                     class_name="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors",
                 ),
                 class_name="p-5 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4",

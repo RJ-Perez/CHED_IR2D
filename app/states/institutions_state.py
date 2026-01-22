@@ -2,6 +2,7 @@ import reflex as rx
 from app.states.hei_state import HEIState, HEI
 import asyncio
 import logging
+from sqlalchemy import text
 
 
 class InstitutionsState(rx.State):
@@ -11,6 +12,7 @@ class InstitutionsState(rx.State):
     show_delete_modal: bool = False
     show_view_modal: bool = False
     show_edit_modal: bool = False
+    show_register_modal: bool = False
     selected_hei_data: HEI = {
         "id": "",
         "name": "",
@@ -25,6 +27,187 @@ class InstitutionsState(rx.State):
     edit_city: str = ""
     edit_admin: str = ""
     is_saving_edit: bool = False
+    new_name: str = ""
+    new_street: str = ""
+    new_region: str = ""
+    new_city: str = ""
+    new_zip: str = ""
+    new_contact: str = ""
+    new_admin: str = ""
+    is_registering: bool = False
+    regions_map: dict[str, list[str]] = {
+        "NCR (National Capital Region)": [
+            "Manila",
+            "Quezon City",
+            "Caloocan",
+            "Las Piñas",
+            "Makati",
+            "Malabon",
+            "Mandaluyong",
+            "Marikina",
+            "Muntinlupa",
+            "Navotas",
+            "Parañaque",
+            "Pasay",
+            "Pasig",
+            "San Juan",
+            "Taguig",
+            "Valenzuela",
+            "Pateros",
+        ],
+        "CAR (Cordillera Administrative Region)": [
+            "Baguio City",
+            "Tabuk",
+            "Bangued",
+            "Lagawe",
+            "Bontoc",
+            "La Trinidad",
+            "Luna",
+        ],
+        "Region I (Ilocos Region)": [
+            "Laoag",
+            "Batac",
+            "Vigan",
+            "Candon",
+            "San Fernando City (La Union)",
+            "Alaminos",
+            "Dagupan",
+            "San Carlos",
+            "Urdaneta",
+        ],
+        "Region II (Cagayan Valley)": ["Tuguegarao", "Cauayan", "Ilagan", "Santiago"],
+        "Region III (Central Luzon)": [
+            "Angeles",
+            "Mabalacat",
+            "San Fernando City (Pampanga)",
+            "Olongapo",
+            "Balanga",
+            "Bulacan",
+            "Meycauayan",
+            "San Jose del Monte",
+            "Cabanatuan",
+            "Gapan",
+            "Muñoz",
+            "Palayan",
+            "San Jose City",
+            "Tarlac City",
+        ],
+        "Region IV-A (CALABARZON)": [
+            "Antipolo",
+            "Bacoor",
+            "Imus",
+            "Dasmariñas",
+            "Cavite City",
+            "General Trias",
+            "Tagaytay",
+            "Trece Martires",
+            "Biñan",
+            "Cabuyao",
+            "Calamba",
+            "San Pedro",
+            "Santa Rosa",
+            "Batangas City",
+            "Lipa",
+            "Tanauan",
+            "Lucena",
+            "Tayabas",
+        ],
+    }
+
+    @rx.var(cache=True)
+    def regions(self) -> list[str]:
+        return list(self.regions_map.keys())
+
+    @rx.var(cache=True)
+    def available_register_cities(self) -> list[str]:
+        return self.regions_map.get(self.new_region, [])
+
+    @rx.var(cache=True)
+    def is_register_form_valid(self) -> bool:
+        return all(
+            [
+                bool(self.new_name.strip()),
+                bool(self.new_street.strip()),
+                bool(self.new_region),
+                bool(self.new_city),
+                bool(self.new_zip.strip()),
+                bool(self.new_contact.strip()),
+                bool(self.new_admin.strip()),
+            ]
+        )
+
+    @rx.event
+    def set_new_region(self, value: str):
+        self.new_region = value
+        self.new_city = ""
+
+    @rx.event
+    def open_register_modal(self):
+        self.show_register_modal = True
+        self.new_name = ""
+        self.new_street = ""
+        self.new_region = ""
+        self.new_city = ""
+        self.new_zip = ""
+        self.new_contact = ""
+        self.new_admin = ""
+
+    @rx.event
+    def close_register_modal(self):
+        self.show_register_modal = False
+
+    @rx.event(background=True)
+    async def register_new_institution(self):
+        async with self:
+            self.is_registering = True
+            name = self.new_name
+            street = self.new_street
+            city = self.new_city
+            region = self.new_region
+            zip_code = self.new_zip
+            contact = self.new_contact
+            admin = self.new_admin
+        async with rx.asession() as session:
+            await session.execute(
+                text("""
+                    INSERT INTO institutions (
+                        institution_name, 
+                        admin_name, 
+                        contact_number, 
+                        street_address, 
+                        city_municipality, 
+                        region, 
+                        zip_code, 
+                        ranking_framework
+                    )
+                    VALUES (
+                        :name, 
+                        :admin, 
+                        :contact, 
+                        :street, 
+                        :city, 
+                        :region, 
+                        :zip, 
+                        'QS'
+                    )
+                """),
+                {
+                    "name": name,
+                    "admin": admin,
+                    "contact": contact,
+                    "street": street,
+                    "city": city,
+                    "region": region,
+                    "zip": zip_code,
+                },
+            )
+            await session.commit()
+        async with self:
+            self.is_registering = False
+            self.show_register_modal = False
+            yield rx.toast("New institution registered successfully!")
+            hei_state = await self.get_state(HEIState)
+            yield HEIState.fetch_institutions
 
     @rx.var(cache=True)
     async def stats(self) -> dict[str, int]:
