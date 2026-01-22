@@ -12,20 +12,19 @@ def numeric_input_metric(
     on_change: rx.event.EventType,
 ) -> rx.Component:
     """Numeric text input for weighted metrics with real-time feedback and validation warnings."""
-    field_key = rx.match(
-        label,
-        ("Academic Reputation", "academic_reputation"),
-        ("Citations per Faculty", "citations_per_faculty"),
-        ("Employer Reputation", "employer_reputation"),
-        ("Employment Outcomes", "employment_outcomes"),
-        ("International Research Network", "international_research_network"),
-        ("International Faculty Ratio", "international_faculty_ratio"),
-        ("International Student Ratio", "international_student_ratio"),
-        ("Faculty-Student Ratio", "faculty_student_ratio"),
-        ("Sustainability Metrics Score", "sustainability_metrics"),
-        "",
-    )
-    error_msg = DashboardState.validation_errors[field_key.to(str)]
+    field_key_map = {
+        "Academic Reputation": "academic_reputation",
+        "Citations per Faculty": "citations_per_faculty",
+        "Employer Reputation": "employer_reputation",
+        "Employment Outcomes": "employment_outcomes",
+        "International Research Network": "international_research_network",
+        "International Faculty Ratio": "international_faculty_ratio",
+        "International Student Ratio": "international_student_ratio",
+        "Faculty-Student Ratio": "faculty_student_ratio",
+        "Sustainability Metrics Score": "sustainability_metrics",
+    }
+    field_key = field_key_map.get(label, "")
+    error_msg = DashboardState.validation_errors[field_key]
     has_error = error_msg != ""
     return rx.el.div(
         rx.el.div(

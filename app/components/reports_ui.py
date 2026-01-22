@@ -176,7 +176,7 @@ def report_table_row(report: ReportItem) -> rx.Component:
                     rx.el.button(
                         rx.icon("clipboard-check", class_name="h-4 w-4 mr-1"),
                         "Review",
-                        on_click=lambda: ReportsState.open_review_modal(report["id"]),
+                        on_click=ReportsState.open_review_modal(report["id"]),
                         class_name="inline-flex items-center px-3 py-1.5 border border-blue-300 shadow-sm text-xs font-bold rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 mr-2",
                     ),
                 ),
@@ -512,7 +512,7 @@ def review_report_modal() -> rx.Component:
                                             "Processing...",
                                             "Decline Assessment",
                                         ),
-                                        on_click=lambda: ReportsState.process_review(
+                                        on_click=ReportsState.process_review(
                                             "Declined"
                                         ),
                                         disabled=ReportsState.is_saving_review,
@@ -524,7 +524,7 @@ def review_report_modal() -> rx.Component:
                                             "Processing...",
                                             "Approve Assessment",
                                         ),
-                                        on_click=lambda: ReportsState.process_review(
+                                        on_click=ReportsState.process_review(
                                             "Reviewed"
                                         ),
                                         disabled=ReportsState.is_saving_review,

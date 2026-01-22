@@ -39,7 +39,7 @@ def ranking_framework_option(
                 class_name="absolute top-4 right-4 animate-in zoom-in duration-300",
             ),
         ),
-        on_click=lambda: HEIState.set_ranking_framework(value),
+        on_click=HEIState.set_ranking_framework(value),
         class_name=rx.cond(
             is_selected,
             "relative p-6 rounded-3xl border-2 border-blue-600 bg-blue-50/30 shadow-lg shadow-blue-100/50 cursor-pointer transition-all transform scale-[1.02]",
@@ -190,7 +190,7 @@ def hei_dropdown_item(hei: HEI) -> rx.Component:
             ),
             class_name="flex items-center justify-between w-full",
         ),
-        on_click=lambda: HEIState.select_hei(hei),
+        on_click=HEIState.select_hei(hei),
         class_name="w-full px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-0",
     )
 
