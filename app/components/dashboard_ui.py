@@ -3,14 +3,14 @@ from app.states.dashboard_state import DashboardState
 from app.states.hei_state import HEIState
 
 
-def slider_input_metric(
+def numeric_input_metric(
     label: str,
     value: rx.Var,
     points: rx.Var,
     max_points: int,
     on_change: rx.event.EventType,
 ) -> rx.Component:
-    """Slider input for weighted metrics with real-time feedback and standardized design tokens."""
+    """Numeric text input for weighted metrics with real-time feedback and standardized design tokens."""
     return rx.el.div(
         rx.el.div(
             rx.el.label(
@@ -29,16 +29,15 @@ def slider_input_metric(
         rx.el.div(
             rx.el.div(
                 rx.el.input(
-                    type="range",
-                    key=value.to_string(),
+                    type="number",
                     default_value=value.to_string(),
-                    on_change=on_change.throttle(300),
-                    min="0",
-                    max="100",
-                    step="1",
-                    class_name="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600",
+                    on_change=on_change.debounce(300),
+                    min=0,
+                    max=100,
+                    placeholder="0-100",
+                    class_name="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all text-center text-lg font-bold text-gray-900",
                 ),
-                class_name="relative flex items-center h-10",
+                class_name="relative",
             ),
             rx.el.div(
                 rx.el.div(
@@ -51,8 +50,8 @@ def slider_input_metric(
         ),
         rx.el.div(
             rx.el.span(
-                f"{value}%",
-                class_name="text-xs font-bold text-gray-500 tracking-widest",
+                f"{value}% completion",
+                class_name="text-[10px] font-bold text-gray-400 uppercase tracking-widest",
             ),
             class_name="flex justify-center mt-2",
         ),
@@ -424,14 +423,14 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    slider_input_metric(
+                    numeric_input_metric(
                         "Academic Reputation",
                         DashboardState.academic_reputation,
                         DashboardState.academic_reputation_points,
                         30,
                         DashboardState.set_academic_reputation,
                     ),
-                    slider_input_metric(
+                    numeric_input_metric(
                         "Citations per Faculty",
                         DashboardState.citations_per_faculty,
                         DashboardState.citations_per_faculty_points,
@@ -495,14 +494,14 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    slider_input_metric(
+                    numeric_input_metric(
                         "Employer Reputation",
                         DashboardState.employer_reputation,
                         DashboardState.employer_reputation_points,
                         15,
                         DashboardState.set_employer_reputation,
                     ),
-                    slider_input_metric(
+                    numeric_input_metric(
                         "Employment Outcomes",
                         DashboardState.employment_outcomes,
                         DashboardState.employment_outcomes_points,
@@ -566,21 +565,21 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    slider_input_metric(
+                    numeric_input_metric(
                         "International Research Network",
                         DashboardState.international_research_network,
                         DashboardState.international_research_network_points,
                         5,
                         DashboardState.set_international_research_network,
                     ),
-                    slider_input_metric(
+                    numeric_input_metric(
                         "International Faculty Ratio",
                         DashboardState.international_faculty_ratio,
                         DashboardState.international_faculty_ratio_points,
                         5,
                         DashboardState.set_international_faculty_ratio,
                     ),
-                    slider_input_metric(
+                    numeric_input_metric(
                         "International Student Ratio",
                         DashboardState.international_student_ratio,
                         DashboardState.international_student_ratio_points,
@@ -650,7 +649,7 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    slider_input_metric(
+                    numeric_input_metric(
                         "Faculty-Student Ratio",
                         DashboardState.faculty_student_ratio,
                         DashboardState.faculty_student_ratio_points,
@@ -713,7 +712,7 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    slider_input_metric(
+                    numeric_input_metric(
                         "Sustainability Metrics Score",
                         DashboardState.sustainability_metrics,
                         DashboardState.sustainability_metrics_points,
