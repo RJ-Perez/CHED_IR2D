@@ -48,9 +48,17 @@ def auth_form() -> rx.Component:
             AuthState.is_redirecting,
             rx.el.div(
                 rx.el.div(
-                    rx.icon(
-                        "squirrel",
-                        class_name="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4",
+                    rx.el.div(
+                        rx.el.div(
+                            class_name="h-3 w-3 bg-blue-600 rounded-full animate-pulse-dot"
+                        ),
+                        rx.el.div(
+                            class_name="h-3 w-3 bg-blue-600 rounded-full animate-pulse-dot delay-200"
+                        ),
+                        rx.el.div(
+                            class_name="h-3 w-3 bg-blue-600 rounded-full animate-pulse-dot delay-400"
+                        ),
+                        class_name="flex items-center justify-center gap-2 mb-6",
                     ),
                     rx.el.h3(
                         "Authentication Successful",
@@ -244,7 +252,16 @@ def auth_form() -> rx.Component:
                 AuthState.is_loading,
                 rx.el.div(
                     rx.el.div(
-                        class_name="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"
+                        rx.el.div(
+                            class_name="h-1.5 w-1.5 bg-white rounded-full animate-pulse-dot"
+                        ),
+                        rx.el.div(
+                            class_name="h-1.5 w-1.5 bg-white rounded-full animate-pulse-dot delay-200"
+                        ),
+                        rx.el.div(
+                            class_name="h-1.5 w-1.5 bg-white rounded-full animate-pulse-dot delay-400"
+                        ),
+                        class_name="flex items-center justify-center gap-1.5 mr-3",
                     ),
                     "Processing...",
                     class_name="flex items-center justify-center",
