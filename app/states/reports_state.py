@@ -49,6 +49,22 @@ class ReportsState(rx.State):
     selected_report_id: str = ""
     selected_report_recommendations: list[dict[str, str]] = []
     is_generating_report_recommendations: bool = False
+    show_review_modal: bool = False
+    selected_review_report: ReportItem = {
+        "id": "",
+        "name": "",
+        "overall_score": 0,
+        "research_score": 0,
+        "employability_score": 0,
+        "global_engagement_score": 0,
+        "learning_experience_score": 0,
+        "sustainability_score": 0,
+        "status": "",
+        "last_generated": "",
+        "evidence_files": [],
+    }
+    review_comments: str = ""
+    is_saving_review: bool = False
 
     def _parse_float(self, value: str) -> float:
         try:
@@ -75,7 +91,9 @@ class ReportsState(rx.State):
                     i.code, 
                     s.value, 
                     s.evidence_files, 
-                    s.updated_at
+                    s.updated_at,
+                    s.review_status,
+                    s.review_comments
                 FROM institution_scores s
                 JOIN ranking_indicators i ON s.indicator_id = i.id
                 WHERE s.ranking_year = 2025
@@ -83,12 +101,21 @@ class ReportsState(rx.State):
             )
             all_scores = scores_result.all()
             inst_data = {}
-            for inst_id, code, val, evidence, updated in all_scores:
+            for (
+                inst_id,
+                code,
+                val,
+                evidence,
+                updated,
+                r_status,
+                r_comments,
+            ) in all_scores:
                 if inst_id not in inst_data:
                     inst_data[inst_id] = {
                         "scores": {},
                         "files": [],
                         "last_update": updated,
+                        "review_status": r_status,
                     }
                 inst_data[inst_id]["scores"][code] = val
                 if evidence:
@@ -198,11 +225,17 @@ class ReportsState(rx.State):
                     or (learning_experience_score == 0)
                     or (sustainability_score == 0)
                 )
-                if indicators_count >= 9:
+                if data.get("review_status") in ["Reviewed", "Declined"]:
+                    status = data["review_status"]
+                elif indicators_count >= 9:
                     status = "Completed"
                 elif indicators_count > 0:
                     status = "In Progress"
-                if is_any_score_na and indicators_count > 0:
+                if (
+                    is_any_score_na
+                    and indicators_count > 0
+                    and (status not in ["Reviewed", "Declined"])
+                ):
                     status = "Incomplete"
                 last_gen = (
                     data["last_update"].strftime("%Y-%m-%d")
@@ -249,6 +282,49 @@ class ReportsState(rx.State):
     @rx.event
     def set_search_query(self, query: str):
         self.search_query = query
+
+    @rx.event
+    def set_review_comments(self, value: str):
+        self.review_comments = value
+
+    @rx.event
+    def open_review_modal(self, report_id: str):
+        report = next((r for r in self.reports if r["id"] == report_id), None)
+        if report:
+            self.selected_review_report = report
+            self.review_comments = ""
+            self.show_review_modal = True
+
+    @rx.event
+    def close_review_modal(self):
+        self.show_review_modal = False
+
+    @rx.event(background=True)
+    async def process_review(self, status: str):
+        """Process Approve/Decline review using RAW SQL."""
+        async with self:
+            self.is_saving_review = True
+            report_id = self.selected_review_report["id"]
+            comments = self.review_comments
+        async with rx.asession() as session:
+            await session.execute(
+                text("""
+                    UPDATE institution_scores 
+                    SET review_status = :status, 
+                        review_comments = :comments,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE institution_id = :inst_id AND ranking_year = 2025
+                """),
+                {"status": status, "comments": comments, "inst_id": int(report_id)},
+            )
+            await session.commit()
+        async with self:
+            self.is_saving_review = False
+            self.show_review_modal = False
+            yield ReportsState.on_load
+            yield rx.toast(
+                f"Institution assessment has been {status.lower()}.", duration=3000
+            )
 
     @rx.event
     def download_report(self, report_id: str):

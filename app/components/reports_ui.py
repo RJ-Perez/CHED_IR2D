@@ -52,33 +52,49 @@ def score_badge(score: int) -> rx.Component:
 
 
 def report_status_badge(status: str) -> rx.Component:
-    """Status badge component."""
+    """Status badge component with review states."""
     return rx.match(
         status,
+        (
+            "Reviewed",
+            rx.el.div(
+                rx.icon("check", class_name="h-3 w-3 mr-1"),
+                rx.el.span("Reviewed"),
+                class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 w-fit",
+            ),
+        ),
+        (
+            "Declined",
+            rx.el.div(
+                rx.icon("x", class_name="h-3 w-3 mr-1"),
+                rx.el.span("Declined"),
+                class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 w-fit",
+            ),
+        ),
         (
             "Completed",
             rx.el.span(
                 "Completed",
-                class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800",
+                class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 w-fit",
             ),
         ),
         (
             "In Progress",
             rx.el.span(
                 "In Progress",
-                class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800",
+                class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 w-fit",
             ),
         ),
         (
             "Incomplete",
             rx.el.span(
                 "Incomplete",
-                class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800",
+                class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 w-fit",
             ),
         ),
         rx.el.span(
             "Pending",
-            class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600",
+            class_name="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 w-fit",
         ),
     )
 
@@ -177,6 +193,15 @@ def report_table_row(report: ReportItem) -> rx.Component:
         ),
         rx.el.td(
             rx.el.div(
+                rx.cond(
+                    report["status"] == "Completed",
+                    rx.el.button(
+                        rx.icon("clipboard-check", class_name="h-4 w-4 mr-1"),
+                        "Review",
+                        on_click=lambda: ReportsState.open_review_modal(report["id"]),
+                        class_name="inline-flex items-center px-3 py-1.5 border border-blue-300 shadow-sm text-xs font-bold rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 mr-2",
+                    ),
+                ),
                 rx.el.button(
                     rx.icon("download", class_name="h-4 w-4 mr-1"),
                     "CSV",
@@ -412,9 +437,140 @@ def reset_confirmation_modal() -> rx.Component:
     )
 
 
+def review_report_modal() -> rx.Component:
+    """Responsive centered modal for reviewing institution assessments."""
+    return rx.cond(
+        ReportsState.show_review_modal,
+        rx.el.div(
+            rx.el.div(
+                rx.el.div(
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.h3(
+                                rx.el.span(
+                                    "Review Assessment: ",
+                                    class_name="text-gray-500 font-medium",
+                                ),
+                                rx.el.span(
+                                    ReportsState.selected_review_report["name"],
+                                    class_name="text-blue-700",
+                                ),
+                                class_name="text-xl font-black mb-6",
+                            ),
+                            rx.el.div(
+                                rx.el.div(
+                                    rx.el.p(
+                                        "Overall Readiness Score",
+                                        class_name="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1",
+                                    ),
+                                    rx.el.p(
+                                        f"{ReportsState.selected_review_report['overall_score']}%",
+                                        class_name="text-4xl font-black text-blue-600",
+                                    ),
+                                    class_name="mb-8 p-6 bg-blue-50 rounded-2xl border border-blue-100",
+                                ),
+                                rx.el.div(
+                                    dimension_score_row(
+                                        "Research & Discovery (50%)",
+                                        ReportsState.selected_review_report[
+                                            "research_score"
+                                        ],
+                                    ),
+                                    dimension_score_row(
+                                        "Employability & Outcomes (20%)",
+                                        ReportsState.selected_review_report[
+                                            "employability_score"
+                                        ],
+                                    ),
+                                    dimension_score_row(
+                                        "Global Engagement (15%)",
+                                        ReportsState.selected_review_report[
+                                            "global_engagement_score"
+                                        ],
+                                    ),
+                                    dimension_score_row(
+                                        "Learning Experience (10%)",
+                                        ReportsState.selected_review_report[
+                                            "learning_experience_score"
+                                        ],
+                                    ),
+                                    dimension_score_row(
+                                        "Sustainability (5%)",
+                                        ReportsState.selected_review_report[
+                                            "sustainability_score"
+                                        ],
+                                    ),
+                                    class_name="space-y-1 mb-8 bg-white border border-gray-100 p-4 rounded-xl",
+                                ),
+                                evidence_list_section(
+                                    ReportsState.selected_review_report[
+                                        "evidence_files"
+                                    ]
+                                ),
+                                rx.el.div(
+                                    rx.el.label(
+                                        "Reviewer Comments",
+                                        class_name="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 mt-6",
+                                    ),
+                                    rx.el.textarea(
+                                        placeholder="Add feedback, observations, or reasons for decline...",
+                                        on_change=ReportsState.set_review_comments,
+                                        class_name="w-full h-24 p-4 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none",
+                                        default_value=ReportsState.review_comments,
+                                    ),
+                                    class_name="mb-8",
+                                ),
+                            ),
+                            rx.el.div(
+                                rx.el.button(
+                                    "Cancel",
+                                    on_click=ReportsState.close_review_modal,
+                                    class_name="px-4 py-2.5 text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors",
+                                ),
+                                rx.el.div(
+                                    rx.el.button(
+                                        rx.cond(
+                                            ReportsState.is_saving_review,
+                                            "Processing...",
+                                            "Decline Assessment",
+                                        ),
+                                        on_click=lambda: ReportsState.process_review(
+                                            "Declined"
+                                        ),
+                                        disabled=ReportsState.is_saving_review,
+                                        class_name="px-6 py-2.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-xl text-sm font-bold hover:bg-rose-100 transition-all",
+                                    ),
+                                    rx.el.button(
+                                        rx.cond(
+                                            ReportsState.is_saving_review,
+                                            "Processing...",
+                                            "Approve Assessment",
+                                        ),
+                                        on_click=lambda: ReportsState.process_review(
+                                            "Reviewed"
+                                        ),
+                                        disabled=ReportsState.is_saving_review,
+                                        class_name="px-6 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all",
+                                    ),
+                                    class_name="flex gap-3",
+                                ),
+                                class_name="flex items-center justify-between pt-6 border-t border-gray-100",
+                            ),
+                        ),
+                        class_name="bg-white rounded-[2rem] shadow-2xl p-8 max-w-2xl w-full mx-4",
+                    ),
+                    class_name="flex items-center justify-center min-h-screen p-4",
+                ),
+                class_name="fixed inset-0 bg-black/60 backdrop-blur-md z-[120] overflow-y-auto",
+            )
+        ),
+    )
+
+
 def reports_dashboard_ui() -> rx.Component:
     """Main UI for the Reports page."""
     return rx.el.div(
+        review_report_modal(),
         delete_report_modal(),
         reset_confirmation_modal(),
         rx.el.div(
