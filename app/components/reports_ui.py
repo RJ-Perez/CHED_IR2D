@@ -1,5 +1,7 @@
 import reflex as rx
 from app.states.reports_state import ReportsState, ReportItem
+from app.components.analytics_ui import TOOLTIP_PROPS
+from app.components.design_system import DS, ds_card
 
 
 def score_badge(score: int) -> rx.Component:
@@ -545,6 +547,84 @@ def review_report_modal() -> rx.Component:
     )
 
 
+def status_distribution_chart() -> rx.Component:
+    """Renders a doughnut chart for institutional status distribution."""
+    return ds_card(
+        rx.el.div(
+            rx.el.div(
+                rx.icon("pie-chart", class_name="h-5 w-5 text-blue-600 mr-2"),
+                rx.el.h3("Status Distribution", class_name=DS.H3),
+                class_name="flex items-center mb-6",
+            ),
+            rx.el.div(
+                rx.el.div(
+                    rx.recharts.pie_chart(
+                        rx.recharts.graphing_tooltip(**TOOLTIP_PROPS),
+                        rx.recharts.pie(
+                            data=ReportsState.status_distribution_data,
+                            data_key="value",
+                            name_key="name",
+                            cx="50%",
+                            cy="50%",
+                            inner_radius="60%",
+                            outer_radius="90%",
+                            stroke="none",
+                            stroke_width=0,
+                            padding_angle=2,
+                        ),
+                        width="100%",
+                        height=220,
+                    ),
+                    rx.el.div(
+                        rx.el.p(
+                            "Total",
+                            class_name="text-[10px] font-bold text-gray-400 uppercase tracking-widest",
+                        ),
+                        rx.el.p(
+                            ReportsState.total_reports.to_string(),
+                            class_name="text-2xl font-black text-gray-900",
+                        ),
+                        class_name="absolute inset-0 flex flex-col items-center justify-center pointer-events-none",
+                    ),
+                    class_name="relative",
+                ),
+                rx.el.div(
+                    rx.foreach(
+                        ReportsState.status_distribution_data,
+                        lambda item: rx.el.div(
+                            rx.el.div(
+                                rx.el.span(
+                                    class_name="w-2.5 h-2.5 rounded-full mr-2",
+                                    style={"backgroundColor": item["fill"]},
+                                ),
+                                rx.el.span(
+                                    item["name"],
+                                    class_name="text-xs font-semibold text-gray-600",
+                                ),
+                                class_name="flex items-center",
+                            ),
+                            rx.el.div(
+                                rx.el.span(
+                                    item["value"].to_string(),
+                                    class_name="text-xs font-bold text-gray-900",
+                                ),
+                                rx.el.span(
+                                    f" ({(item['value'].to(float) / ReportsState.total_reports.to(float) * 100).to(int)}%)",
+                                    class_name="text-[10px] text-gray-400 font-medium",
+                                ),
+                                class_name="flex items-center",
+                            ),
+                            class_name="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0",
+                        ),
+                    ),
+                    class_name="mt-4",
+                ),
+                class_name="grid grid-cols-1 md:grid-cols-2 gap-8 items-center",
+            ),
+        )
+    )
+
+
 def reports_dashboard_ui() -> rx.Component:
     """Main UI for the Reports page."""
     from app.components.design_system import ds_pagination, ds_stat_card, DS
@@ -599,6 +679,7 @@ def reports_dashboard_ui() -> rx.Component:
             ),
             class_name="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8",
         ),
+        rx.el.div(status_distribution_chart(), class_name="mb-8"),
         rx.el.div(
             rx.el.div(
                 rx.el.input(
