@@ -149,10 +149,193 @@ def delete_confirmation_modal() -> rx.Component:
     )
 
 
+def view_institution_modal() -> rx.Component:
+    return rx.cond(
+        InstitutionsState.show_view_modal,
+        rx.el.div(
+            rx.el.div(
+                rx.el.div(
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.h3(
+                                "Institution Details",
+                                class_name="text-xl font-bold text-gray-900 mb-6",
+                            ),
+                            rx.el.div(
+                                rx.el.div(
+                                    rx.el.p(
+                                        "Name",
+                                        class_name="text-xs font-bold text-gray-400 uppercase tracking-widest",
+                                    ),
+                                    rx.el.p(
+                                        InstitutionsState.selected_hei_data["name"],
+                                        class_name="text-sm font-semibold text-gray-700",
+                                    ),
+                                    class_name="mb-4",
+                                ),
+                                rx.el.div(
+                                    rx.el.p(
+                                        "Address",
+                                        class_name="text-xs font-bold text-gray-400 uppercase tracking-widest",
+                                    ),
+                                    rx.el.p(
+                                        InstitutionsState.selected_hei_data["address"],
+                                        class_name="text-sm font-semibold text-gray-700",
+                                    ),
+                                    class_name="mb-4",
+                                ),
+                                rx.el.div(
+                                    rx.el.p(
+                                        "Administrator",
+                                        class_name="text-xs font-bold text-gray-400 uppercase tracking-widest",
+                                    ),
+                                    rx.el.p(
+                                        InstitutionsState.selected_hei_data[
+                                            "admin_name"
+                                        ],
+                                        class_name="text-sm font-semibold text-gray-700",
+                                    ),
+                                    class_name="mb-4",
+                                ),
+                                rx.el.div(
+                                    rx.el.p(
+                                        "Street",
+                                        class_name="text-xs font-bold text-gray-400 uppercase tracking-widest",
+                                    ),
+                                    rx.el.p(
+                                        InstitutionsState.selected_hei_data["street"],
+                                        class_name="text-sm font-semibold text-gray-700",
+                                    ),
+                                    class_name="mb-4",
+                                ),
+                                rx.el.div(
+                                    rx.el.p(
+                                        "City",
+                                        class_name="text-xs font-bold text-gray-400 uppercase tracking-widest",
+                                    ),
+                                    rx.el.p(
+                                        InstitutionsState.selected_hei_data["city"],
+                                        class_name="text-sm font-semibold text-gray-700",
+                                    ),
+                                    class_name="mb-4",
+                                ),
+                            ),
+                            rx.el.div(
+                                rx.el.button(
+                                    "Close",
+                                    on_click=InstitutionsState.close_modals,
+                                    class_name="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors",
+                                ),
+                                class_name="mt-8",
+                            ),
+                            class_name="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full",
+                        ),
+                        class_name="flex items-center justify-center min-h-screen p-4",
+                    ),
+                    class_name="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] overflow-y-auto",
+                )
+            )
+        ),
+    )
+
+
+def edit_institution_modal() -> rx.Component:
+    return rx.cond(
+        InstitutionsState.show_edit_modal,
+        rx.el.div(
+            rx.el.div(
+                rx.el.div(
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.h3(
+                                "Edit Institution",
+                                class_name="text-xl font-bold text-gray-900 mb-6",
+                            ),
+                            rx.el.div(
+                                rx.el.div(
+                                    rx.el.label(
+                                        "Institution Name",
+                                        class_name="block text-xs font-bold text-gray-500 uppercase mb-2",
+                                    ),
+                                    rx.el.input(
+                                        default_value=InstitutionsState.edit_name,
+                                        on_change=InstitutionsState.set_edit_name,
+                                        class_name="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm",
+                                    ),
+                                    class_name="mb-4",
+                                ),
+                                rx.el.div(
+                                    rx.el.label(
+                                        "Street Address",
+                                        class_name="block text-xs font-bold text-gray-500 uppercase mb-2",
+                                    ),
+                                    rx.el.input(
+                                        default_value=InstitutionsState.edit_street,
+                                        on_change=InstitutionsState.set_edit_street,
+                                        class_name="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm",
+                                    ),
+                                    class_name="mb-4",
+                                ),
+                                rx.el.div(
+                                    rx.el.label(
+                                        "City",
+                                        class_name="block text-xs font-bold text-gray-500 uppercase mb-2",
+                                    ),
+                                    rx.el.input(
+                                        default_value=InstitutionsState.edit_city,
+                                        on_change=InstitutionsState.set_edit_city,
+                                        class_name="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm",
+                                    ),
+                                    class_name="mb-4",
+                                ),
+                                rx.el.div(
+                                    rx.el.label(
+                                        "Administrator Name",
+                                        class_name="block text-xs font-bold text-gray-500 uppercase mb-2",
+                                    ),
+                                    rx.el.input(
+                                        default_value=InstitutionsState.edit_admin,
+                                        on_change=InstitutionsState.set_edit_admin,
+                                        class_name="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm",
+                                    ),
+                                    class_name="mb-4",
+                                ),
+                            ),
+                            rx.el.div(
+                                rx.el.button(
+                                    "Cancel",
+                                    on_click=InstitutionsState.close_modals,
+                                    class_name="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors",
+                                ),
+                                rx.el.button(
+                                    rx.cond(
+                                        InstitutionsState.is_saving_edit,
+                                        "Saving...",
+                                        "Save Changes",
+                                    ),
+                                    on_click=InstitutionsState.save_institution_edit,
+                                    disabled=InstitutionsState.is_saving_edit,
+                                    class_name="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors",
+                                ),
+                                class_name="flex justify-end gap-3 mt-8",
+                            ),
+                            class_name="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full",
+                        ),
+                        class_name="flex items-center justify-center min-h-screen p-4",
+                    ),
+                    class_name="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] overflow-y-auto",
+                )
+            )
+        ),
+    )
+
+
 def institutions_dashboard_ui() -> rx.Component:
     """Main content for the Institutions Management page."""
     return rx.el.div(
         delete_confirmation_modal(),
+        view_institution_modal(),
+        edit_institution_modal(),
         rx.el.div(
             rx.el.h1(
                 "Institutions Management", class_name="text-2xl font-bold text-gray-900"

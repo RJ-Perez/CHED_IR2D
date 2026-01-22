@@ -9,6 +9,22 @@ class InstitutionsState(rx.State):
     delete_confirm_id: str = ""
     delete_confirm_name: str = ""
     show_delete_modal: bool = False
+    show_view_modal: bool = False
+    show_edit_modal: bool = False
+    selected_hei_data: HEI = {
+        "id": "",
+        "name": "",
+        "address": "",
+        "type": "",
+        "admin_name": "",
+        "street": "",
+        "city": "",
+    }
+    edit_name: str = ""
+    edit_street: str = ""
+    edit_city: str = ""
+    edit_admin: str = ""
+    is_saving_edit: bool = False
 
     @rx.var(cache=True)
     async def stats(self) -> dict[str, int]:
@@ -37,12 +53,66 @@ class InstitutionsState(rx.State):
         self.search_query = query
 
     @rx.event
-    def view_details(self, hei_id: str):
-        return rx.toast(f"Viewing details for institution ID: {hei_id}")
+    async def view_details(self, hei_id: str):
+        hei_state = await self.get_state(HEIState)
+        hei = next((h for h in hei_state.hei_database if h["id"] == hei_id), None)
+        if hei:
+            self.selected_hei_data = hei
+            self.show_view_modal = True
 
     @rx.event
-    def edit_institution(self, hei_id: str):
-        return rx.toast(f"Editing institution ID: {hei_id}")
+    async def edit_institution(self, hei_id: str):
+        hei_state = await self.get_state(HEIState)
+        hei = next((h for h in hei_state.hei_database if h["id"] == hei_id), None)
+        if hei:
+            self.selected_hei_data = hei
+            self.edit_name = hei["name"]
+            self.edit_street = hei["street"]
+            self.edit_city = hei["city"]
+            self.edit_admin = hei["admin_name"]
+            self.show_edit_modal = True
+
+    @rx.event
+    def close_modals(self):
+        self.show_view_modal = False
+        self.show_edit_modal = False
+
+    @rx.event(background=True)
+    async def save_institution_edit(self):
+        async with self:
+            self.is_saving_edit = True
+            hei_id = self.selected_hei_data["id"]
+            name = self.edit_name
+            street = self.edit_street
+            city = self.edit_city
+            admin = self.edit_admin
+        from sqlalchemy import text
+
+        async with rx.asession() as session:
+            await session.execute(
+                text("""
+                    UPDATE institutions 
+                    SET institution_name = :name, 
+                        street_address = :street, 
+                        city_municipality = :city, 
+                        admin_name = :admin 
+                    WHERE id = :id
+                """),
+                {
+                    "name": name,
+                    "street": street,
+                    "city": city,
+                    "admin": admin,
+                    "id": int(hei_id),
+                },
+            )
+            await session.commit()
+        async with self:
+            self.is_saving_edit = False
+            self.show_edit_modal = False
+            yield rx.toast("Institution updated successfully.")
+            hei_state = await self.get_state(HEIState)
+            yield HEIState.fetch_institutions
 
     @rx.event
     def confirm_delete(self, hei_id: str, hei_name: str):
