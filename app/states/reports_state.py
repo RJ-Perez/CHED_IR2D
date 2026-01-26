@@ -72,6 +72,19 @@ class ReportsState(rx.State):
     review_comments: str = ""
     is_saving_review: bool = False
 
+    def _clean_json_response(self, text: str) -> str:
+        """Sanitizes AI response text to ensure it is valid parseable JSON."""
+        if not text:
+            return ""
+        text = re.sub("\\s*", "", text, flags=re.IGNORECASE)
+        text = re.sub("\\s*", "", text)
+        start = text.find("{")
+        end = text.rfind("}")
+        if start != -1 and end != -1:
+            text = text[start : end + 1]
+        text = re.sub(",\\s*([}\\]])", "\\1", text)
+        return text.strip()
+
     def _parse_float(self, value: str) -> float:
         try:
             clean = "".join((c for c in value if c.isdigit() or c == "."))
@@ -695,10 +708,16 @@ class ReportsState(rx.State):
                         break
             if not response_text:
                 raise Exception("Failed to generate AI content after retries")
-            json_match = re.search("\\{.*\\}", response_text, re.DOTALL)
-            if json_match:
-                response_text = json_match.group(0)
-            recommendations_data = json.loads(response_text)
+            response_text = self._clean_json_response(response_text)
+            if not response_text:
+                raise Exception("Cleaned AI response is empty")
+            try:
+                recommendations_data = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                logging.exception(
+                    f"Failed to parse Report AI JSON: {e}. Cleaned text: {response_text[:200]}..."
+                )
+                raise e
             recommendations = []
             for rec in recommendations_data.get("recommendations", []):
                 category = rec.get("category", "Overall")
