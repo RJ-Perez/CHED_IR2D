@@ -60,6 +60,12 @@ def sidebar(current_page: str) -> rx.Component:
                 "/analytics",
                 is_active=current_page == "analytics",
             ),
+            sidebar_item(
+                "Insights",
+                "line-chart",
+                "/post-assessment",
+                is_active=current_page == "post-assessment",
+            ),
             sidebar_section_label("CHED Modules"),
             sidebar_item(
                 "Institutions",
@@ -69,12 +75,6 @@ def sidebar(current_page: str) -> rx.Component:
             ),
             sidebar_item(
                 "Reports", "file-text", "/reports", is_active=current_page == "reports"
-            ),
-            sidebar_item(
-                "Insights",
-                "line-chart",
-                "/post-assessment",
-                is_active=current_page == "post-assessment",
             ),
             sidebar_item(
                 "Settings",
