@@ -23,6 +23,14 @@ def sidebar_item(
     )
 
 
+def sidebar_section_label(label: str) -> rx.Component:
+    """Subtle uppercase section label for grouping navigation items."""
+    return rx.el.p(
+        label,
+        class_name="text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] px-4 mt-6 mb-2",
+    )
+
+
 @rx.memo
 def sidebar(current_page: str) -> rx.Component:
     """Main application navigation sidebar.
@@ -39,6 +47,7 @@ def sidebar(current_page: str) -> rx.Component:
             class_name="flex items-center h-20 px-6 border-b border-gray-100 shrink-0",
         ),
         rx.el.nav(
+            sidebar_section_label("HEI Modules"),
             sidebar_item(
                 "Assessment",
                 "layout-dashboard",
@@ -51,6 +60,7 @@ def sidebar(current_page: str) -> rx.Component:
                 "/analytics",
                 is_active=current_page == "analytics",
             ),
+            sidebar_section_label("CHED Modules"),
             sidebar_item(
                 "Institutions",
                 "building-2",
