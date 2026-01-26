@@ -707,7 +707,7 @@ class ReportsState(rx.State):
                 weak_areas.append("Learning Experience")
             if sustainability_score < 70:
                 weak_areas.append("Sustainability")
-            prompt = f"""You are an expert higher education consultant. Analyze the following performance data for {institution_name} in the Philippines and provide 3 strategic, actionable recommendations to improve their international ranking readiness.\n\n{performance_summary}\n\nFocus areas: {(", ".join(weak_areas) if weak_areas else "General Excellence")}\n\nProvide recommendations in JSON format with this structure:\n{{\n  "recommendations": [\n    {{\n      "title": "Short, actionable title (max 8 words)",\n      "description": "Detailed recommendation (2 sentences) explaining strategies specific to the metric",\n      "category": "Research & Discovery|Employability|Global Engagement|Learning Experience|Sustainability|Overall",\n      "priority": "High|Medium|Low"\n    }}\n  ]\n}}\n\nReturn ONLY valid JSON."""
+            prompt = f"""You are an expert higher education consultant specializing in QS World University Rankings. Analyze the following performance data for {institution_name} in the Philippines and provide 3 strategic, actionable recommendations to improve their QS ranking readiness.\n\n{performance_summary}\n\nQS Methodology Weights:\n- Research & Discovery (50%): Academic Reputation (30%) + Citations/Faculty (20%)\n- Employability (20%): Employer Reputation (15%) + Employment Outcomes (5%)\n- Learning Experience (10%): Faculty Student Ratio (10%)\n- Global Engagement (15%): Int. Research Network (5%) + Int. Faculty (5%) + Int. Students (5%)\n- Sustainability (5%)\n\nFocus areas: {(", ".join(weak_areas) if weak_areas else "General Excellence")}\n\nProvide recommendations in JSON format with this structure:\n{{\n  "recommendations": [\n    {{\n      "title": "Short, actionable title (max 8 words)",\n      "description": "Detailed recommendation (2 sentences) referencing specific QS indicators (e.g., 'Academic Reputation', 'Employer Reputation')",\n      "category": "Research & Discovery|Employability|Global Engagement|Learning Experience|Sustainability|Overall",\n      "priority": "High|Medium|Low"\n    }}\n  ]\n}}\n\nReturn ONLY valid JSON."""
             client = genai.Client(api_key=GOOGLE_AI_API_KEY)
             max_retries = 5
             response_text = ""
@@ -837,8 +837,8 @@ class ReportsState(rx.State):
         if research_score < 75:
             recommendations.append(
                 {
-                    "title": "Boost Research Output",
-                    "description": "Focus on increasing faculty publication rates in indexed journals to improve academic reputation and citations.",
+                    "title": "Increase Scopus Citations",
+                    "description": "Research & Discovery accounts for 50% of the QS score. Prioritize publishing in Scopus-indexed journals to drive up 'Citations per Faculty' and enhance 'Academic Reputation'.",
                     "category": "Research & Discovery",
                     "priority": "High",
                     "icon": "microscope",
@@ -849,8 +849,8 @@ class ReportsState(rx.State):
         if employability_score < 75:
             recommendations.append(
                 {
-                    "title": "Strengthen Industry Ties",
-                    "description": "Expand partnership programs with key industry players to improve graduate employability and employer reputation scores.",
+                    "title": "Boost Employer Reputation",
+                    "description": "Expand industry partnerships to improve 'Employer Reputation' (15% weight) and systematically track alumni career progression for 'Employment Outcomes'.",
                     "category": "Employability",
                     "priority": "High",
                     "icon": "briefcase",
@@ -861,8 +861,8 @@ class ReportsState(rx.State):
         if not recommendations:
             recommendations.append(
                 {
-                    "title": "Maintain Performance",
-                    "description": "Current metrics are strong. Focus on sustainability and long-term strategic planning to maintain leadership.",
+                    "title": "Sustain QS Excellence",
+                    "description": "Current performance is strong. Continue to monitor 'Faculty Student Ratio' and 'International Research Network' metrics to maintain your QS ranking competitiveness.",
                     "category": "Overall",
                     "priority": "Medium",
                     "icon": "bar-chart-2",
