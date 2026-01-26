@@ -6,6 +6,7 @@ from app.states.settings_state import SettingsState
 from app.states.dashboard_state import DashboardState
 from app.states.analytics_state import AnalyticsState
 from app.states.reports_state import ReportsState
+from app.states.post_assessment_state import PostAssessmentState
 
 
 def branding_section() -> rx.Component:
@@ -200,8 +201,22 @@ def settings_page() -> rx.Component:
     )
 
 
+def post_assessment_page() -> rx.Component:
+    from app.components.post_assessment_ui import post_assessment_content
+
+    return rx.el.div(
+        sidebar(current_page="post-assessment"),
+        rx.el.main(
+            post_assessment_content(), class_name="flex-1 p-8 overflow-y-auto h-full"
+        ),
+        class_name="flex h-screen w-full bg-gray-50 font-['Inter']",
+        on_mount=PostAssessmentState.on_load,
+    )
+
+
 app.add_page(assessment_page, route="/dashboard", on_load=DashboardState.on_load)
 app.add_page(institutions_page, route="/institutions")
 app.add_page(analytics_page, route="/analytics")
 app.add_page(reports_page, route="/reports")
 app.add_page(settings_page, route="/settings")
+app.add_page(post_assessment_page, route="/post-assessment")
