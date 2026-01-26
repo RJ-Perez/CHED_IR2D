@@ -36,6 +36,7 @@ class AnalyticsState(rx.State):
     learning_experience_score: int = 0
     sustainability_score: int = 0
     overall_score: int = 0
+    review_status: str = ""
     research_comparison_data: list[dict[str, str | int | float]] = []
     employability_comparison_data: list[dict[str, str | int | float]] = []
     global_engagement_comparison_data: list[dict[str, str | int | float]] = []
@@ -86,6 +87,20 @@ class AnalyticsState(rx.State):
             )
         rows = result.all()
         for code, val in rows:
+            async with rx.asession() as status_session:
+                status_result = await status_session.execute(
+                    text("""
+                    SELECT review_status 
+                    FROM institution_scores 
+                    WHERE institution_id = :inst_id 
+                    AND review_status IS NOT NULL 
+                    LIMIT 1
+                    """),
+                    {"inst_id": institution_id},
+                )
+                status_row = status_result.first()
+                async with self:
+                    self.review_status = status_row[0] if status_row else "Pending"
             if code == "academic_reputation":
                 academic_rep = self._parse_float(val)
             elif code == "citations_per_faculty":
