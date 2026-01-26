@@ -97,10 +97,9 @@ class ReportsState(rx.State):
     async def on_load(self):
         """Fetches all institutions and calculates their scores from database records."""
         async with rx.asession() as session:
-            await session.execute(text("DROP TABLE IF EXISTS institution_reviews"))
             await session.execute(
                 text("""
-                CREATE TABLE institution_reviews (
+                CREATE TABLE IF NOT EXISTS institution_reviews (
                     id SERIAL PRIMARY KEY,
                     institution_id INTEGER NOT NULL,
                     status VARCHAR(50) NOT NULL,
