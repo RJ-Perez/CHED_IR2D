@@ -145,40 +145,34 @@ from app.components.sidebar import sidebar
 
 def assessment_page() -> rx.Component:
     from app.components.dashboard_ui import dashboard_content
-    from app.components.chatbot import chatbot_component
 
     return rx.el.div(
         sidebar(current_page="dashboard"),
         rx.el.main(dashboard_content(), class_name="flex-1 p-8 overflow-y-auto h-full"),
-        chatbot_component(),
         class_name="flex h-screen w-full bg-gray-50 font-['Inter']",
     )
 
 
 def institutions_page() -> rx.Component:
     from app.components.placeholder_pages import institutions_content
-    from app.components.chatbot import chatbot_component
 
     return rx.el.div(
         sidebar(current_page="institutions"),
         rx.el.main(
             institutions_content(), class_name="flex-1 p-8 overflow-y-auto h-full"
         ),
-        chatbot_component(),
         class_name="flex h-screen w-full bg-gray-50 font-['Inter']",
     )
 
 
 def analytics_page() -> rx.Component:
     from app.components.analytics_ui import analytics_content_ui
-    from app.components.chatbot import chatbot_component
 
     return rx.el.div(
         sidebar(current_page="analytics"),
         rx.el.main(
             analytics_content_ui(), class_name="flex-1 p-8 overflow-y-auto h-full"
         ),
-        chatbot_component(),
         class_name="flex h-screen w-full bg-gray-50 font-['Inter']",
         on_mount=AnalyticsState.on_load,
     )
@@ -186,12 +180,10 @@ def analytics_page() -> rx.Component:
 
 def reports_page() -> rx.Component:
     from app.components.placeholder_pages import reports_content
-    from app.components.chatbot import chatbot_component
 
     return rx.el.div(
         sidebar(current_page="reports"),
         rx.el.main(reports_content(), class_name="flex-1 p-8 overflow-y-auto h-full"),
-        chatbot_component(),
         class_name="flex h-screen w-full bg-gray-50 font-['Inter']",
         on_mount=ReportsState.on_load,
     )
@@ -199,12 +191,10 @@ def reports_page() -> rx.Component:
 
 def settings_page() -> rx.Component:
     from app.components.settings_ui import settings_content
-    from app.components.chatbot import chatbot_component
 
     return rx.el.div(
         sidebar(current_page="settings"),
         rx.el.main(settings_content(), class_name="flex-1 p-8 overflow-y-auto h-full"),
-        chatbot_component(),
         class_name="flex h-screen w-full bg-gray-50 font-['Inter']",
         on_mount=SettingsState.on_load,
     )
