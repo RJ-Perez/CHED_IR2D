@@ -99,6 +99,27 @@ class ReportsState(rx.State):
         async with rx.asession() as session:
             await session.execute(
                 text("""
+                CREATE TABLE IF NOT EXISTS institution_reviews (
+                    id SERIAL PRIMARY KEY,
+                    institution_id INTEGER NOT NULL,
+                    review_status VARCHAR(50) NOT NULL,
+                    overall_score INTEGER,
+                    research_score INTEGER,
+                    employability_score INTEGER,
+                    global_engagement_score INTEGER,
+                    learning_experience_score INTEGER,
+                    sustainability_score INTEGER,
+                    reviewer_comments TEXT,
+                    evidence_files TEXT,
+                    ranking_year INTEGER,
+                    reviewed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    reviewed_by INTEGER
+                )
+            """)
+            )
+            await session.commit()
+            await session.execute(
+                text("""
                 UPDATE institution_scores 
                 SET review_status = 'For Review', updated_at = CURRENT_TIMESTAMP
                 WHERE review_status = 'Completed' AND ranking_year = 2025
@@ -422,11 +443,12 @@ class ReportsState(rx.State):
 
     @rx.event(background=True)
     async def process_review(self, status: str):
-        """Process Approve/Decline review using RAW SQL."""
+        """Process Approve/Decline review using RAW SQL and migrate data to history table."""
         async with self:
             self.is_saving_review = True
             report_id = self.selected_review_report["id"]
             comments = self.review_comments
+            report_data = self.selected_review_report
         async with rx.asession() as session:
             await session.execute(
                 text("""
@@ -438,13 +460,58 @@ class ReportsState(rx.State):
                 """),
                 {"status": status, "comments": comments, "inst_id": int(report_id)},
             )
+            files_json = json.dumps(report_data.get("evidence_files", []))
+            await session.execute(
+                text("""
+                    INSERT INTO institution_reviews (
+                        institution_id, 
+                        review_status, 
+                        overall_score, 
+                        research_score, 
+                        employability_score, 
+                        global_engagement_score, 
+                        learning_experience_score, 
+                        sustainability_score, 
+                        reviewer_comments, 
+                        evidence_files, 
+                        ranking_year, 
+                        reviewed_at
+                    ) VALUES (
+                        :inst_id, 
+                        :status, 
+                        :overall, 
+                        :research, 
+                        :emp, 
+                        :global, 
+                        :learning, 
+                        :sustain, 
+                        :comments, 
+                        :evidence, 
+                        2025, 
+                        CURRENT_TIMESTAMP
+                    )
+                """),
+                {
+                    "inst_id": int(report_id),
+                    "status": status,
+                    "overall": report_data["overall_score"],
+                    "research": report_data["research_score"],
+                    "emp": report_data["employability_score"],
+                    "global": report_data["global_engagement_score"],
+                    "learning": report_data["learning_experience_score"],
+                    "sustain": report_data["sustainability_score"],
+                    "comments": comments,
+                    "evidence": files_json,
+                },
+            )
             await session.commit()
         async with self:
             self.is_saving_review = False
             self.show_review_modal = False
             yield ReportsState.on_load
             yield rx.toast(
-                f"Institution assessment has been {status.lower()}.", duration=3000
+                f"Institution assessment has been {status.lower()} and archived.",
+                duration=3000,
             )
 
     @rx.event
