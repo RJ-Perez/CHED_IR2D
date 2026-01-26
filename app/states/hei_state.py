@@ -38,6 +38,7 @@ class HEIState(rx.State):
     reg_admin: str = ""
     is_loading: bool = False
     is_fetching: bool = False
+    show_preliminary_notice: bool = False
     regions_map: dict[str, list[str]] = {
         "NCR (National Capital Region)": [
             "Manila",
@@ -448,19 +449,20 @@ class HEIState(rx.State):
                         }
         async with self:
             self.is_loading = False
-            hei_name = (
-                self.reg_name
-                if self.is_registration_mode
-                else self.selected_hei["name"]
-            )
-            framework_full = (
-                "QS Stars"
-                if self.ranking_framework == "QS"
-                else "Times Higher Education"
-            )
-            yield rx.toast(
-                f"Setup complete for {hei_name} using {framework_full} framework.",
-                duration=3000,
-                position="top-center",
-            )
-            yield rx.redirect("/dashboard")
+            self.show_preliminary_notice = True
+
+    @rx.event
+    def acknowledge_and_proceed(self):
+        self.show_preliminary_notice = False
+        hei_name = (
+            self.reg_name if self.is_registration_mode else self.selected_hei["name"]
+        )
+        framework_full = (
+            "QS Stars" if self.ranking_framework == "QS" else "Times Higher Education"
+        )
+        yield rx.toast(
+            f"Setup complete for {hei_name} using {framework_full} framework.",
+            duration=3000,
+            position="top-center",
+        )
+        yield rx.redirect("/dashboard")
