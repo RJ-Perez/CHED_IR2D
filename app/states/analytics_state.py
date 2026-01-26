@@ -332,7 +332,7 @@ class AnalyticsState(rx.State):
                 weak_areas.append("Learning Experience")
             if sustainability_score < 70:
                 weak_areas.append("Sustainability")
-            prompt = f"""You are an expert higher education consultant specializing in international university rankings (QS and THE). \n\nAnalyze the following performance data for a Higher Education Institution in the Philippines and provide 3-4 strategic, actionable recommendations to improve their international ranking readiness.\n\n{performance_summary}\n\nAreas needing improvement: {(", ".join(weak_areas) if weak_areas else "All areas are performing well")}\n\nProvide recommendations in JSON format with this structure:\n{{\n  "recommendations": [\n    {{\n      "title": "Short, actionable title (max 8 words)",\n      "description": "Detailed recommendation (2-3 sentences) explaining what to do and why",\n      "category": "Research & Discovery|Employability|Global Engagement|Learning Experience|Sustainability|Overall",\n      "priority": "High|Medium|Low"\n    }}\n  ]\n}}\n\nFocus on:\n1. Specific, actionable steps the institution can take\n2. Evidence-based strategies used by top-ranked universities\n3. Realistic improvements given the Philippine higher education context\n4. Prioritize recommendations that will have the most impact on overall score\n\nReturn ONLY valid JSON, no additional text."""
+            prompt = f"""You are an expert higher education consultant specializing in the QS World University Rankings methodology. \n\nAnalyze the following performance data for a Higher Education Institution in the Philippines and provide 3-4 strategic, actionable recommendations to improve their QS ranking readiness.\n\n{performance_summary}\n\nMethodology Context:\n- Research & Discovery (50%): Academic Reputation (30%) + Citations per Faculty (20%)\n- Employability & Outcomes (20%): Employer Reputation (15%) + Employment Outcomes (5%)\n- Global Engagement (15%): International Research Network (5%) + Int. Faculty Ratio (5%) + Int. Student Ratio (5%)\n- Learning Experience (10%): Faculty Student Ratio (10%)\n- Sustainability (5%)\n\nAreas needing improvement: {(", ".join(weak_areas) if weak_areas else "All areas are performing well")}\n\nProvide recommendations in JSON format with this structure:\n{{\n  "recommendations": [\n    {{\n      "title": "Short, actionable title (max 8 words)",\n      "description": "Detailed recommendation (2-3 sentences) explaining specific actions aligned with QS indicators (e.g., improving Scopus citations, increasing international faculty).",\n      "category": "Research & Discovery|Employability|Global Engagement|Learning Experience|Sustainability|Overall",\n      "priority": "High|Medium|Low"\n    }}\n  ]\n}}\n\nFocus on:\n1. Specific QS indicators (e.g., Academic Reputation Survey, Scopus-indexed citations)\n2. Actionable steps to improve survey visibility and data reporting\n3. Strategies to enhance International Research Network (IRN) and Faculty Student Ratio\n4. Realistic improvements for a Philippine HEI context\n\nReturn ONLY valid JSON, no additional text."""
             client = genai.Client(api_key=GOOGLE_AI_API_KEY)
             max_retries = 5
             response_text = ""
@@ -527,8 +527,8 @@ class AnalyticsState(rx.State):
         if research_score < 80:
             recommendations.append(
                 {
-                    "title": "Enhance Research Excellence",
-                    "description": f"Your research score is {research_score}/100. Focus on increasing high-impact publications, improving citation rates, and strengthening academic reputation through international collaborations and research grants.",
+                    "title": "Boost Academic Reputation & Citations",
+                    "description": f"Your Research & Discovery score is {research_score}/100. Focus on increasing 'Citations per Faculty' by encouraging publication in Scopus-indexed journals and improve 'Academic Reputation' by increasing visibility in global academic networks.",
                     "category": "Research & Discovery",
                     "priority": "High" if research_score < 60 else "Medium",
                     "icon": "microscope",
@@ -539,8 +539,8 @@ class AnalyticsState(rx.State):
         if employability_score < 80:
             recommendations.append(
                 {
-                    "title": "Strengthen Employer Partnerships",
-                    "description": f"Your employability score is {employability_score}/100. Build stronger industry partnerships, improve graduate employment tracking, and enhance employer reputation through alumni engagement and career services.",
+                    "title": "Improve Employer Reputation",
+                    "description": f"Your Employability score is {employability_score}/100. Strengthen 'Employer Reputation' by expanding industry partnerships and ensure robust tracking of 'Employment Outcomes' for recent graduates.",
                     "category": "Employability",
                     "priority": "High" if employability_score < 60 else "Medium",
                     "icon": "briefcase",
@@ -551,8 +551,8 @@ class AnalyticsState(rx.State):
         if global_engagement_score < 80:
             recommendations.append(
                 {
-                    "title": "Expand International Presence",
-                    "description": f"Your global engagement score is {global_engagement_score}/100. Increase international faculty and student ratios, establish more international research networks, and promote student exchange programs.",
+                    "title": "Grow International Research Network",
+                    "description": f"Your Global Engagement score is {global_engagement_score}/100. Focus on the 'International Research Network' (IRN) index by formalizing cross-border research collaborations and recruiting International Faculty.",
                     "category": "Global Engagement",
                     "priority": "Medium",
                     "icon": "globe",
@@ -563,8 +563,8 @@ class AnalyticsState(rx.State):
         if learning_experience_score < 80:
             recommendations.append(
                 {
-                    "title": "Improve Faculty-Student Ratio",
-                    "description": f"Your learning experience score is {learning_experience_score}/100. Consider hiring additional faculty members to improve the faculty-student ratio, which enhances teaching quality and student support.",
+                    "title": "Optimize Faculty-Student Ratio",
+                    "description": f"Your Learning Experience score is {learning_experience_score}/100. The 'Faculty Student Ratio' accounts for 10% of the QS score; consider strategic hiring to lower this ratio and improve teaching quality metrics.",
                     "category": "Learning Experience",
                     "priority": "Medium",
                     "icon": "graduation-cap",
@@ -575,8 +575,8 @@ class AnalyticsState(rx.State):
         if sustainability_score < 80:
             recommendations.append(
                 {
-                    "title": "Enhance Sustainability Initiatives",
-                    "description": f"Your sustainability score is {sustainability_score}/100. Develop comprehensive ESG policies, implement environmental programs, and integrate sustainability into curriculum and campus operations.",
+                    "title": "Advance Sustainability (ESG)",
+                    "description": f"Your Sustainability score is {sustainability_score}/100. Align institutional policies with UN SDGs and ensure documentation of environmental and social governance initiatives for the QS Sustainability metric.",
                     "category": "Sustainability",
                     "priority": "Low",
                     "icon": "leaf",
