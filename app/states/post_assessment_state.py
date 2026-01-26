@@ -37,10 +37,12 @@ class PostAssessmentState(rx.State):
     @rx.var
     def days_until_expiry(self) -> int:
         try:
+            if not self.audit_validity_date:
+                return 0
             validity = datetime.date.fromisoformat(self.audit_validity_date)
             today = datetime.date.today()
             return (validity - today).days
-        except ValueError as e:
+        except (ValueError, TypeError) as e:
             logging.exception(f"Error parsing audit validity date: {e}")
             return 0
 
