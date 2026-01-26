@@ -356,14 +356,100 @@ def analytics_content_ui() -> rx.Component:
     Combines score cards, comparison charts, and AI-powered advice.
     """
     return rx.el.div(
-        rx.el.div(
-            rx.el.h1(
-                "Performance Analytics",
-                class_name="text-2xl font-bold text-slate-900 tracking-tight",
+        rx.cond(
+            AnalyticsState.review_status == "For Review",
+            rx.el.div(
+                rx.el.div(
+                    rx.icon("info", class_name="h-5 w-5 text-blue-600 mr-3"),
+                    rx.el.p(
+                        "This assessment is currently under formal verification and audit by CHED. Analytics reflect provisional data.",
+                        class_name="text-sm font-semibold text-blue-800",
+                    ),
+                    class_name="flex items-center",
+                ),
+                class_name="bg-blue-50 border border-blue-100 px-6 py-3 rounded-xl mb-6 animate-in fade-in duration-500",
             ),
-            rx.el.p(
-                "Real-time readiness assessment based on your data entries against regional and international benchmarks.",
-                class_name="text-sm text-slate-500 mt-1 font-medium",
+        ),
+        rx.el.div(
+            rx.el.div(
+                rx.el.div(
+                    rx.el.h1(
+                        "Performance Analytics",
+                        class_name="text-2xl font-bold text-slate-900 tracking-tight",
+                    ),
+                    rx.el.p(
+                        "Real-time readiness assessment based on your data entries against regional and international benchmarks.",
+                        class_name="text-sm text-slate-500 mt-1 font-medium",
+                    ),
+                    class_name="flex-1",
+                ),
+                rx.el.div(
+                    rx.match(
+                        AnalyticsState.review_status,
+                        (
+                            "For Review",
+                            rx.el.div(
+                                rx.el.div(
+                                    class_name="h-2 w-2 rounded-full bg-blue-400 animate-pulse mr-2"
+                                ),
+                                rx.el.span(
+                                    "Under Review",
+                                    class_name="text-xs font-bold text-blue-700 uppercase",
+                                ),
+                                class_name="flex items-center bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200",
+                            ),
+                        ),
+                        (
+                            "Reviewed",
+                            rx.el.div(
+                                rx.icon(
+                                    "circle_pause",
+                                    class_name="h-3.5 w-3.5 text-emerald-600 mr-2",
+                                ),
+                                rx.el.span(
+                                    "Approved",
+                                    class_name="text-xs font-bold text-emerald-700 uppercase",
+                                ),
+                                class_name="flex items-center bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200",
+                            ),
+                        ),
+                        (
+                            "Declined",
+                            rx.el.div(
+                                rx.icon(
+                                    "gpu", class_name="h-3.5 w-3.5 text-rose-600 mr-2"
+                                ),
+                                rx.el.span(
+                                    "Declined",
+                                    class_name="text-xs font-bold text-rose-700 uppercase",
+                                ),
+                                class_name="flex items-center bg-rose-50 px-3 py-1.5 rounded-full border border-rose-200",
+                            ),
+                        ),
+                        (
+                            "In Progress",
+                            rx.el.div(
+                                rx.el.div(
+                                    class_name="h-2 w-2 rounded-full bg-amber-400 animate-pulse mr-2"
+                                ),
+                                rx.el.span(
+                                    "In Progress",
+                                    class_name="text-xs font-bold text-amber-700 uppercase",
+                                ),
+                                class_name="flex items-center bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200",
+                            ),
+                        ),
+                        rx.el.div(
+                            rx.el.span(
+                                "Pending",
+                                class_name="text-xs font-bold text-slate-500 uppercase",
+                            ),
+                            class_name="flex items-center bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200",
+                        ),
+                    ),
+                    class_name="flex items-center",
+                ),
+                class_name="flex items-start justify-between",
             ),
             class_name="mb-8",
         ),
