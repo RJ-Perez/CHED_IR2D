@@ -117,6 +117,17 @@ class ReportsState(rx.State):
                 )
             """)
             )
+            await session.execute(
+                text("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='institution_reviews' AND column_name='review_status') THEN
+                        ALTER TABLE institution_reviews ADD COLUMN review_status VARCHAR(50);
+                    END IF;
+                END
+                $$;
+                """)
+            )
             await session.commit()
             await session.execute(
                 text("""
