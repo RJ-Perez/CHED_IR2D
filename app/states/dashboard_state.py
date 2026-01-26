@@ -12,6 +12,7 @@ class DashboardState(rx.State):
     """
 
     academic_reputation: int = 0
+    review_status: str = ""
     citations_per_faculty: int = 0
     employer_reputation: int = 0
     employment_outcomes: int = 0
@@ -381,7 +382,8 @@ class DashboardState(rx.State):
                 SELECT 
                     i.code, 
                     s.value, 
-                    s.evidence_files
+                    s.evidence_files,
+                    s.review_status
                 FROM institution_scores s
                 JOIN ranking_indicators i ON s.indicator_id = i.id
                 WHERE s.institution_id = :inst_id AND s.ranking_year = 2025
@@ -390,7 +392,9 @@ class DashboardState(rx.State):
             )
             data = rows.all()
             async with self:
-                for code, value, evidence in data:
+                for code, value, evidence, r_status in data:
+                    if r_status:
+                        self.review_status = r_status
                     if code == "academic_reputation":
                         try:
                             self.academic_reputation = int(float(value))

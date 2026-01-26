@@ -296,6 +296,20 @@ def dashboard_header() -> rx.Component:
         ),
     )
     return rx.el.div(
+        rx.cond(
+            DashboardState.review_status == "For Review",
+            rx.el.div(
+                rx.el.div(
+                    rx.icon("info", class_name="h-5 w-5 text-blue-600 mr-3"),
+                    rx.el.p(
+                        "Your assessment is currently under formal verification and audit by CHED. Edits made now will be tracked for the next review cycle.",
+                        class_name="text-sm font-semibold text-blue-800",
+                    ),
+                    class_name="flex items-center",
+                ),
+                class_name="bg-blue-50 border-b border-blue-100 px-8 py-3",
+            ),
+        ),
         rx.el.div(
             rx.el.div(
                 rx.el.div(
@@ -326,15 +340,59 @@ def dashboard_header() -> rx.Component:
                             "Assessment Status",
                             class_name="text-[10px] font-bold text-blue-200 uppercase tracking-widest mb-1",
                         ),
-                        rx.el.div(
+                        rx.match(
+                            DashboardState.review_status,
+                            (
+                                "For Review",
+                                rx.el.div(
+                                    rx.el.div(
+                                        class_name="h-2 w-2 rounded-full bg-blue-400 animate-pulse mr-2"
+                                    ),
+                                    rx.el.span(
+                                        "Under Review",
+                                        class_name="text-xs font-bold text-white uppercase",
+                                    ),
+                                    class_name="flex items-center bg-blue-600/40 px-3 py-1.5 rounded-full border border-blue-300/30",
+                                ),
+                            ),
+                            (
+                                "Reviewed",
+                                rx.el.div(
+                                    rx.icon(
+                                        "warehouse",
+                                        class_name="h-3.5 w-3.5 text-emerald-400 mr-2",
+                                    ),
+                                    rx.el.span(
+                                        "Approved",
+                                        class_name="text-xs font-bold text-white uppercase",
+                                    ),
+                                    class_name="flex items-center bg-emerald-600/40 px-3 py-1.5 rounded-full border border-emerald-300/30",
+                                ),
+                            ),
+                            (
+                                "Declined",
+                                rx.el.div(
+                                    rx.icon(
+                                        "wheat",
+                                        class_name="h-3.5 w-3.5 text-rose-400 mr-2",
+                                    ),
+                                    rx.el.span(
+                                        "Declined",
+                                        class_name="text-xs font-bold text-white uppercase",
+                                    ),
+                                    class_name="flex items-center bg-rose-600/40 px-3 py-1.5 rounded-full border border-rose-300/30",
+                                ),
+                            ),
                             rx.el.div(
-                                class_name="h-2 w-2 rounded-full bg-emerald-400 animate-pulse mr-2"
+                                rx.el.div(
+                                    class_name="h-2 w-2 rounded-full bg-emerald-400 animate-pulse mr-2"
+                                ),
+                                rx.el.span(
+                                    "Active Data Entry",
+                                    class_name="text-xs font-bold text-white uppercase",
+                                ),
+                                class_name="flex items-center bg-white/10 px-3 py-1.5 rounded-full border border-white/20",
                             ),
-                            rx.el.span(
-                                "Active Data Entry",
-                                class_name="text-xs font-bold text-white uppercase",
-                            ),
-                            class_name="flex items-center bg-white/10 px-3 py-1.5 rounded-full border border-white/20",
                         ),
                         class_name="flex flex-col items-end",
                     ),
