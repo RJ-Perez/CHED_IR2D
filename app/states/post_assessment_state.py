@@ -372,9 +372,13 @@ class PostAssessmentState(rx.State):
                     "UPDATE qs_stars_assessments SET audit_start_date = :start, audit_delivery_date = :del, audit_validity_date = :val, methodology_version = :ver WHERE id = :aid"
                 ),
                 {
-                    "start": self.audit_start_date,
-                    "del": self.audit_delivery_date,
-                    "val": self.audit_validity_date,
+                    "start": self.audit_start_date if self.audit_start_date else None,
+                    "del": self.audit_delivery_date
+                    if self.audit_delivery_date
+                    else None,
+                    "val": self.audit_validity_date
+                    if self.audit_validity_date
+                    else None,
                     "ver": self.methodology_version,
                     "aid": self.assessment_id,
                 },
