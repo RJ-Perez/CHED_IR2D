@@ -71,6 +71,12 @@ def sidebar(current_page: str) -> rx.Component:
                 "Reports", "file-text", "/reports", is_active=current_page == "reports"
             ),
             sidebar_item(
+                "Insights",
+                "line-chart",
+                "/post-assessment",
+                is_active=current_page == "post-assessment",
+            ),
+            sidebar_item(
                 "Settings",
                 "settings",
                 "/settings",
