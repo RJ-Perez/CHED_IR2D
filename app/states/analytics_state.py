@@ -48,6 +48,19 @@ class AnalyticsState(rx.State):
     target_color: str = "#10b981"
     your_color: str = "#2563eb"
 
+    def _clean_json_response(self, text: str) -> str:
+        """Sanitizes AI response text to ensure it is valid parseable JSON."""
+        if not text:
+            return ""
+        text = re.sub("\\s*", "", text, flags=re.IGNORECASE)
+        text = re.sub("\\s*", "", text)
+        start = text.find("{")
+        end = text.rfind("}")
+        if start != -1 and end != -1:
+            text = text[start : end + 1]
+        text = re.sub(",\\s*([}\\]])", "\\1", text)
+        return text.strip()
+
     def _parse_float(self, value: str) -> float:
         try:
             clean = "".join((c for c in value if c.isdigit() or c == "."))
@@ -382,10 +395,8 @@ class AnalyticsState(rx.State):
                     )
                     self.is_generating_recommendations = False
                 return
-            json_match = re.search("\\{.*\\}", response_text, re.DOTALL)
-            if json_match:
-                response_text = json_match.group(0)
-            elif not response_text.strip():
+            response_text = self._clean_json_response(response_text)
+            if not response_text:
                 logging.info(
                     "Cleaned AI response is empty. Falling back to rule-based recommendations."
                 )
@@ -403,7 +414,7 @@ class AnalyticsState(rx.State):
                 recommendations_data = json.loads(response_text)
             except json.JSONDecodeError as e:
                 logging.exception(
-                    f"Failed to parse AI JSON response: {e}. Raw response: {response_text[:100]}..."
+                    f"Failed to parse AI JSON response: {e}. Cleaned response: {response_text[:200]}..."
                 )
                 async with self:
                     self.ai_recommendations = self._get_fallback_recommendations(
