@@ -75,6 +75,8 @@ class PostAssessmentState(rx.State):
     def audit_time_elapsed_percent(self) -> float:
         """Calculate percentage of time elapsed in the audit validity period."""
         try:
+            if not self.audit_start_date or not self.audit_validity_date:
+                return 0.0
             start = datetime.date.fromisoformat(self.audit_start_date)
             validity = datetime.date.fromisoformat(self.audit_validity_date)
             today = datetime.date.today()
@@ -345,7 +347,7 @@ class PostAssessmentState(rx.State):
         for ind_name, cat, score, max_s in defaults:
             await session.execute(
                 text(
-                    "INSERT INTO qs_indicator_scores (assessment_id, indicator_name, category, points_achieved, max_score) VALUES (:aid, :name, :cat, :score, :max)"
+                    "INSERT INTO qs_indicator_scores (assessment_id, indicator_name, category, points_achieved, max_score) VALUES (:aid, :name, :cat, :score, :max) ON CONFLICT (assessment_id, indicator_name) DO NOTHING"
                 ),
                 {
                     "aid": assessment_id,
