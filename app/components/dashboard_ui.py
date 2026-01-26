@@ -363,7 +363,7 @@ def dashboard_header() -> rx.Component:
                                             "Under Review",
                                             class_name="text-[10px] font-bold text-blue-100 uppercase",
                                         ),
-                                        class_name="flex items-center bg-blue-600/40 px-2.5 py-1 rounded-lg border border-blue-300/30",
+                                        class_name="flex items-center bg-blue-600/40 px-3 py-1.5 rounded-full border border-blue-300/30",
                                     ),
                                 ),
                                 (
@@ -377,7 +377,7 @@ def dashboard_header() -> rx.Component:
                                             "Approved",
                                             class_name="text-[10px] font-bold text-emerald-50 uppercase",
                                         ),
-                                        class_name="flex items-center bg-emerald-600/40 px-2.5 py-1 rounded-lg border border-emerald-300/30",
+                                        class_name="flex items-center bg-emerald-600/40 px-3 py-1.5 rounded-full border border-emerald-300/30",
                                     ),
                                 ),
                                 (
@@ -391,7 +391,7 @@ def dashboard_header() -> rx.Component:
                                             "Declined",
                                             class_name="text-[10px] font-bold text-rose-50 uppercase",
                                         ),
-                                        class_name="flex items-center bg-rose-600/40 px-2.5 py-1 rounded-lg border border-rose-300/30",
+                                        class_name="flex items-center bg-rose-600/40 px-3 py-1.5 rounded-full border border-rose-300/30",
                                     ),
                                 ),
                                 (
@@ -404,7 +404,7 @@ def dashboard_header() -> rx.Component:
                                             "In Progress",
                                             class_name="text-[10px] font-bold text-amber-100 uppercase",
                                         ),
-                                        class_name="flex items-center bg-amber-600/40 px-2.5 py-1 rounded-lg border border-amber-300/30",
+                                        class_name="flex items-center bg-amber-600/40 px-3 py-1.5 rounded-full border border-amber-300/30",
                                     ),
                                 ),
                                 rx.el.div(
@@ -412,7 +412,7 @@ def dashboard_header() -> rx.Component:
                                         "Pending Review",
                                         class_name="text-[10px] font-bold text-slate-100 uppercase",
                                     ),
-                                    class_name="flex items-center bg-white/5 px-2.5 py-1 rounded-lg border border-white/10",
+                                    class_name="flex items-center bg-white/5 px-3 py-1.5 rounded-full border border-white/10",
                                 ),
                             ),
                             class_name="flex flex-col items-end",
