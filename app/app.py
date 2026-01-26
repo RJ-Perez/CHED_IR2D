@@ -1,7 +1,6 @@
 import reflex as rx
 from app.components.auth_ui import auth_form
 from app.states.auth_state import AuthState
-from app.components.chatbot import chatbot_component
 from app.states.hei_state import HEIState
 from app.states.settings_state import SettingsState
 from app.states.dashboard_state import DashboardState
@@ -89,7 +88,6 @@ def landing_page() -> rx.Component:
             rx.el.div(auth_form(), class_name="w-full max-w-xl px-4"),
             class_name="flex-1 flex items-center justify-center min-h-screen bg-gray-50",
         ),
-        chatbot_component(),
         class_name="flex min-h-screen w-full font-['Inter']",
     )
 
@@ -135,7 +133,6 @@ def hei_selection_page() -> rx.Component:
         rx.el.div(
             selection_screen_content(), class_name="flex-1 py-12 px-4 sm:px-6 lg:px-8"
         ),
-        chatbot_component(),
         class_name="min-h-screen bg-gray-50 font-['Inter'] flex flex-col",
     )
 
@@ -148,6 +145,7 @@ from app.components.sidebar import sidebar
 
 def assessment_page() -> rx.Component:
     from app.components.dashboard_ui import dashboard_content
+    from app.components.chatbot import chatbot_component
 
     return rx.el.div(
         sidebar(current_page="dashboard"),
@@ -159,6 +157,7 @@ def assessment_page() -> rx.Component:
 
 def institutions_page() -> rx.Component:
     from app.components.placeholder_pages import institutions_content
+    from app.components.chatbot import chatbot_component
 
     return rx.el.div(
         sidebar(current_page="institutions"),
@@ -172,6 +171,7 @@ def institutions_page() -> rx.Component:
 
 def analytics_page() -> rx.Component:
     from app.components.analytics_ui import analytics_content_ui
+    from app.components.chatbot import chatbot_component
 
     return rx.el.div(
         sidebar(current_page="analytics"),
@@ -186,6 +186,7 @@ def analytics_page() -> rx.Component:
 
 def reports_page() -> rx.Component:
     from app.components.placeholder_pages import reports_content
+    from app.components.chatbot import chatbot_component
 
     return rx.el.div(
         sidebar(current_page="reports"),
@@ -198,6 +199,7 @@ def reports_page() -> rx.Component:
 
 def settings_page() -> rx.Component:
     from app.components.settings_ui import settings_content
+    from app.components.chatbot import chatbot_component
 
     return rx.el.div(
         sidebar(current_page="settings"),
