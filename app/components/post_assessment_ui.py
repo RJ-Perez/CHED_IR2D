@@ -291,91 +291,138 @@ def analytics_insights_card() -> rx.Component:
                             ),
                             class_name="flex items-center bg-blue-50 px-2 py-0.5 rounded-full",
                         ),
-                        rx.el.div(
+                        rx.cond(
+                            PostAssessmentState.has_synced_analytics,
                             rx.el.div(
-                                class_name="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-2"
+                                rx.el.div(
+                                    class_name="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-2"
+                                ),
+                                rx.el.span(
+                                    f"Live Sync: {PostAssessmentState.last_sync_time}",
+                                    class_name="text-[10px] font-bold text-slate-400 uppercase",
+                                ),
+                                class_name="flex items-center",
                             ),
-                            rx.el.span(
-                                f"Live Sync: {PostAssessmentState.last_sync_time}",
-                                class_name="text-[10px] font-bold text-slate-400 uppercase",
-                            ),
-                            class_name="flex items-center",
+                            None,
                         ),
                     ),
                     class_name="flex items-center",
                 ),
                 class_name="flex items-center justify-between mb-4",
             ),
-            rx.el.div(
-                analytics_score_item(
-                    "Research & Discovery",
-                    PostAssessmentState.analytics_research_score,
-                    "microscope",
-                    "text-purple-600",
-                ),
-                analytics_score_item(
-                    "Employability",
-                    PostAssessmentState.analytics_employability_score,
-                    "briefcase",
-                    "text-emerald-600",
-                ),
-                analytics_score_item(
-                    "Global Engagement",
-                    PostAssessmentState.analytics_global_engagement_score,
-                    "globe",
-                    "text-blue-600",
-                ),
-                analytics_score_item(
-                    "Learning Experience",
-                    PostAssessmentState.analytics_learning_experience_score,
-                    "graduation-cap",
-                    "text-indigo-600",
-                ),
-                analytics_score_item(
-                    "Sustainability",
-                    PostAssessmentState.analytics_sustainability_score,
-                    "leaf",
-                    "text-green-600",
-                ),
-                class_name=rx.cond(
-                    PostAssessmentState.is_syncing_analytics,
-                    "bg-gray-50 rounded-xl p-4 mb-6 opacity-50 transition-opacity",
-                    "bg-gray-50 rounded-xl p-4 mb-6 transition-opacity",
-                ),
-            ),
-            rx.el.h4(
-                "Strategic Recommendations",
-                class_name="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3",
-            ),
-            rx.el.div(
-                rx.cond(
-                    PostAssessmentState.analytics_recommendations.length() > 0,
-                    rx.foreach(
-                        PostAssessmentState.analytics_recommendations,
-                        lambda rec: rx.el.div(
-                            rx.icon(
-                                "lightbulb",
-                                class_name="h-4 w-4 text-amber-500 mr-2 flex-shrink-0 mt-0.5",
-                            ),
-                            rx.el.div(
-                                rx.el.p(
-                                    rec["title"],
-                                    class_name="text-sm font-bold text-gray-800",
-                                ),
-                                rx.el.p(
-                                    rec["description"],
-                                    class_name="text-xs text-gray-600 mt-1 leading-snug",
-                                ),
-                            ),
-                            class_name="flex items-start p-3 bg-white border border-gray-100 rounded-lg shadow-sm",
+            rx.cond(
+                PostAssessmentState.has_synced_analytics,
+                rx.fragment(
+                    rx.el.div(
+                        analytics_score_item(
+                            "Research & Discovery",
+                            PostAssessmentState.analytics_research_score,
+                            "microscope",
+                            "text-purple-600",
+                        ),
+                        analytics_score_item(
+                            "Employability",
+                            PostAssessmentState.analytics_employability_score,
+                            "briefcase",
+                            "text-emerald-600",
+                        ),
+                        analytics_score_item(
+                            "Global Engagement",
+                            PostAssessmentState.analytics_global_engagement_score,
+                            "globe",
+                            "text-blue-600",
+                        ),
+                        analytics_score_item(
+                            "Learning Experience",
+                            PostAssessmentState.analytics_learning_experience_score,
+                            "graduation-cap",
+                            "text-indigo-600",
+                        ),
+                        analytics_score_item(
+                            "Sustainability",
+                            PostAssessmentState.analytics_sustainability_score,
+                            "leaf",
+                            "text-green-600",
+                        ),
+                        class_name=rx.cond(
+                            PostAssessmentState.is_syncing_analytics,
+                            "bg-gray-50 rounded-xl p-4 mb-6 opacity-50 transition-opacity",
+                            "bg-gray-50 rounded-xl p-4 mb-6 transition-opacity",
                         ),
                     ),
-                    rx.el.p(
-                        "No recommendations currently available.",
-                        class_name="text-xs text-gray-400 italic",
+                    rx.el.h4(
+                        "Strategic Recommendations",
+                        class_name="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3",
+                    ),
+                    rx.el.div(
+                        rx.cond(
+                            PostAssessmentState.analytics_recommendations.length() > 0,
+                            rx.foreach(
+                                PostAssessmentState.analytics_recommendations,
+                                lambda rec: rx.el.div(
+                                    rx.icon(
+                                        "lightbulb",
+                                        class_name="h-4 w-4 text-amber-500 mr-2 flex-shrink-0 mt-0.5",
+                                    ),
+                                    rx.el.div(
+                                        rx.el.p(
+                                            rec["title"],
+                                            class_name="text-sm font-bold text-gray-800",
+                                        ),
+                                        rx.el.p(
+                                            rec["description"],
+                                            class_name="text-xs text-gray-600 mt-1 leading-snug",
+                                        ),
+                                    ),
+                                    class_name="flex items-start p-3 bg-white border border-gray-100 rounded-lg shadow-sm",
+                                ),
+                            ),
+                            rx.el.p(
+                                "No recommendations currently available.",
+                                class_name="text-xs text-gray-400 italic",
+                            ),
+                        ),
+                        class_name="space-y-2 max-h-[300px] overflow-y-auto pr-1",
                     ),
                 ),
-                class_name="space-y-2 max-h-[300px] overflow-y-auto pr-1",
+                rx.el.div(
+                    rx.el.div(
+                        rx.icon(
+                            "sparkles",
+                            class_name="h-12 w-12 text-indigo-400 mb-4 animate-bounce",
+                        ),
+                        rx.el.h4(
+                            "Unlock Strategic Insights",
+                            class_name="text-base font-bold text-gray-900 mb-2",
+                        ),
+                        rx.el.p(
+                            "Generate data-driven insights and AI recommendations by syncing your institution's latest performance metrics.",
+                            class_name="text-xs text-gray-500 text-center mb-8 px-4 leading-relaxed",
+                        ),
+                        rx.el.button(
+                            rx.cond(
+                                PostAssessmentState.is_syncing_analytics,
+                                rx.el.div(
+                                    rx.el.div(
+                                        class_name="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                                    ),
+                                    "Generating...",
+                                    class_name="flex items-center",
+                                ),
+                                rx.el.div(
+                                    rx.icon("zap", class_name="h-4 w-4 mr-2"),
+                                    "Generate Insights",
+                                    class_name="flex items-center",
+                                ),
+                            ),
+                            on_click=PostAssessmentState.load_institution_scores_for_insights,
+                            disabled=PostAssessmentState.is_syncing_analytics,
+                            class_name="w-full max-w-[240px] py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 transition-all transform active:scale-95 disabled:opacity-50",
+                        ),
+                        class_name="flex flex-col items-center justify-center p-8 bg-indigo-50/50 rounded-2xl border border-indigo-100 border-dashed",
+                    ),
+                    class_name="h-full flex items-center justify-center",
+                ),
             ),
         ),
         class_name="bg-white rounded-2xl p-6 border border-indigo-100 shadow-lg shadow-indigo-50/50 h-full",
