@@ -37,6 +37,7 @@ class PostAssessmentState(rx.State):
     analytics_sustainability_score: int = 0
     analytics_overall_score: int = 0
     analytics_recommendations: list[dict[str, str]] = []
+    has_synced_analytics: bool = False
 
     @rx.var
     def weak_indicators_count(self) -> int:
@@ -215,9 +216,8 @@ class PostAssessmentState(rx.State):
                         "notes": plan["notes"] if plan["notes"] else "",
                     }
                 )
-            async with self:
-                self.indicator_scores = merged_scores
-        yield PostAssessmentState.load_institution_scores_for_insights
+                async with self:
+                    self.indicator_scores = merged_scores
         async with self:
             self.is_loading = False
 
@@ -342,4 +342,6 @@ class PostAssessmentState(rx.State):
                     "No analytics data found. Please ensure assessment data is entered and visit the Analytics page.",
                     duration=4000,
                 )
+            else:
+                self.has_synced_analytics = True
             self.is_syncing_analytics = False
