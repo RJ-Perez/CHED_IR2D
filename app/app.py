@@ -214,7 +214,13 @@ def post_assessment_page() -> rx.Component:
     )
 
 
-app.add_page(assessment_page, route="/dashboard", on_load=DashboardState.on_load)
+from app.states.notification_state import NotificationState
+
+app.add_page(
+    assessment_page,
+    route="/dashboard",
+    on_load=[DashboardState.on_load, NotificationState.fetch_notifications],
+)
 app.add_page(institutions_page, route="/institutions")
 app.add_page(analytics_page, route="/analytics")
 app.add_page(reports_page, route="/reports")

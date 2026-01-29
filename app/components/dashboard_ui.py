@@ -275,6 +275,117 @@ def progress_tracker() -> rx.Component:
     )
 
 
+def notification_item(notif: dict) -> rx.Component:
+    """Renders a single notification entry for the review status."""
+    is_approved = notif["status"] == "Reviewed"
+    return rx.el.div(
+        rx.el.div(
+            rx.el.div(
+                rx.icon(
+                    rx.cond(is_approved, "check-circle", "alert-circle"),
+                    class_name=rx.cond(
+                        is_approved, "text-emerald-500 h-4 w-4", "text-rose-500 h-4 w-4"
+                    ),
+                ),
+                rx.el.span(
+                    notif["status"],
+                    class_name=rx.cond(
+                        is_approved,
+                        "text-[10px] font-bold text-emerald-600 uppercase ml-2",
+                        "text-[10px] font-bold text-rose-600 uppercase ml-2",
+                    ),
+                ),
+                class_name="flex items-center mb-1",
+            ),
+            rx.el.p(
+                notif["comments"],
+                class_name="text-xs text-slate-600 line-clamp-2 leading-relaxed",
+            ),
+            rx.el.div(
+                rx.el.span(
+                    notif["reviewer_name"],
+                    class_name="text-[10px] font-bold text-slate-400",
+                ),
+                rx.el.span(" • ", class_name="text-slate-300 mx-1"),
+                rx.el.span(
+                    notif["created_at"], class_name="text-[10px] text-slate-400"
+                ),
+                class_name="mt-2 flex items-center",
+            ),
+            class_name="flex-1",
+        ),
+        class_name=rx.cond(
+            is_approved,
+            "p-4 border-l-4 border-emerald-500 bg-emerald-50/30 hover:bg-emerald-50 transition-colors",
+            "p-4 border-l-4 border-rose-500 bg-rose-50/30 hover:bg-rose-50 transition-colors",
+        ),
+    )
+
+
+def notification_bell() -> rx.Component:
+    """Renders the notification bell icon with dropdown logic."""
+    from app.states.notification_state import NotificationState
+
+    return rx.el.div(
+        rx.el.button(
+            rx.icon("bell", class_name="h-6 w-6 text-white"),
+            rx.cond(
+                NotificationState.unread_count > 0,
+                rx.el.span(
+                    NotificationState.unread_count,
+                    class_name="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-blue-900",
+                ),
+            ),
+            on_click=NotificationState.toggle_notifications,
+            class_name="relative p-2 rounded-xl hover:bg-white/10 transition-colors",
+        ),
+        rx.cond(
+            NotificationState.show_notifications,
+            rx.el.div(
+                rx.el.div(
+                    rx.el.div(
+                        rx.el.h4(
+                            "Review Notifications",
+                            class_name="text-sm font-bold text-slate-900",
+                        ),
+                        rx.el.button(
+                            rx.icon("x", class_name="h-4 w-4"),
+                            on_click=NotificationState.toggle_notifications,
+                            class_name="text-slate-400 hover:text-slate-600",
+                        ),
+                        class_name="flex items-center justify-between p-4 border-b border-slate-100",
+                    ),
+                    rx.el.div(
+                        rx.cond(
+                            NotificationState.notifications.length() > 0,
+                            rx.el.div(
+                                rx.foreach(
+                                    NotificationState.notifications, notification_item
+                                ),
+                                class_name="max-h-[300px] overflow-y-auto",
+                            ),
+                            rx.el.div(
+                                rx.icon(
+                                    "bell-off", class_name="h-8 w-8 text-slate-200 mb-2"
+                                ),
+                                rx.el.p(
+                                    "No review updates yet.",
+                                    class_name="text-xs text-slate-400 font-medium",
+                                ),
+                                class_name="flex flex-col items-center justify-center py-10",
+                            ),
+                        )
+                    ),
+                    class_name="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2",
+                ),
+                on_mouse_leave=NotificationState.toggle_notifications,
+                class_name="absolute right-0",
+            ),
+        ),
+        class_name="relative",
+    )
+
+
 def dashboard_header() -> rx.Component:
     """Dynamic header showing selected HEI context with a modern banner design."""
     hei_name = rx.cond(
@@ -318,9 +429,13 @@ def dashboard_header() -> rx.Component:
                         class_name="p-3 bg-white/20 rounded-2xl backdrop-blur-md border border-white/30 mr-6",
                     ),
                     rx.el.div(
-                        rx.el.h1(
-                            hei_name,
-                            class_name="text-3xl font-extrabold text-white tracking-tight",
+                        rx.el.div(
+                            rx.el.h1(
+                                hei_name,
+                                class_name="text-3xl font-extrabold text-white tracking-tight",
+                            ),
+                            notification_bell(),
+                            class_name="flex items-center justify-between gap-4",
                         ),
                         rx.el.div(
                             rx.icon("award", class_name="h-4 w-4 text-blue-200 mr-2"),
