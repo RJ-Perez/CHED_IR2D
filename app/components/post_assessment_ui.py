@@ -168,7 +168,7 @@ def indicator_row(ind: IndicatorScore) -> rx.Component:
                             on_change=lambda val: PostAssessmentState.set_indicator_notes(
                                 ind["indicator_name"], val
                             ),
-                            class_name="w-full md:w-64 h-[42px] min-h-[42px] text-sm border border-gray-200 rounded-lg p-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none resize-none transition-all",
+                            class_name="w-full md:w-64 min-h-[42px] text-sm border border-gray-200 rounded-lg p-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none resize-y transition-all",
                         ),
                         class_name="flex flex-col flex-1",
                     ),
