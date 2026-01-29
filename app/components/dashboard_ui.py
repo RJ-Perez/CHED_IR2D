@@ -276,23 +276,52 @@ def progress_tracker() -> rx.Component:
 
 
 def notification_item(notif: dict) -> rx.Component:
-    """Renders a single notification entry for the review status."""
-    is_approved = notif["status"] == "Reviewed"
+    """Renders a single notification entry for the review status using real DB values."""
     return rx.el.div(
         rx.el.div(
             rx.el.div(
-                rx.icon(
-                    rx.cond(is_approved, "check-circle", "alert-circle"),
-                    class_name=rx.cond(
-                        is_approved, "text-emerald-500 h-4 w-4", "text-rose-500 h-4 w-4"
+                rx.match(
+                    notif["status"],
+                    (
+                        "Reviewed",
+                        rx.icon(
+                            "lamp_wall_down", class_name="text-emerald-500 h-4 w-4"
+                        ),
                     ),
+                    (
+                        "Approved",
+                        rx.icon(
+                            "lamp_wall_down", class_name="text-emerald-500 h-4 w-4"
+                        ),
+                    ),
+                    ("Declined", rx.icon("wheat", class_name="text-rose-500 h-4 w-4")),
+                    (
+                        "In Progress",
+                        rx.icon("clock", class_name="text-amber-500 h-4 w-4"),
+                    ),
+                    rx.icon("bell", class_name="text-blue-500 h-4 w-4"),
                 ),
                 rx.el.span(
                     notif["status"],
-                    class_name=rx.cond(
-                        is_approved,
-                        "text-[10px] font-bold text-emerald-600 uppercase ml-2",
-                        "text-[10px] font-bold text-rose-600 uppercase ml-2",
+                    class_name=rx.match(
+                        notif["status"],
+                        (
+                            "Reviewed",
+                            "text-[10px] font-bold text-emerald-600 uppercase ml-2",
+                        ),
+                        (
+                            "Approved",
+                            "text-[10px] font-bold text-emerald-600 uppercase ml-2",
+                        ),
+                        (
+                            "Declined",
+                            "text-[10px] font-bold text-rose-600 uppercase ml-2",
+                        ),
+                        (
+                            "In Progress",
+                            "text-[10px] font-bold text-amber-600 uppercase ml-2",
+                        ),
+                        "text-[10px] font-bold text-blue-600 uppercase ml-2",
                     ),
                 ),
                 class_name="flex items-center mb-1",
@@ -304,21 +333,31 @@ def notification_item(notif: dict) -> rx.Component:
             rx.el.div(
                 rx.el.span(
                     notif["reviewer_name"],
-                    class_name="text-[10px] font-bold text-slate-400",
-                ),
-                rx.el.span(" • ", class_name="text-slate-300 mx-1"),
-                rx.el.span(
-                    notif["created_at"],
-                    class_name="text-[10px] text-slate-400 font-semibold",
+                    class_name="text-[10px] font-bold text-slate-400 uppercase tracking-tight",
                 ),
                 class_name="mt-2 flex items-center",
             ),
             class_name="flex-1",
         ),
-        class_name=rx.cond(
-            is_approved,
-            "p-5 border-l-4 border-emerald-500 bg-emerald-50/30 hover:bg-emerald-50 transition-colors border-b border-slate-100",
-            "p-5 border-l-4 border-rose-500 bg-rose-50/30 hover:bg-rose-50 transition-colors border-b border-slate-100",
+        class_name=rx.match(
+            notif["status"],
+            (
+                "Reviewed",
+                "p-5 border-l-4 border-emerald-500 bg-emerald-50/30 hover:bg-emerald-50 transition-colors border-b border-slate-100",
+            ),
+            (
+                "Approved",
+                "p-5 border-l-4 border-emerald-500 bg-emerald-50/30 hover:bg-emerald-50 transition-colors border-b border-slate-100",
+            ),
+            (
+                "Declined",
+                "p-5 border-l-4 border-rose-500 bg-rose-50/30 hover:bg-rose-50 transition-colors border-b border-slate-100",
+            ),
+            (
+                "In Progress",
+                "p-5 border-l-4 border-amber-500 bg-amber-50/30 hover:bg-amber-50 transition-colors border-b border-slate-100",
+            ),
+            "p-5 border-l-4 border-blue-500 bg-blue-50/30 hover:bg-blue-50 transition-colors border-b border-slate-100",
         ),
     )
 

@@ -10,7 +10,6 @@ class Notification(TypedDict):
     status: str
     reviewer_name: str
     comments: str
-    created_at: str
     is_read: bool
 
 
@@ -61,8 +60,7 @@ class NotificationState(rx.State):
                         "id": row[0],
                         "status": row[1],
                         "reviewer_name": row[2] if row[2] else "CHED Reviewer",
-                        "comments": row[3] if row[3] else "No comments provided.",
-                        "created_at": "Recent Update",
+                        "comments": row[3] if row[3] else "No feedback provided.",
                         "is_read": row[0] in self.read_notification_ids,
                     }
                     for row in rows
