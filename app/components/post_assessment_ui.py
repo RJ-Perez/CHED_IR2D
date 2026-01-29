@@ -331,6 +331,119 @@ def weakness_summary_banner() -> rx.Component:
     )
 
 
+def analytics_score_item(label: str, score: int, icon: str, color: str) -> rx.Component:
+    """Helper for displaying analytics scores in the insights card."""
+    return rx.el.div(
+        rx.el.div(
+            rx.icon(icon, class_name=f"h-4 w-4 {color} mr-2"),
+            rx.el.span(label, class_name="text-sm font-medium text-gray-700"),
+            class_name="flex items-center",
+        ),
+        rx.el.div(
+            rx.el.span(score, class_name="text-sm font-bold text-gray-900 mr-1"),
+            rx.el.span("/ 100", class_name="text-xs text-gray-400"),
+            rx.cond(
+                score < 50,
+                rx.icon("trending-down", class_name="h-3 w-3 text-red-500 ml-2 inline"),
+                rx.icon(
+                    "trending-up", class_name="h-3 w-3 text-emerald-500 ml-2 inline"
+                ),
+            ),
+            class_name="flex items-center",
+        ),
+        class_name="flex items-center justify-between py-2 border-b border-gray-50 last:border-0",
+    )
+
+
+def analytics_insights_card() -> rx.Component:
+    """New card displaying fetched analytics data and AI recommendations."""
+    return rx.cond(
+        PostAssessmentState.last_analytics_sync != "",
+        rx.el.div(
+            rx.el.div(
+                rx.el.div(
+                    rx.icon("line-chart", class_name="h-5 w-5 text-indigo-600 mr-2"),
+                    rx.el.h3(
+                        "Analytics-Driven Insights",
+                        class_name="text-lg font-bold text-gray-900",
+                    ),
+                    class_name="flex items-center mb-4",
+                ),
+                rx.el.div(
+                    analytics_score_item(
+                        "Research & Discovery",
+                        PostAssessmentState.analytics_research_score,
+                        "microscope",
+                        "text-purple-600",
+                    ),
+                    analytics_score_item(
+                        "Employability",
+                        PostAssessmentState.analytics_employability_score,
+                        "briefcase",
+                        "text-emerald-600",
+                    ),
+                    analytics_score_item(
+                        "Global Engagement",
+                        PostAssessmentState.analytics_global_engagement_score,
+                        "globe",
+                        "text-blue-600",
+                    ),
+                    analytics_score_item(
+                        "Learning Experience",
+                        PostAssessmentState.analytics_learning_experience_score,
+                        "graduation-cap",
+                        "text-indigo-600",
+                    ),
+                    class_name="bg-gray-50 rounded-xl p-4 mb-6",
+                ),
+                rx.el.h4(
+                    "Strategic Recommendations",
+                    class_name="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3",
+                ),
+                rx.el.div(
+                    rx.foreach(
+                        PostAssessmentState.analytics_recommendations,
+                        lambda rec: rx.el.div(
+                            rx.icon(
+                                "lightbulb",
+                                class_name="h-4 w-4 text-amber-500 mr-2 flex-shrink-0 mt-0.5",
+                            ),
+                            rx.el.div(
+                                rx.el.p(
+                                    rec["title"],
+                                    class_name="text-sm font-bold text-gray-800",
+                                ),
+                                rx.el.p(
+                                    rec["description"],
+                                    class_name="text-xs text-gray-600 mt-1 leading-snug",
+                                ),
+                            ),
+                            class_name="flex items-start p-3 bg-white border border-gray-100 rounded-lg shadow-sm",
+                        ),
+                    ),
+                    class_name="space-y-2 max-h-[300px] overflow-y-auto pr-1",
+                ),
+            ),
+            class_name="bg-white rounded-2xl p-6 border border-indigo-100 shadow-lg shadow-indigo-50/50 h-full",
+        ),
+        rx.el.div(
+            rx.el.div(
+                rx.icon("refresh-cw", class_name="h-8 w-8 text-gray-300 mb-3"),
+                rx.el.p(
+                    "Sync to view Analytics Insights",
+                    class_name="text-sm font-semibold text-gray-500",
+                ),
+                rx.el.p(
+                    "Pull scores and AI advice from the Analytics module.",
+                    class_name="text-xs text-gray-400 mt-1 text-center max-w-[200px]",
+                ),
+                class_name="flex flex-col items-center justify-center h-full min-h-[300px]",
+            ),
+            class_name="bg-gray-50 rounded-2xl p-6 border border-dashed border-gray-200 h-full",
+        ),
+    )
+
+
 def post_assessment_content() -> rx.Component:
     return rx.el.div(
         rx.el.div(
@@ -344,18 +457,42 @@ def post_assessment_content() -> rx.Component:
                     class_name="text-gray-600 mt-2 text-lg",
                 ),
             ),
-            rx.el.button(
-                "Simulate Audit Data (Demo)",
-                on_click=PostAssessmentState.simulate_audit_update,
-                class_name="text-sm text-blue-700 font-bold bg-blue-50 px-4 py-2.5 rounded-xl hover:bg-blue-100 transition-colors border border-blue-200 shadow-sm",
+            rx.el.div(
+                rx.el.button(
+                    rx.cond(
+                        PostAssessmentState.is_loading,
+                        rx.el.div(
+                            rx.el.div(
+                                class_name="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"
+                            ),
+                            "Syncing...",
+                            class_name="flex items-center",
+                        ),
+                        rx.el.div(
+                            rx.icon("refresh-cw", class_name="h-4 w-4 mr-2"),
+                            "Sync from Analytics",
+                            class_name="flex items-center",
+                        ),
+                    ),
+                    on_click=PostAssessmentState.sync_from_analytics,
+                    disabled=PostAssessmentState.is_loading,
+                    class_name="text-sm text-indigo-700 font-bold bg-indigo-50 px-4 py-2.5 rounded-xl hover:bg-indigo-100 transition-colors border border-indigo-200 shadow-sm mr-2",
+                ),
+                rx.el.button(
+                    "Simulate Audit Data (Demo)",
+                    on_click=PostAssessmentState.simulate_audit_update,
+                    class_name="text-sm text-blue-700 font-bold bg-blue-50 px-4 py-2.5 rounded-xl hover:bg-blue-100 transition-colors border border-blue-200 shadow-sm",
+                ),
+                class_name="flex items-center",
             ),
             class_name="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-10 gap-4",
         ),
         weakness_summary_banner(),
         rx.el.div(
-            overall_rating_card(),
-            audit_clock_card(),
-            class_name="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10 min-h-[340px]",
+            rx.el.div(overall_rating_card(), class_name="lg:col-span-1"),
+            rx.el.div(audit_clock_card(), class_name="lg:col-span-1"),
+            rx.el.div(analytics_insights_card(), class_name="lg:col-span-1"),
+            class_name="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10 min-h-[400px]",
         ),
         rx.el.div(category_stars_section(), class_name="mb-10"),
         rx.el.div(

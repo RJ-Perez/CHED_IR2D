@@ -33,6 +33,14 @@ class PostAssessmentState(rx.State):
     indicator_scores: list[IndicatorScore] = []
     is_loading: bool = False
     is_saving: bool = False
+    analytics_research_score: int = 0
+    analytics_employability_score: int = 0
+    analytics_global_engagement_score: int = 0
+    analytics_learning_experience_score: int = 0
+    analytics_sustainability_score: int = 0
+    analytics_overall_score: int = 0
+    analytics_recommendations: list[dict[str, str]] = []
+    last_analytics_sync: str = ""
 
     @rx.var
     def days_until_expiry(self) -> int:
@@ -422,3 +430,77 @@ class PostAssessmentState(rx.State):
         async with self:
             self.is_loading = False
             yield rx.toast("Audit data simulated successfully.")
+
+    @rx.event(background=True)
+    async def sync_from_analytics(self):
+        """Fetch data from AnalyticsState, map to categories, and generate strategic targets."""
+        from app.states.analytics_state import AnalyticsState
+
+        async with self:
+            self.is_loading = True
+            analytics_state = await self.get_state(AnalyticsState)
+        await analytics_state.on_load()
+        async with self:
+            self.analytics_research_score = analytics_state.research_score
+            self.analytics_employability_score = analytics_state.employability_score
+            self.analytics_global_engagement_score = (
+                analytics_state.global_engagement_score
+            )
+            self.analytics_learning_experience_score = (
+                analytics_state.learning_experience_score
+            )
+            self.analytics_sustainability_score = analytics_state.sustainability_score
+            self.analytics_overall_score = analytics_state.overall_score
+            self.analytics_recommendations = analytics_state.ai_recommendations
+            self.last_analytics_sync = datetime.datetime.now().strftime(
+                "%Y-%m-%d %H:%M"
+            )
+            category_map = {
+                "Academic Development": self.analytics_research_score,
+                "Employability": self.analytics_employability_score,
+                "Teaching": self.analytics_learning_experience_score,
+                "Inclusiveness": self.analytics_global_engagement_score,
+            }
+            updates_made = 0
+        async with rx.asession() as session:
+            for ind in self.indicator_scores:
+                cat_score = category_map.get(ind["category"], 100)
+                if cat_score < 50 and ind["target_score"] == 0:
+                    suggested_target = max(
+                        ind["points_achieved"] * 1.2, ind["max_score"] * 0.5
+                    )
+                    suggested_target = round(min(suggested_target, ind["max_score"]), 2)
+                    note_prefix = f"[Analytics Insight: Low {ind['category']} Score ({cat_score}%)] "
+                    new_note = note_prefix + (
+                        ind["notes"] or "Focus area for improvement."
+                    )
+                    await session.execute(
+                        text("""
+                        INSERT INTO qs_action_plans (assessment_id, indicator_name, current_score, target_score, notes)
+                        VALUES (:aid, :name, :curr, :targ, :notes)
+                        ON CONFLICT (assessment_id, indicator_name)
+                        DO UPDATE SET target_score = :targ, notes = :notes, updated_at = CURRENT_TIMESTAMP
+                        """),
+                        {
+                            "aid": self.assessment_id,
+                            "name": ind["indicator_name"],
+                            "curr": ind["points_achieved"],
+                            "targ": suggested_target,
+                            "notes": new_note,
+                        },
+                    )
+                    updates_made += 1
+            await session.commit()
+        yield PostAssessmentState.on_load
+        async with self:
+            self.is_loading = False
+            if updates_made > 0:
+                yield rx.toast(
+                    f"Synced with Analytics: Auto-generated {updates_made} action plan targets based on performance gaps.",
+                    duration=5000,
+                )
+            else:
+                yield rx.toast(
+                    "Synced with Analytics: Insights updated. No new targets required.",
+                    duration=3000,
+                )
