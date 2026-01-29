@@ -439,7 +439,14 @@ class PostAssessmentState(rx.State):
         async with self:
             self.is_loading = True
             analytics_state = await self.get_state(AnalyticsState)
-        await analytics_state.on_load()
+        if analytics_state.overall_score == 0 and analytics_state.research_score == 0:
+            async with self:
+                self.is_loading = False
+                yield rx.toast(
+                    "No analytics data found. Please visit the Analytics page first to calculate scores.",
+                    duration=5000,
+                )
+            return
         async with self:
             self.analytics_research_score = analytics_state.research_score
             self.analytics_employability_score = analytics_state.employability_score
