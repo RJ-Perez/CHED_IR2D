@@ -28,6 +28,8 @@ class PostAssessmentState(rx.State):
     indicator_scores: list[IndicatorScore] = []
     is_loading: bool = False
     is_saving: bool = False
+    is_syncing_analytics: bool = False
+    last_sync_time: str = ""
     analytics_research_score: int = 0
     analytics_employability_score: int = 0
     analytics_global_engagement_score: int = 0
@@ -318,12 +320,30 @@ class PostAssessmentState(rx.State):
 
     @rx.event(background=True)
     async def load_institution_scores_for_insights(self):
-        """Derive Insight Scores strictly from actual Institution Scores in the database."""
+        """Synchronize Insight Scores and recommendations directly from AnalyticsState."""
         async with self:
-            hei_state = await self.get_state(HEIState)
-            if not hei_state.selected_hei:
-                return
-            inst_id = int(hei_state.selected_hei["id"])
+            self.is_syncing_analytics = True
+            from app.states.analytics_state import AnalyticsState
+
+            analytics = await self.get_state(AnalyticsState)
+        await analytics.on_load()
+        async with self:
+            self.analytics_research_score = analytics.research_score
+            self.analytics_employability_score = analytics.employability_score
+            self.analytics_global_engagement_score = analytics.global_engagement_score
+            self.analytics_learning_experience_score = (
+                analytics.learning_experience_score
+            )
+            self.analytics_sustainability_score = analytics.sustainability_score
+            self.analytics_overall_score = analytics.overall_score
+            self.analytics_recommendations = analytics.ai_recommendations
+            self.last_sync_time = datetime.datetime.now().strftime("%H:%M:%S")
+            if self.analytics_overall_score == 0:
+                yield rx.toast(
+                    "No analytics data found. Please ensure assessment data is entered.",
+                    duration=4000,
+                )
+            self.is_syncing_analytics = False
         async with rx.asession() as session:
             result = await session.execute(
                 text("""

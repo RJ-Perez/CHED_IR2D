@@ -270,12 +270,41 @@ def analytics_insights_card() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.div(
-                rx.icon("line-chart", class_name="h-5 w-5 text-indigo-600 mr-2"),
-                rx.el.h3(
-                    "Derived Insight Scores",
-                    class_name="text-lg font-bold text-gray-900",
+                rx.el.div(
+                    rx.icon("line-chart", class_name="h-5 w-5 text-indigo-600 mr-2"),
+                    rx.el.h3(
+                        "Analytics-Driven Insights",
+                        class_name="text-lg font-bold text-gray-900",
+                    ),
+                    class_name="flex items-center",
                 ),
-                class_name="flex items-center mb-4",
+                rx.el.div(
+                    rx.cond(
+                        PostAssessmentState.is_syncing_analytics,
+                        rx.el.div(
+                            rx.el.div(
+                                class_name="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-2"
+                            ),
+                            rx.el.span(
+                                "Syncing...",
+                                class_name="text-[10px] font-bold text-blue-600 uppercase",
+                            ),
+                            class_name="flex items-center bg-blue-50 px-2 py-0.5 rounded-full",
+                        ),
+                        rx.el.div(
+                            rx.el.div(
+                                class_name="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-2"
+                            ),
+                            rx.el.span(
+                                f"Live Sync: {PostAssessmentState.last_sync_time}",
+                                class_name="text-[10px] font-bold text-slate-400 uppercase",
+                            ),
+                            class_name="flex items-center",
+                        ),
+                    ),
+                    class_name="flex items-center",
+                ),
+                class_name="flex items-center justify-between mb-4",
             ),
             rx.el.div(
                 analytics_score_item(
@@ -308,7 +337,11 @@ def analytics_insights_card() -> rx.Component:
                     "leaf",
                     "text-green-600",
                 ),
-                class_name="bg-gray-50 rounded-xl p-4 mb-6",
+                class_name=rx.cond(
+                    PostAssessmentState.is_syncing_analytics,
+                    "bg-gray-50 rounded-xl p-4 mb-6 opacity-50 transition-opacity",
+                    "bg-gray-50 rounded-xl p-4 mb-6 transition-opacity",
+                ),
             ),
             rx.el.h4(
                 "Strategic Recommendations",
