@@ -118,9 +118,23 @@ class PostAssessmentState(rx.State):
             await session.commit()
         yield rx.toast(f"Action plan for '{indicator_name}' saved.")
 
+    def _calculate_stars(self, score: int) -> int:
+        """Convert 0-100 score to 0-5 stars based on 20-point increments."""
+        if score >= 80:
+            return 5
+        if score >= 60:
+            return 4
+        if score >= 40:
+            return 3
+        if score >= 20:
+            return 2
+        if score > 0:
+            return 1
+        return 0
+
     @rx.event(background=True)
     async def on_load(self):
-        """Initialize tables and load data."""
+        """Initialize tables and verify institution context."""
         async with self:
             self.is_loading = True
         async with rx.asession() as session:
@@ -133,23 +147,11 @@ class PostAssessmentState(rx.State):
                 return
             inst_id = int(hei_state.selected_hei["id"])
             result = await session.execute(
-                text(
-                    "SELECT id, methodology_version, overall_stars, teaching_stars, employability_stars, academic_development_stars, inclusiveness_stars FROM qs_stars_assessments WHERE institution_id = :iid"
-                ),
+                text("SELECT id FROM qs_stars_assessments WHERE institution_id = :iid"),
                 {"iid": inst_id},
             )
             row = result.first()
-            if row:
-                assessment_id = row[0]
-                async with self:
-                    self.assessment_id = row[0]
-                    self.methodology_version = row[1]
-                    self.overall_stars = row[2]
-                    self.teaching_stars = row[3]
-                    self.employability_stars = row[4]
-                    self.academic_development_stars = row[5]
-                    self.inclusiveness_stars = row[6]
-            else:
+            if not row:
                 await session.execute(
                     text(
                         "INSERT INTO qs_stars_assessments (institution_id, methodology_version) VALUES (:iid, '5.2')"
@@ -164,60 +166,8 @@ class PostAssessmentState(rx.State):
                     {"iid": inst_id},
                 )
                 row = result.first()
-                assessment_id = row[0]
-                async with self:
-                    self.assessment_id = assessment_id
-                    self.methodology_version = "5.2"
-                    self.overall_stars = 0
-                    self.teaching_stars = 0
-                    self.employability_stars = 0
-                    self.academic_development_stars = 0
-                    self.inclusiveness_stars = 0
-            ind_res = await session.execute(
-                text(
-                    "SELECT id, assessment_id, indicator_name, category, points_achieved, max_score FROM qs_indicator_scores WHERE assessment_id = :aid ORDER BY category, indicator_name"
-                ),
-                {"aid": assessment_id},
-            )
-            ind_rows = ind_res.fetchall()
-            if not ind_rows:
-                await self._seed_default_indicators(session, assessment_id)
-                ind_res = await session.execute(
-                    text(
-                        "SELECT id, assessment_id, indicator_name, category, points_achieved, max_score FROM qs_indicator_scores WHERE assessment_id = :aid ORDER BY category, indicator_name"
-                    ),
-                    {"aid": assessment_id},
-                )
-                ind_rows = ind_res.fetchall()
-            plan_res = await session.execute(
-                text(
-                    "SELECT indicator_name, target_score, notes FROM qs_action_plans WHERE assessment_id = :aid"
-                ),
-                {"aid": assessment_id},
-            )
-            plans_map = {
-                r[0]: {"target": float(r[1]), "notes": r[2]}
-                for r in plan_res.fetchall()
-            }
-            merged_scores = []
-            for r in ind_rows:
-                ind_name = r[2]
-                current_score = float(r[4])
-                plan = plans_map.get(ind_name, {"target": current_score, "notes": ""})
-                merged_scores.append(
-                    {
-                        "id": r[0],
-                        "assessment_id": r[1],
-                        "indicator_name": ind_name,
-                        "category": r[3],
-                        "points_achieved": current_score,
-                        "max_score": float(r[5]),
-                        "target_score": plan["target"],
-                        "notes": plan["notes"] if plan["notes"] else "",
-                    }
-                )
-                async with self:
-                    self.indicator_scores = merged_scores
+            async with self:
+                self.assessment_id = row[0]
         async with self:
             self.is_loading = False
 
@@ -271,35 +221,8 @@ class PostAssessmentState(rx.State):
         await session.commit()
 
     async def _seed_default_indicators(self, session, assessment_id):
-        defaults = [
-            ("Faculty-Student Ratio", "Teaching", 0, 40),
-            ("Professors per 100 Students", "Teaching", 0, 20),
-            ("Student Satisfaction", "Teaching", 0, 40),
-            ("Graduate Employment Rate", "Employability", 0, 50),
-            ("Employer Partnerships", "Employability", 0, 25),
-            ("Career Services", "Employability", 0, 25),
-            ("Publications per Faculty", "Academic Development", 0, 40),
-            ("Research Income", "Academic Development", 0, 30),
-            ("PhD Staff Ratio", "Academic Development", 0, 30),
-            ("International Students Ratio", "Inclusiveness", 0, 20),
-            ("International Faculty Ratio", "Inclusiveness", 0, 20),
-            ("Scholarships Offered", "Inclusiveness", 0, 30),
-            ("Facilities Access", "Inclusiveness", 0, 30),
-        ]
-        for ind_name, cat, score, max_s in defaults:
-            await session.execute(
-                text(
-                    "INSERT INTO qs_indicator_scores (assessment_id, indicator_name, category, points_achieved, max_score) VALUES (:aid, :name, :cat, :score, :max) ON CONFLICT (assessment_id, indicator_name) DO NOTHING"
-                ),
-                {
-                    "aid": assessment_id,
-                    "name": ind_name,
-                    "cat": cat,
-                    "score": score,
-                    "max": max_s,
-                },
-            )
-        await session.commit()
+        """This method is now a no-op as we pull directly from lens configuration."""
+        pass
 
     @rx.event(background=True)
     async def save_audit_metadata(self):
@@ -320,13 +243,13 @@ class PostAssessmentState(rx.State):
 
     @rx.event(background=True)
     async def load_institution_scores_for_insights(self):
-        """Synchronize Insight Scores and recommendations directly from AnalyticsState."""
+        """Synchronize Insight Scores and load real indicator gap data from database."""
         async with self:
             self.is_syncing_analytics = True
             from app.states.analytics_state import AnalyticsState
 
             analytics = await self.get_state(AnalyticsState)
-        async with self:
+            hei_state = await self.get_state(HEIState)
             self.analytics_research_score = analytics.research_score
             self.analytics_employability_score = analytics.employability_score
             self.analytics_global_engagement_score = analytics.global_engagement_score
@@ -336,12 +259,80 @@ class PostAssessmentState(rx.State):
             self.analytics_sustainability_score = analytics.sustainability_score
             self.analytics_overall_score = analytics.overall_score
             self.analytics_recommendations = analytics.ai_recommendations
+            self.overall_stars = self._calculate_stars(self.analytics_overall_score)
+            self.teaching_stars = self._calculate_stars(
+                self.analytics_learning_experience_score
+            )
+            self.employability_stars = self._calculate_stars(
+                self.analytics_employability_score
+            )
+            self.academic_development_stars = self._calculate_stars(
+                self.analytics_research_score
+            )
+            self.inclusiveness_stars = self._calculate_stars(
+                self.analytics_global_engagement_score
+            )
             self.last_sync_time = datetime.datetime.now().strftime("%H:%M:%S")
             if self.analytics_overall_score == 0:
+                self.is_syncing_analytics = False
                 yield rx.toast(
-                    "No analytics data found. Please ensure assessment data is entered and visit the Analytics page.",
-                    duration=4000,
+                    "No analytics data found. Please ensure assessment data is entered."
                 )
-            else:
+                return
+            inst_id = int(hei_state.selected_hei["id"])
+            assessment_id = self.assessment_id
+        async with rx.asession() as session:
+            result = await session.execute(
+                text("""
+                SELECT 
+                    i.indicator_name, 
+                    l.lens_name as category, 
+                    COALESCE(CAST(s.value AS DECIMAL), 0) as achieved,
+                    i.indicator_weight_pct as max_s
+                FROM ranking_indicators i
+                JOIN ranking_lenses l ON i.lens_id = l.id
+                LEFT JOIN institution_scores s ON i.id = s.indicator_id 
+                    AND s.institution_id = :inst_id 
+                    AND s.ranking_year = 2025
+                ORDER BY l.lens_name, i.indicator_name
+                """),
+                {"inst_id": inst_id},
+            )
+            db_rows = result.all()
+            plan_res = await session.execute(
+                text(
+                    "SELECT indicator_name, target_score, notes FROM qs_action_plans WHERE assessment_id = :aid"
+                ),
+                {"aid": assessment_id},
+            )
+            plans_map = {
+                r[0]: {"target": float(r[1]), "notes": r[2]} for r in plan_res.all()
+            }
+            cat_map = {
+                "Learning Experience": "Teaching",
+                "Employability & Outcomes": "Employability",
+                "Research & Discovery": "Academic Development",
+                "Global Engagement": "Inclusiveness",
+            }
+            merged = []
+            for i_name, i_cat, achieved, max_s in db_rows:
+                target_cat = cat_map.get(i_cat, "Other")
+                if target_cat == "Other":
+                    continue
+                plan = plans_map.get(i_name, {"target": float(achieved), "notes": ""})
+                merged.append(
+                    {
+                        "id": 0,
+                        "assessment_id": assessment_id,
+                        "indicator_name": i_name,
+                        "category": target_cat,
+                        "points_achieved": float(achieved),
+                        "max_score": float(max_s) if float(max_s) > 0 else 100.0,
+                        "target_score": plan["target"],
+                        "notes": plan["notes"] if plan["notes"] else "",
+                    }
+                )
+            async with self:
+                self.indicator_scores = merged
                 self.has_synced_analytics = True
-            self.is_syncing_analytics = False
+                self.is_syncing_analytics = False
