@@ -152,15 +152,15 @@ class AnalyticsState(rx.State):
                 faculty_student_ratio = self._parse_float(val)
             elif code == "sustainability_metrics":
                 sustainability = self._parse_float(val)
-        b_academic_rep = 90.0
-        b_citations = 20.0
-        b_emp_rep = 90.0
-        b_emp_outcomes = 95.0
-        b_int_research_net = 80.0
-        b_int_faculty_ratio = 15.0
-        b_int_student_ratio = 10.0
-        b_faculty_student_ratio = 12.0
-        b_sustainability = 85.0
+        b_academic_rep = 100.0
+        b_citations = 100.0
+        b_emp_rep = 100.0
+        b_emp_outcomes = 100.0
+        b_int_research_net = 100.0
+        b_int_faculty_ratio = 25.0
+        b_int_student_ratio = 25.0
+        b_faculty_student_ratio = 8.0
+        b_sustainability = 100.0
         s_academic_rep = (
             min(100, academic_rep / b_academic_rep * 100) if b_academic_rep else 0
         )
