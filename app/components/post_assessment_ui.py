@@ -271,10 +271,10 @@ def analytics_insights_card() -> rx.Component:
         rx.el.div(
             rx.el.div(
                 rx.el.div(
-                    rx.icon("line-chart", class_name="h-5 w-5 text-indigo-600 mr-2"),
+                    rx.icon("line-chart", class_name="h-6 w-6 text-indigo-600 mr-3"),
                     rx.el.h3(
                         "Analytics-Driven Insights",
-                        class_name="text-lg font-bold text-gray-900",
+                        class_name="text-xl font-bold text-gray-900 tracking-tight",
                     ),
                     class_name="flex items-center",
                 ),
@@ -446,9 +446,11 @@ def post_assessment_content() -> rx.Component:
         ),
         weakness_summary_banner(),
         rx.el.div(
-            rx.el.div(overall_rating_card(), class_name="lg:col-span-1"),
-            rx.el.div(analytics_insights_card(), class_name="lg:col-span-1"),
-            class_name="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10 min-h-[400px]",
+            rx.el.div(analytics_insights_card(), class_name="w-full mb-8"),
+            rx.el.div(
+                overall_rating_card(), class_name="w-full lg:w-2/3 mx-auto mb-10"
+            ),
+            class_name="flex flex-col min-h-[400px]",
         ),
         rx.el.div(category_stars_section(), class_name="mb-10"),
         rx.el.div(
