@@ -73,7 +73,7 @@ class ReportsState(rx.State):
     is_saving_review: bool = False
 
     def _clean_json_response(self, text: str) -> str:
-        """Sanitizes AI response text to ensure it is valid parseable JSON."""
+        """Sanitizes AI response text to ensure it is valid parseable JSON without corrupting string values."""
         if not text:
             return ""
         text = re.sub("\\s*", "", text, flags=re.IGNORECASE)
