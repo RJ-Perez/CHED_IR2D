@@ -406,22 +406,36 @@ def analytics_insights_card() -> rx.Component:
                                 PostAssessmentState.is_syncing_analytics,
                                 rx.el.div(
                                     rx.el.div(
-                                        class_name="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                                        class_name="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"
                                     ),
-                                    "Generating...",
-                                    class_name="flex items-center",
+                                    "Synthesizing Analysis...",
+                                    class_name="flex items-center justify-center",
                                 ),
                                 rx.el.div(
-                                    rx.icon("zap", class_name="h-4 w-4 mr-2"),
-                                    "Generate Insights",
-                                    class_name="flex items-center",
+                                    rx.icon(
+                                        "sparkles",
+                                        class_name="h-5 w-5 mr-2 animate-pulse",
+                                    ),
+                                    "Unlock Institutional Insights",
+                                    class_name="flex items-center justify-center",
                                 ),
                             ),
                             on_click=PostAssessmentState.load_institution_scores_for_insights,
                             disabled=PostAssessmentState.is_syncing_analytics,
-                            class_name="w-full max-w-[240px] py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 transition-all transform active:scale-95 disabled:opacity-50",
+                            class_name="""
+                                w-full max-w-[320px] py-4 px-8
+                                bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700
+                                text-white rounded-2xl text-base font-black uppercase tracking-wider
+                                shadow-[0_10px_30px_-10px_rgba(79,70,229,0.5)]
+                                hover:shadow-[0_20px_40px_-15px_rgba(79,70,229,0.6)]
+                                hover:scale-[1.03] active:scale-[0.98]
+                                border-2 border-white/20 hover:border-white/40
+                                transition-all duration-300 ease-out
+                                disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100
+                                relative overflow-hidden group
+                            """,
                         ),
-                        class_name="flex flex-col items-center justify-center p-8 bg-indigo-50/50 rounded-2xl border border-indigo-100 border-dashed",
+                        class_name="flex flex-col items-center justify-center p-12 bg-indigo-50/40 rounded-[2.5rem] border border-indigo-100 border-dashed shadow-inner",
                     ),
                     class_name="h-full flex items-center justify-center",
                 ),
