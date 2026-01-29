@@ -97,24 +97,26 @@ def indicator_row(ind: IndicatorScore) -> rx.Component:
                 rx.el.div(
                     rx.el.p(
                         ind["indicator_name"],
-                        class_name="font-bold text-gray-900 text-base",
+                        class_name="font-bold text-gray-900 text-base truncate",
                     ),
                     rx.cond(
                         is_weakness,
                         rx.el.span(
                             "Attention Required",
-                            class_name="text-[10px] font-bold bg-red-100 text-red-600 px-2.5 py-1 rounded-full ml-3 border border-red-200",
+                            class_name="text-[10px] font-bold bg-red-100 text-red-600 px-2.5 py-1 rounded-full ml-3 border border-red-200 whitespace-nowrap",
                         ),
                         rx.fragment(),
                     ),
-                    class_name="flex items-center mb-3",
+                    class_name="flex items-center mb-3 min-w-0",
                 ),
                 rx.el.div(
                     rx.el.div(
                         class_name=f"h-2.5 rounded-full {rx.cond(is_weakness, 'bg-red-500', 'bg-blue-600')} transition-all duration-500",
-                        style={"width": f"{percentage}%"},
+                        style={
+                            "width": f"{rx.cond(percentage > 100, 100, percentage).to(str)}%"
+                        },
                     ),
-                    class_name="w-full bg-gray-100 rounded-full h-2.5 mb-2",
+                    class_name="w-full bg-gray-100 rounded-full h-2.5 mb-2 overflow-hidden",
                 ),
                 rx.el.div(
                     rx.el.span(
@@ -127,9 +129,9 @@ def indicator_row(ind: IndicatorScore) -> rx.Component:
                     ),
                     class_name="flex items-center",
                 ),
-                class_name="flex-1 mr-8 min-w-[300px]",
+                class_name="flex-1 lg:mr-8 min-w-0 max-w-full",
             ),
-            rx.el.div(class_name="w-px bg-gray-100 h-24 hidden md:block mx-4"),
+            rx.el.div(class_name="w-px bg-gray-100 h-24 hidden lg:block mx-4"),
             rx.el.div(
                 rx.el.div(
                     rx.el.div(
@@ -181,11 +183,11 @@ def indicator_row(ind: IndicatorScore) -> rx.Component:
                         ),
                         class_name="flex flex-col justify-end ml-2",
                     ),
-                    class_name="flex items-start w-full md:w-auto",
+                    class_name="flex items-start w-full lg:w-auto",
                 ),
-                class_name="flex-1",
+                class_name="flex-1 min-w-0",
             ),
-            class_name="flex flex-col md:flex-row items-start md:items-center justify-between p-6 hover:bg-slate-50 transition-colors gap-6",
+            class_name="flex flex-col lg:flex-row items-start lg:items-center justify-between p-6 hover:bg-slate-50 transition-colors gap-6",
         ),
         class_name="border-b border-gray-100 last:border-0",
     )
