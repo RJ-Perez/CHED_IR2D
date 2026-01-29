@@ -299,7 +299,7 @@ def notification_item(notif: dict) -> rx.Component:
             ),
             rx.el.p(
                 notif["comments"],
-                class_name="text-xs text-slate-600 line-clamp-2 leading-relaxed",
+                class_name="text-sm text-slate-700 font-medium leading-relaxed",
             ),
             rx.el.div(
                 rx.el.span(
@@ -308,7 +308,8 @@ def notification_item(notif: dict) -> rx.Component:
                 ),
                 rx.el.span(" • ", class_name="text-slate-300 mx-1"),
                 rx.el.span(
-                    notif["created_at"], class_name="text-[10px] text-slate-400"
+                    notif["created_at"],
+                    class_name="text-[10px] text-slate-400 font-semibold",
                 ),
                 class_name="mt-2 flex items-center",
             ),
@@ -316,8 +317,8 @@ def notification_item(notif: dict) -> rx.Component:
         ),
         class_name=rx.cond(
             is_approved,
-            "p-4 border-l-4 border-emerald-500 bg-emerald-50/30 hover:bg-emerald-50 transition-colors",
-            "p-4 border-l-4 border-rose-500 bg-rose-50/30 hover:bg-rose-50 transition-colors",
+            "p-5 border-l-4 border-emerald-500 bg-emerald-50/30 hover:bg-emerald-50 transition-colors border-b border-slate-100",
+            "p-5 border-l-4 border-rose-500 bg-rose-50/30 hover:bg-rose-50 transition-colors border-b border-slate-100",
         ),
     )
 
@@ -343,17 +344,21 @@ def notification_bell() -> rx.Component:
             NotificationState.show_notifications,
             rx.el.div(
                 rx.el.div(
+                    on_click=NotificationState.toggle_notifications,
+                    class_name="fixed inset-0 z-[90] bg-black/5 cursor-default",
+                ),
+                rx.el.div(
                     rx.el.div(
                         rx.el.h4(
                             "Review Notifications",
-                            class_name="text-sm font-bold text-slate-900",
+                            class_name="text-base font-bold text-slate-900",
                         ),
                         rx.el.button(
-                            rx.icon("x", class_name="h-4 w-4"),
+                            rx.icon("x", class_name="h-5 w-5"),
                             on_click=NotificationState.toggle_notifications,
-                            class_name="text-slate-400 hover:text-slate-600",
+                            class_name="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all",
                         ),
-                        class_name="flex items-center justify-between p-4 border-b border-slate-100",
+                        class_name="flex items-center justify-between p-5 border-b border-slate-100 bg-white sticky top-0 z-10",
                     ),
                     rx.el.div(
                         rx.cond(
@@ -362,24 +367,24 @@ def notification_bell() -> rx.Component:
                                 rx.foreach(
                                     NotificationState.notifications, notification_item
                                 ),
-                                class_name="max-h-[300px] overflow-y-auto",
+                                class_name="max-h-[450px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 min-h-[150px]",
                             ),
                             rx.el.div(
                                 rx.icon(
-                                    "bell-off", class_name="h-8 w-8 text-slate-200 mb-2"
+                                    "bell-off",
+                                    class_name="h-12 w-12 text-slate-200 mb-4",
                                 ),
                                 rx.el.p(
                                     "No review updates yet.",
-                                    class_name="text-xs text-slate-400 font-medium",
+                                    class_name="text-sm text-slate-400 font-bold uppercase tracking-widest",
                                 ),
-                                class_name="flex flex-col items-center justify-center py-10",
+                                class_name="flex flex-col items-center justify-center py-20 bg-slate-50",
                             ),
                         )
                     ),
-                    class_name="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2",
+                    class_name="fixed top-24 right-12 w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-4 duration-300",
                 ),
-                on_mouse_leave=NotificationState.toggle_notifications,
-                class_name="absolute right-0",
+                class_name="z-[100]",
             ),
         ),
         class_name="relative",
@@ -540,7 +545,7 @@ def dashboard_header() -> rx.Component:
             ),
             class_name="max-w-7xl mx-auto px-8 py-10",
         ),
-        class_name="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 shadow-xl mb-10",
+        class_name="relative rounded-3xl bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 shadow-xl mb-10",
     )
 
 
