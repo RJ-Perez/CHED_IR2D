@@ -19,11 +19,6 @@ class IndicatorScore(TypedDict):
 
 class PostAssessmentState(rx.State):
     assessment_id: int = -1
-    audit_start_date: str = datetime.date.today().isoformat()
-    audit_delivery_date: str = datetime.date.today().isoformat()
-    audit_validity_date: str = (
-        datetime.date.today() + datetime.timedelta(days=365 * 3)
-    ).isoformat()
     methodology_version: str = "5.2"
     overall_stars: int = 0
     teaching_stars: int = 0
@@ -40,37 +35,6 @@ class PostAssessmentState(rx.State):
     analytics_sustainability_score: int = 0
     analytics_overall_score: int = 0
     analytics_recommendations: list[dict[str, str]] = []
-    last_analytics_sync: str = ""
-
-    @rx.var
-    def days_until_expiry(self) -> int:
-        try:
-            if not self.audit_validity_date:
-                return 0
-            validity = datetime.date.fromisoformat(self.audit_validity_date)
-            today = datetime.date.today()
-            return (validity - today).days
-        except (ValueError, TypeError) as e:
-            logging.exception(f"Error parsing audit validity date: {e}")
-            return 0
-
-    @rx.var
-    def audit_status(self) -> str:
-        days = self.days_until_expiry
-        if days < 0:
-            return "Expired"
-        elif days <= 90:
-            return "Expiring Soon"
-        return "Valid"
-
-    @rx.var
-    def audit_status_color(self) -> str:
-        status = self.audit_status
-        if status == "Expired":
-            return "red"
-        elif status == "Expiring Soon":
-            return "amber"
-        return "emerald"
 
     @rx.var
     def weak_indicators_count(self) -> int:
@@ -80,36 +44,6 @@ class PostAssessmentState(rx.State):
             if ind["max_score"] > 0 and ind["points_achieved"] / ind["max_score"] < 0.5:
                 count += 1
         return count
-
-    @rx.var
-    def audit_time_elapsed_percent(self) -> float:
-        """Calculate percentage of time elapsed in the audit validity period."""
-        try:
-            if not self.audit_start_date or not self.audit_validity_date:
-                return 0.0
-            start = datetime.date.fromisoformat(self.audit_start_date)
-            validity = datetime.date.fromisoformat(self.audit_validity_date)
-            today = datetime.date.today()
-            total_days = (validity - start).days
-            elapsed = (today - start).days
-            if total_days <= 0:
-                return 100.0
-            return max(0.0, min(100.0, elapsed / total_days * 100))
-        except Exception as e:
-            logging.exception(f"Error calculating audit time elapsed: {e}")
-            return 0.0
-
-    @rx.event
-    def set_audit_start_date(self, value: str):
-        self.audit_start_date = value
-
-    @rx.event
-    def set_audit_delivery_date(self, value: str):
-        self.audit_delivery_date = value
-
-    @rx.event
-    def set_audit_validity_date(self, value: str):
-        self.audit_validity_date = value
 
     @rx.event
     def set_methodology_version(self, value: str):
@@ -197,7 +131,7 @@ class PostAssessmentState(rx.State):
             inst_id = int(hei_state.selected_hei["id"])
             result = await session.execute(
                 text(
-                    "SELECT id, audit_start_date, audit_delivery_date, audit_validity_date, methodology_version, overall_stars, teaching_stars, employability_stars, academic_development_stars, inclusiveness_stars FROM qs_stars_assessments WHERE institution_id = :iid"
+                    "SELECT id, methodology_version, overall_stars, teaching_stars, employability_stars, academic_development_stars, inclusiveness_stars FROM qs_stars_assessments WHERE institution_id = :iid"
                 ),
                 {"iid": inst_id},
             )
@@ -206,15 +140,12 @@ class PostAssessmentState(rx.State):
                 assessment_id = row[0]
                 async with self:
                     self.assessment_id = row[0]
-                    self.audit_start_date = row[1].isoformat() if row[1] else ""
-                    self.audit_delivery_date = row[2].isoformat() if row[2] else ""
-                    self.audit_validity_date = row[3].isoformat() if row[3] else ""
-                    self.methodology_version = row[4]
-                    self.overall_stars = row[5]
-                    self.teaching_stars = row[6]
-                    self.employability_stars = row[7]
-                    self.academic_development_stars = row[8]
-                    self.inclusiveness_stars = row[9]
+                    self.methodology_version = row[1]
+                    self.overall_stars = row[2]
+                    self.teaching_stars = row[3]
+                    self.employability_stars = row[4]
+                    self.academic_development_stars = row[5]
+                    self.inclusiveness_stars = row[6]
             else:
                 await session.execute(
                     text(
@@ -284,7 +215,9 @@ class PostAssessmentState(rx.State):
                 )
             async with self:
                 self.indicator_scores = merged_scores
-                self.is_loading = False
+        yield PostAssessmentState.load_institution_scores_for_insights
+        async with self:
+            self.is_loading = False
 
     async def _ensure_tables(self, session):
         await session.execute(
@@ -292,9 +225,6 @@ class PostAssessmentState(rx.State):
             CREATE TABLE IF NOT EXISTS qs_stars_assessments (
                 id SERIAL PRIMARY KEY,
                 institution_id INTEGER NOT NULL,
-                audit_start_date DATE,
-                audit_delivery_date DATE,
-                audit_validity_date DATE,
                 methodology_version VARCHAR(50),
                 overall_stars INTEGER DEFAULT 0,
                 teaching_stars INTEGER DEFAULT 0,
@@ -371,25 +301,15 @@ class PostAssessmentState(rx.State):
 
     @rx.event(background=True)
     async def save_audit_metadata(self):
-        """Save audit dates and version."""
+        """Save audit methodology version."""
         async with self:
             self.is_saving = True
         async with rx.asession() as session:
             await session.execute(
                 text(
-                    "UPDATE qs_stars_assessments SET audit_start_date = :start, audit_delivery_date = :del, audit_validity_date = :val, methodology_version = :ver WHERE id = :aid"
+                    "UPDATE qs_stars_assessments SET methodology_version = :ver WHERE id = :aid"
                 ),
-                {
-                    "start": self.audit_start_date if self.audit_start_date else None,
-                    "del": self.audit_delivery_date
-                    if self.audit_delivery_date
-                    else None,
-                    "val": self.audit_validity_date
-                    if self.audit_validity_date
-                    else None,
-                    "ver": self.methodology_version,
-                    "aid": self.assessment_id,
-                },
+                {"ver": self.methodology_version, "aid": self.assessment_id},
             )
             await session.commit()
         async with self:
@@ -397,117 +317,63 @@ class PostAssessmentState(rx.State):
             yield rx.toast("Audit metadata saved.")
 
     @rx.event(background=True)
-    async def simulate_audit_update(self):
-        """DEMO ONLY: Updates scores randomly to simulate a completed audit import."""
-        import random
-
+    async def load_institution_scores_for_insights(self):
+        """Derive Insight Scores strictly from actual Institution Scores in the database."""
         async with self:
-            self.is_loading = True
+            hei_state = await self.get_state(HEIState)
+            if not hei_state.selected_hei:
+                return
+            inst_id = int(hei_state.selected_hei["id"])
         async with rx.asession() as session:
-            await session.execute(
-                text(
-                    "UPDATE qs_stars_assessments SET overall_stars = 4, teaching_stars = 5, employability_stars = 4, academic_development_stars = 3, inclusiveness_stars = 5 WHERE id = :aid"
-                ),
-                {"aid": self.assessment_id},
+            result = await session.execute(
+                text("""
+                SELECT i.code, s.value 
+                FROM institution_scores s 
+                JOIN ranking_indicators i ON s.indicator_id = i.id 
+                WHERE s.institution_id = :iid AND s.ranking_year = 2025
+                """),
+                {"iid": inst_id},
             )
-            indicators_res = await session.execute(
-                text(
-                    "SELECT indicator_name, max_score FROM qs_indicator_scores WHERE assessment_id = :aid"
-                ),
-                {"aid": self.assessment_id},
+            rows = result.all()
+            scores = {row[0]: float(row[1]) if row[1] else 0.0 for row in rows}
+            s_academic = min(100, scores.get("academic_reputation", 0) / 90.0 * 100)
+            s_citations = min(100, scores.get("citations_per_faculty", 0) / 20.0 * 100)
+            research = int(s_academic * 0.6 + s_citations * 0.4)
+            s_emp_rep = min(100, scores.get("employer_reputation", 0) / 90.0 * 100)
+            s_emp_out = min(100, scores.get("employment_outcomes", 0) / 95.0 * 100)
+            employability = int(s_emp_rep * 0.75 + s_emp_out * 0.25)
+            s_irn = min(
+                100, scores.get("international_research_network", 0) / 80.0 * 100
             )
-            rows = indicators_res.all()
-            for name, max_score in rows:
-                achieved = round(random.uniform(0.3, 0.95) * float(max_score), 2)
-                await session.execute(
-                    text(
-                        "UPDATE qs_indicator_scores SET points_achieved = :score WHERE assessment_id = :aid AND indicator_name = :name"
-                    ),
-                    {"score": achieved, "aid": self.assessment_id, "name": name},
-                )
-            await session.commit()
-        yield PostAssessmentState.on_load
-        async with self:
-            self.is_loading = False
-            yield rx.toast("Audit data simulated successfully.")
-
-    @rx.event(background=True)
-    async def sync_from_analytics(self):
-        """Fetch data from AnalyticsState, map to categories, and generate strategic targets."""
-        from app.states.analytics_state import AnalyticsState
-
-        async with self:
-            self.is_loading = True
-            analytics_state = await self.get_state(AnalyticsState)
-        if analytics_state.overall_score == 0 and analytics_state.research_score == 0:
+            s_ifac = min(100, scores.get("international_faculty_ratio", 0) / 15.0 * 100)
+            s_istud = min(
+                100, scores.get("international_student_ratio", 0) / 10.0 * 100
+            )
+            global_eng = int((s_irn + s_ifac + s_istud) / 3)
+            fs_ratio = scores.get("faculty_student_ratio", 0)
+            s_learning = int(
+                max(0, min(100, 12.0 / fs_ratio * 100 if fs_ratio > 0 else 0))
+            )
+            s_sus = min(100, scores.get("sustainability_metrics", 0) / 85.0 * 100)
+            sustainability = int(s_sus)
+            overall = int(
+                research * 0.5
+                + employability * 0.2
+                + global_eng * 0.15
+                + s_learning * 0.1
+                + sustainability * 0.05
+            )
             async with self:
-                self.is_loading = False
-                yield rx.toast(
-                    "No analytics data found. Please visit the Analytics page first to calculate scores.",
-                    duration=5000,
-                )
-            return
-        async with self:
-            self.analytics_research_score = analytics_state.research_score
-            self.analytics_employability_score = analytics_state.employability_score
-            self.analytics_global_engagement_score = (
-                analytics_state.global_engagement_score
-            )
-            self.analytics_learning_experience_score = (
-                analytics_state.learning_experience_score
-            )
-            self.analytics_sustainability_score = analytics_state.sustainability_score
-            self.analytics_overall_score = analytics_state.overall_score
-            self.analytics_recommendations = analytics_state.ai_recommendations
-            self.last_analytics_sync = datetime.datetime.now().strftime(
-                "%Y-%m-%d %H:%M"
-            )
-            category_map = {
-                "Academic Development": self.analytics_research_score,
-                "Employability": self.analytics_employability_score,
-                "Teaching": self.analytics_learning_experience_score,
-                "Inclusiveness": self.analytics_global_engagement_score,
-            }
-            updates_made = 0
-        async with rx.asession() as session:
-            for ind in self.indicator_scores:
-                cat_score = category_map.get(ind["category"], 100)
-                if cat_score < 50 and ind["target_score"] == 0:
-                    suggested_target = max(
-                        ind["points_achieved"] * 1.2, ind["max_score"] * 0.5
-                    )
-                    suggested_target = round(min(suggested_target, ind["max_score"]), 2)
-                    note_prefix = f"[Analytics Insight: Low {ind['category']} Score ({cat_score}%)] "
-                    new_note = note_prefix + (
-                        ind["notes"] or "Focus area for improvement."
-                    )
-                    await session.execute(
-                        text("""
-                        INSERT INTO qs_action_plans (assessment_id, indicator_name, current_score, target_score, notes)
-                        VALUES (:aid, :name, :curr, :targ, :notes)
-                        ON CONFLICT (assessment_id, indicator_name)
-                        DO UPDATE SET target_score = :targ, notes = :notes, updated_at = CURRENT_TIMESTAMP
-                        """),
-                        {
-                            "aid": self.assessment_id,
-                            "name": ind["indicator_name"],
-                            "curr": ind["points_achieved"],
-                            "targ": suggested_target,
-                            "notes": new_note,
-                        },
-                    )
-                    updates_made += 1
-            await session.commit()
-        yield PostAssessmentState.on_load
-        async with self:
-            self.is_loading = False
-            if updates_made > 0:
-                yield rx.toast(
-                    f"Synced with Analytics: Auto-generated {updates_made} action plan targets based on performance gaps.",
-                    duration=5000,
-                )
-            else:
-                yield rx.toast(
-                    "Synced with Analytics: Insights updated. No new targets required.",
-                    duration=3000,
-                )
+                self.analytics_research_score = research
+                self.analytics_employability_score = employability
+                self.analytics_global_engagement_score = global_eng
+                self.analytics_learning_experience_score = s_learning
+                self.analytics_sustainability_score = sustainability
+                self.analytics_overall_score = overall
+                try:
+                    from app.states.analytics_state import AnalyticsState
+
+                    analytics = await self.get_state(AnalyticsState)
+                    self.analytics_recommendations = analytics.ai_recommendations
+                except Exception as e:
+                    logging.exception(f"Error loading analytics recommendations: {e}")

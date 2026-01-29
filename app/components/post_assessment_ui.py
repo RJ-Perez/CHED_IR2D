@@ -29,96 +29,6 @@ def star_rating_display(stars: int, label: str, size: str = "md") -> rx.Componen
     )
 
 
-def audit_clock_card() -> rx.Component:
-    """Displays audit validity and status with enhanced visuals."""
-    return ds_card(
-        rx.el.div(
-            rx.el.div(
-                rx.icon("timer", class_name="h-6 w-6 text-blue-600 mr-2"),
-                rx.el.h3("Audit Validity", class_name=DS.H3),
-                class_name="flex items-center mb-4",
-            ),
-            rx.el.div(
-                rx.el.div(
-                    rx.el.p("Status", class_name=DS.LABEL),
-                    rx.el.div(
-                        rx.el.span(
-                            PostAssessmentState.audit_status,
-                            class_name=f"px-3 py-1 rounded-full text-xs font-bold bg-{PostAssessmentState.audit_status_color}-100 text-{PostAssessmentState.audit_status_color}-700 border border-{PostAssessmentState.audit_status_color}-200",
-                        ),
-                        class_name="mt-1",
-                    ),
-                ),
-                rx.el.div(
-                    rx.el.p("Days Remaining", class_name=DS.LABEL),
-                    rx.el.h4(
-                        f"{PostAssessmentState.days_until_expiry} Days",
-                        class_name="text-xl font-bold text-gray-900 mt-1",
-                    ),
-                ),
-                class_name="flex justify-between items-end mb-4",
-            ),
-            rx.el.div(
-                rx.el.div(
-                    rx.el.div(
-                        style={
-                            "width": f"{PostAssessmentState.audit_time_elapsed_percent}%"
-                        },
-                        class_name="h-full bg-blue-600 rounded-full transition-all duration-1000",
-                    ),
-                    class_name="h-2 w-full bg-gray-100 rounded-full overflow-hidden",
-                ),
-                rx.el.div(
-                    rx.el.span("Start", class_name="text-[10px] text-gray-400"),
-                    rx.el.span("Expiry", class_name="text-[10px] text-gray-400"),
-                    class_name="flex justify-between mt-1 mb-6",
-                ),
-            ),
-            rx.el.div(
-                rx.el.div(
-                    rx.el.label("Start Date", class_name=DS.LABEL),
-                    rx.el.input(
-                        type="date",
-                        on_change=PostAssessmentState.set_audit_start_date,
-                        class_name="w-full text-xs border-b border-gray-200 focus:border-blue-500 outline-none py-1 bg-transparent text-gray-700",
-                        default_value=PostAssessmentState.audit_start_date,
-                    ),
-                    class_name="mb-2",
-                ),
-                rx.el.div(
-                    rx.el.label("Validity Date", class_name=DS.LABEL),
-                    rx.el.input(
-                        type="date",
-                        on_change=PostAssessmentState.set_audit_validity_date,
-                        class_name="w-full text-xs border-b border-gray-200 focus:border-blue-500 outline-none py-1 bg-transparent text-gray-700",
-                        default_value=PostAssessmentState.audit_validity_date,
-                    ),
-                    class_name="mb-2",
-                ),
-                rx.el.div(
-                    rx.el.label("Methodology Version", class_name=DS.LABEL),
-                    rx.el.input(
-                        on_change=PostAssessmentState.set_methodology_version,
-                        class_name="w-full text-xs border-b border-gray-200 focus:border-blue-500 outline-none py-1 bg-transparent text-gray-700 font-medium",
-                        default_value=PostAssessmentState.methodology_version,
-                        placeholder="e.g. 5.2",
-                    ),
-                ),
-                class_name="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100",
-            ),
-            ds_button(
-                "Update Metadata",
-                variant="secondary",
-                size="sm",
-                on_click=PostAssessmentState.save_audit_metadata,
-                loading=PostAssessmentState.is_saving,
-                class_name="w-full mt-4",
-            ),
-            class_name="h-full flex flex-col justify-between",
-        )
-    )
-
-
 def overall_rating_card() -> rx.Component:
     return rx.el.div(
         rx.el.div(
@@ -356,51 +266,57 @@ def analytics_score_item(label: str, score: int, icon: str, color: str) -> rx.Co
 
 
 def analytics_insights_card() -> rx.Component:
-    """New card displaying fetched analytics data and AI recommendations."""
-    return rx.cond(
-        PostAssessmentState.last_analytics_sync != "",
+    """Card displaying derived institutional scores and AI strategic advice."""
+    return rx.el.div(
         rx.el.div(
             rx.el.div(
-                rx.el.div(
-                    rx.icon("line-chart", class_name="h-5 w-5 text-indigo-600 mr-2"),
-                    rx.el.h3(
-                        "Analytics-Driven Insights",
-                        class_name="text-lg font-bold text-gray-900",
-                    ),
-                    class_name="flex items-center mb-4",
+                rx.icon("line-chart", class_name="h-5 w-5 text-indigo-600 mr-2"),
+                rx.el.h3(
+                    "Derived Insight Scores",
+                    class_name="text-lg font-bold text-gray-900",
                 ),
-                rx.el.div(
-                    analytics_score_item(
-                        "Research & Discovery",
-                        PostAssessmentState.analytics_research_score,
-                        "microscope",
-                        "text-purple-600",
-                    ),
-                    analytics_score_item(
-                        "Employability",
-                        PostAssessmentState.analytics_employability_score,
-                        "briefcase",
-                        "text-emerald-600",
-                    ),
-                    analytics_score_item(
-                        "Global Engagement",
-                        PostAssessmentState.analytics_global_engagement_score,
-                        "globe",
-                        "text-blue-600",
-                    ),
-                    analytics_score_item(
-                        "Learning Experience",
-                        PostAssessmentState.analytics_learning_experience_score,
-                        "graduation-cap",
-                        "text-indigo-600",
-                    ),
-                    class_name="bg-gray-50 rounded-xl p-4 mb-6",
+                class_name="flex items-center mb-4",
+            ),
+            rx.el.div(
+                analytics_score_item(
+                    "Research & Discovery",
+                    PostAssessmentState.analytics_research_score,
+                    "microscope",
+                    "text-purple-600",
                 ),
-                rx.el.h4(
-                    "Strategic Recommendations",
-                    class_name="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3",
+                analytics_score_item(
+                    "Employability",
+                    PostAssessmentState.analytics_employability_score,
+                    "briefcase",
+                    "text-emerald-600",
                 ),
-                rx.el.div(
+                analytics_score_item(
+                    "Global Engagement",
+                    PostAssessmentState.analytics_global_engagement_score,
+                    "globe",
+                    "text-blue-600",
+                ),
+                analytics_score_item(
+                    "Learning Experience",
+                    PostAssessmentState.analytics_learning_experience_score,
+                    "graduation-cap",
+                    "text-indigo-600",
+                ),
+                analytics_score_item(
+                    "Sustainability",
+                    PostAssessmentState.analytics_sustainability_score,
+                    "leaf",
+                    "text-green-600",
+                ),
+                class_name="bg-gray-50 rounded-xl p-4 mb-6",
+            ),
+            rx.el.h4(
+                "Strategic Recommendations",
+                class_name="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3",
+            ),
+            rx.el.div(
+                rx.cond(
+                    PostAssessmentState.analytics_recommendations.length() > 0,
                     rx.foreach(
                         PostAssessmentState.analytics_recommendations,
                         lambda rec: rx.el.div(
@@ -421,26 +337,15 @@ def analytics_insights_card() -> rx.Component:
                             class_name="flex items-start p-3 bg-white border border-gray-100 rounded-lg shadow-sm",
                         ),
                     ),
-                    class_name="space-y-2 max-h-[300px] overflow-y-auto pr-1",
+                    rx.el.p(
+                        "No recommendations currently available.",
+                        class_name="text-xs text-gray-400 italic",
+                    ),
                 ),
+                class_name="space-y-2 max-h-[300px] overflow-y-auto pr-1",
             ),
-            class_name="bg-white rounded-2xl p-6 border border-indigo-100 shadow-lg shadow-indigo-50/50 h-full",
         ),
-        rx.el.div(
-            rx.el.div(
-                rx.icon("refresh-cw", class_name="h-8 w-8 text-gray-300 mb-3"),
-                rx.el.p(
-                    "Sync to view Analytics Insights",
-                    class_name="text-sm font-semibold text-gray-500",
-                ),
-                rx.el.p(
-                    "Pull scores and AI advice from the Analytics module.",
-                    class_name="text-xs text-gray-400 mt-1 text-center max-w-[200px]",
-                ),
-                class_name="flex flex-col items-center justify-center h-full min-h-[300px]",
-            ),
-            class_name="bg-gray-50 rounded-2xl p-6 border border-dashed border-gray-200 h-full",
-        ),
+        class_name="bg-white rounded-2xl p-6 border border-indigo-100 shadow-lg shadow-indigo-50/50 h-full",
     )
 
 
@@ -457,42 +362,13 @@ def post_assessment_content() -> rx.Component:
                     class_name="text-gray-600 mt-2 text-lg",
                 ),
             ),
-            rx.el.div(
-                rx.el.button(
-                    rx.cond(
-                        PostAssessmentState.is_loading,
-                        rx.el.div(
-                            rx.el.div(
-                                class_name="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"
-                            ),
-                            "Syncing...",
-                            class_name="flex items-center",
-                        ),
-                        rx.el.div(
-                            rx.icon("refresh-cw", class_name="h-4 w-4 mr-2"),
-                            "Sync from Analytics",
-                            class_name="flex items-center",
-                        ),
-                    ),
-                    on_click=PostAssessmentState.sync_from_analytics,
-                    disabled=PostAssessmentState.is_loading,
-                    class_name="text-sm text-indigo-700 font-bold bg-indigo-50 px-4 py-2.5 rounded-xl hover:bg-indigo-100 transition-colors border border-indigo-200 shadow-sm mr-2",
-                ),
-                rx.el.button(
-                    "Simulate Audit Data (Demo)",
-                    on_click=PostAssessmentState.simulate_audit_update,
-                    class_name="text-sm text-blue-700 font-bold bg-blue-50 px-4 py-2.5 rounded-xl hover:bg-blue-100 transition-colors border border-blue-200 shadow-sm",
-                ),
-                class_name="flex items-center",
-            ),
             class_name="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-10 gap-4",
         ),
         weakness_summary_banner(),
         rx.el.div(
             rx.el.div(overall_rating_card(), class_name="lg:col-span-1"),
-            rx.el.div(audit_clock_card(), class_name="lg:col-span-1"),
             rx.el.div(analytics_insights_card(), class_name="lg:col-span-1"),
-            class_name="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10 min-h-[400px]",
+            class_name="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10 min-h-[400px]",
         ),
         rx.el.div(category_stars_section(), class_name="mb-10"),
         rx.el.div(
