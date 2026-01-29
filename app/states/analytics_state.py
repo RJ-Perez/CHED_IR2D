@@ -48,6 +48,25 @@ class AnalyticsState(rx.State):
     target_color: str = "#10b981"
     your_color: str = "#2563eb"
 
+    async def _calculate_ncr_averages(self) -> dict[str, float]:
+        """Queries all scores for 2025 and calculates real NCR averages per indicator."""
+        async with rx.asession() as session:
+            result = await session.execute(
+                text("""
+                SELECT 
+                    i.code, 
+                    AVG(CAST(NULLIF(regexp_replace(s.value, '[^0-9.]', '', 'g'), '') AS DOUBLE PRECISION)) as average
+                FROM institution_scores s
+                JOIN ranking_indicators i ON s.indicator_id = i.id
+                WHERE s.ranking_year = 2025
+                GROUP BY i.code
+                """)
+            )
+            rows = result.all()
+            return {
+                row[0]: round(row[1], 2) if row[1] is not None else 0.0 for row in rows
+            }
+
     def _clean_json_response(self, text: str) -> str:
         """Sanitizes AI response text to ensure it is valid parseable JSON without corrupting string values."""
         if not text:
@@ -77,6 +96,7 @@ class AnalyticsState(rx.State):
             if not hei_state.selected_hei:
                 return
             institution_id = int(hei_state.selected_hei["id"])
+        ncr_avgs = await self._calculate_ncr_averages()
         academic_rep = 0.0
         citations = 0.0
         emp_rep = 0.0
@@ -193,13 +213,13 @@ class AnalyticsState(rx.State):
                 {
                     "metric": "Academic Rep.",
                     "You": academic_rep,
-                    "NCR Avg": 65.0,
+                    "NCR Avg": ncr_avgs.get("academic_reputation", 0.0),
                     "Target": b_academic_rep,
                 },
                 {
                     "metric": "Citations/Faculty",
                     "You": citations,
-                    "NCR Avg": 8.5,
+                    "NCR Avg": ncr_avgs.get("citations_per_faculty", 0.0),
                     "Target": b_citations,
                 },
             ]
@@ -207,13 +227,13 @@ class AnalyticsState(rx.State):
                 {
                     "metric": "Emp. Reputation",
                     "You": emp_rep,
-                    "NCR Avg": 65.0,
+                    "NCR Avg": ncr_avgs.get("employer_reputation", 0.0),
                     "Target": b_emp_rep,
                 },
                 {
                     "metric": "Emp. Outcomes",
                     "You": emp_outcomes,
-                    "NCR Avg": 82.0,
+                    "NCR Avg": ncr_avgs.get("employment_outcomes", 0.0),
                     "Target": b_emp_outcomes,
                 },
             ]
@@ -221,19 +241,19 @@ class AnalyticsState(rx.State):
                 {
                     "metric": "Research Network",
                     "You": int_research_net,
-                    "NCR Avg": 55.0,
+                    "NCR Avg": ncr_avgs.get("international_research_network", 0.0),
                     "Target": b_int_research_net,
                 },
                 {
                     "metric": "Int. Faculty %",
                     "You": int_faculty_ratio,
-                    "NCR Avg": 8.0,
+                    "NCR Avg": ncr_avgs.get("international_faculty_ratio", 0.0),
                     "Target": b_int_faculty_ratio,
                 },
                 {
                     "metric": "Int. Student %",
                     "You": int_student_ratio,
-                    "NCR Avg": 5.5,
+                    "NCR Avg": ncr_avgs.get("international_student_ratio", 0.0),
                     "Target": b_int_student_ratio,
                 },
             ]
@@ -241,7 +261,7 @@ class AnalyticsState(rx.State):
                 {
                     "metric": "Faculty:Student",
                     "You": faculty_student_ratio,
-                    "NCR Avg": 18.0,
+                    "NCR Avg": ncr_avgs.get("faculty_student_ratio", 0.0),
                     "Target": b_faculty_student_ratio,
                 }
             ]
@@ -249,7 +269,7 @@ class AnalyticsState(rx.State):
                 {
                     "metric": "Sustainability",
                     "You": sustainability,
-                    "NCR Avg": 60.0,
+                    "NCR Avg": ncr_avgs.get("sustainability_metrics", 0.0),
                     "Target": b_sustainability,
                 }
             ]
