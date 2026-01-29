@@ -326,7 +326,6 @@ class PostAssessmentState(rx.State):
             from app.states.analytics_state import AnalyticsState
 
             analytics = await self.get_state(AnalyticsState)
-        await analytics.on_load()
         async with self:
             self.analytics_research_score = analytics.research_score
             self.analytics_employability_score = analytics.employability_score
@@ -340,7 +339,7 @@ class PostAssessmentState(rx.State):
             self.last_sync_time = datetime.datetime.now().strftime("%H:%M:%S")
             if self.analytics_overall_score == 0:
                 yield rx.toast(
-                    "No analytics data found. Please ensure assessment data is entered.",
+                    "No analytics data found. Please ensure assessment data is entered and visit the Analytics page.",
                     duration=4000,
                 )
             self.is_syncing_analytics = False
