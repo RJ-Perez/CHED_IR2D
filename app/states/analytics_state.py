@@ -9,7 +9,7 @@ import asyncio
 import time
 
 AI_RECOMMENDATIONS_CACHE = {}
-CACHE_TTL = 3600
+CACHE_TTL = 1800
 try:
     from google import genai
     from google.genai import types
@@ -68,17 +68,20 @@ class AnalyticsState(rx.State):
             }
 
     def _clean_json_response(self, text: str) -> str:
-        """Sanitizes AI response text to ensure it is valid parseable JSON without corrupting string values."""
+        """Sanitizes AI response text to ensure it is valid parseable JSON without corrupting string values.
+        Specifically prevents the removal of spaces within string values.
+        """
         if not text:
             return ""
-        text = re.sub("\\s*", "", text, flags=re.IGNORECASE)
-        text = re.sub("\\s*", "", text)
+        text = re.sub("\\n?", "", text)
+        text = re.sub("\\n?", "", text)
+        text = text.strip()
         start = text.find("{")
         end = text.rfind("}")
         if start != -1 and end != -1:
             text = text[start : end + 1]
-        text = re.sub(",\\s*([}\\]])", "\\1", text)
-        return text.strip()
+        text = re.sub(",(\\s*[}\\]])", "\\1", text)
+        return text
 
     def _parse_float(self, value: str) -> float:
         try:
@@ -298,6 +301,12 @@ class AnalyticsState(rx.State):
             sustainability=sustainability,
         )
 
+    @rx.event
+    def clear_ai_cache(self):
+        """Manually clears the recommendations cache to force refresh with fixed logic."""
+        global AI_RECOMMENDATIONS_CACHE
+        AI_RECOMMENDATIONS_CACHE = {}
+
     @rx.event(background=True)
     async def generate_ai_recommendations(
         self,
@@ -327,7 +336,13 @@ class AnalyticsState(rx.State):
         now = time.time()
         if inst_id in AI_RECOMMENDATIONS_CACHE:
             cache_entry = AI_RECOMMENDATIONS_CACHE[inst_id]
-            if now - cache_entry["timestamp"] < CACHE_TTL:
+            is_corrupt = False
+            if cache_entry.get("recommendations"):
+                first_rec = cache_entry["recommendations"][0]
+                desc = first_rec.get("description", "")
+                if len(desc) > 50 and " " not in desc:
+                    is_corrupt = True
+            if now - cache_entry["timestamp"] < CACHE_TTL and (not is_corrupt):
                 logging.info(
                     f"Using cached AI recommendations for institution {inst_id}"
                 )
@@ -335,6 +350,10 @@ class AnalyticsState(rx.State):
                     self.ai_recommendations = cache_entry["recommendations"]
                     self.is_generating_recommendations = False
                 return
+            elif is_corrupt:
+                logging.warning(
+                    f"Detected corrupt cache entry for {inst_id}. Forcing refresh."
+                )
         if not GOOGLE_AI_AVAILABLE:
             async with self:
                 self.is_generating_recommendations = False

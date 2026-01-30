@@ -76,14 +76,15 @@ class ReportsState(rx.State):
         """Sanitizes AI response text to ensure it is valid parseable JSON without corrupting string values."""
         if not text:
             return ""
-        text = re.sub("\\s*", "", text, flags=re.IGNORECASE)
-        text = re.sub("\\s*", "", text)
+        text = re.sub("\\n?", "", text)
+        text = re.sub("\\n?", "", text)
+        text = text.strip()
         start = text.find("{")
         end = text.rfind("}")
         if start != -1 and end != -1:
             text = text[start : end + 1]
         text = re.sub(",\\s*([}\\]])", "\\1", text)
-        return text.strip()
+        return text
 
     def _parse_float(self, value: str) -> float:
         try:
