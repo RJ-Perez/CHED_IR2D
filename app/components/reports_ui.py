@@ -212,15 +212,24 @@ def report_recommendation_card(rec: dict) -> rx.Component:
         ),
         rx.el.div(
             rx.el.div(
-                rx.el.h5(rec["title"], class_name="font-semibold text-gray-900"),
+                rx.el.h5(
+                    rec["title"],
+                    class_name="font-bold text-gray-900 whitespace-normal break-words",
+                ),
                 rx.el.span(
                     rec["priority"],
-                    class_name=f"ml-2 text-xs px-2 py-1 rounded-full {rec['bg_class']} {rec['color_class']} font-medium",
+                    class_name=f"ml-2 text-[10px] px-2 py-0.5 rounded-full {rec['bg_class']} {rec['color_class']} font-bold border border-current uppercase",
                 ),
-                class_name="flex items-center",
+                class_name="flex items-start justify-between gap-2 mb-2",
             ),
-            rx.el.p(rec["description"], class_name="text-sm text-gray-600 mt-2"),
-            rx.el.span(rec["category"], class_name="text-xs text-gray-400 mt-2 block"),
+            rx.el.p(
+                rec["description"],
+                class_name="text-sm text-gray-600 leading-relaxed whitespace-normal break-words",
+            ),
+            rx.el.span(
+                rec["category"],
+                class_name="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-4 block pt-2 border-t border-gray-100/50",
+            ),
         ),
         class_name=f"flex items-start p-4 {rec['bg_class']} border rounded-xl",
     )

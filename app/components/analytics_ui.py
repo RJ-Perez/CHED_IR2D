@@ -546,7 +546,8 @@ def analytics_content_ui() -> rx.Component:
                                     rx.el.div(
                                         rx.el.h5(
                                             rec["title"],
-                                            class_name="font-bold text-gray-900 text-sm leading-tight break-words flex-1",
+                                            class_name="font-bold text-gray-900 text-sm leading-tight whitespace-normal break-words flex-1",
+                                            style={"wordSpacing": "normal"},
                                         ),
                                         rx.el.span(
                                             rec["priority"],
@@ -556,7 +557,8 @@ def analytics_content_ui() -> rx.Component:
                                     ),
                                     rx.el.p(
                                         rec["description"],
-                                        class_name="text-sm text-gray-600 leading-relaxed break-words whitespace-normal",
+                                        class_name="text-sm text-gray-600 leading-relaxed whitespace-normal break-words",
+                                        style={"wordSpacing": "normal"},
                                     ),
                                     rx.el.div(
                                         rx.el.span(
