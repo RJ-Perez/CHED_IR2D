@@ -27,7 +27,7 @@ class DashboardState(rx.State):
     formal_global_engagement_score: int = 0
     formal_learning_experience_score: int = 0
     formal_sustainability_score: int = 0
-    show_initial_question: bool = True
+    show_initial_question: bool = False
     has_formal_assessment: bool = False
     uploaded_formal_research_files: list[str] = []
     uploaded_formal_employability_files: list[str] = []
