@@ -351,11 +351,49 @@ def sustainability_chart() -> rx.Component:
     )
 
 
+def loading_overlay(text: str) -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.el.div(
+                rx.image(
+                    src="https://chedcar.com/wp-content/uploads/2020/09/Commission_on_Higher_Education_CHEd.svg_.png",
+                    class_name="h-16 w-16 mx-auto mb-6 animate-pulse",
+                ),
+                rx.el.div(
+                    class_name="h-12 w-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"
+                ),
+                rx.el.h3(text, class_name="text-xl font-bold text-gray-900 mb-2"),
+                rx.el.p(
+                    "Synthesizing performance metrics...",
+                    class_name="text-gray-500 animate-pulse",
+                ),
+                class_name="bg-white p-12 rounded-[2.5rem] shadow-2xl text-center max-w-sm w-full border border-gray-100",
+            ),
+            class_name="fixed inset-0 z-[500] flex items-center justify-center bg-gray-50/80 backdrop-blur-md",
+        ),
+        class_name="relative",
+    )
+
+
 def analytics_content_ui() -> rx.Component:
     """The main visualization layout for institution performance.
     Combines score cards, comparison charts, and AI-powered advice.
     """
     return rx.el.div(
+        rx.cond(
+            AnalyticsState.is_loading,
+            rx.el.div(
+                rx.el.div(
+                    class_name="h-full w-full bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-600 animate-slide-progress"
+                ),
+                class_name="absolute top-0 left-0 w-full h-1 overflow-hidden z-[60]",
+            ),
+        ),
+        rx.cond(
+            AnalyticsState.is_loading,
+            loading_overlay("Loading Analytics..."),
+            rx.fragment(),
+        ),
         rx.cond(
             AnalyticsState.review_status == "For Review",
             rx.el.div(

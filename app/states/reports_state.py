@@ -50,6 +50,7 @@ class ReportsState(rx.State):
     reports: list[ReportItem] = []
     search_query: str = ""
     selected_report_id: str = ""
+    is_loading: bool = False
     selected_report_recommendations: list[dict[str, str]] = []
     is_generating_report_recommendations: bool = False
     show_review_modal: bool = False
@@ -115,233 +116,248 @@ class ReportsState(rx.State):
     @rx.event(background=True)
     async def on_load(self):
         """Fetches all institutions and calculates their scores from database records."""
-        async with rx.asession() as session:
-            await session.execute(
-                text("""
-                CREATE TABLE IF NOT EXISTS institution_reviews (
-                    id SERIAL PRIMARY KEY,
-                    institution_id INTEGER NOT NULL,
-                    status VARCHAR(50) NOT NULL,
-                    reviewer_name VARCHAR(255),
-                    comments TEXT
-                )
-            """)
-            )
-            await session.commit()
-            await session.execute(
-                text("""
-                UPDATE institution_scores 
-                SET review_status = 'For Review', updated_at = CURRENT_TIMESTAMP
-                WHERE review_status = 'Completed' AND ranking_year = 2025
-                """)
-            )
-            await session.commit()
-            inst_result = await session.execute(
-                text(
-                    "SELECT id, institution_name FROM institutions ORDER BY institution_name ASC"
-                )
-            )
-            institutions = inst_result.all()
-            scores_result = await session.execute(
-                text("""
-                SELECT 
-                    s.institution_id, 
-                    i.code, 
-                    s.value, 
-                    s.evidence_files, 
-                    s.updated_at,
-                    s.review_status,
-                    s.review_comments
-                FROM institution_scores s
-                JOIN ranking_indicators i ON s.indicator_id = i.id
-                WHERE s.ranking_year = 2025
-                """)
-            )
-            all_scores = scores_result.all()
-            inst_data = {}
-            for (
-                inst_id,
-                code,
-                val,
-                evidence,
-                updated,
-                r_status,
-                r_comments,
-            ) in all_scores:
-                if inst_id not in inst_data:
-                    inst_data[inst_id] = {
-                        "scores": {},
-                        "files": [],
-                        "last_update": updated,
-                        "review_status": r_status,
-                    }
-                inst_data[inst_id]["scores"][code] = val
-                if evidence:
-                    try:
-                        files = json.loads(evidence)
-                        if isinstance(files, list):
-                            inst_data[inst_id]["files"].extend(files)
-                    except Exception as e:
-                        logging.exception(
-                            f"Error parsing evidence files JSON for institution {inst_id}: {e}"
-                        )
-                        pass
-                if updated and (
-                    not inst_data[inst_id]["last_update"]
-                    or updated > inst_data[inst_id]["last_update"]
-                ):
-                    inst_data[inst_id]["last_update"] = updated
-            processed_reports = []
-            for i_id, i_name in institutions:
-                data = inst_data.get(
-                    i_id, {"scores": {}, "files": [], "last_update": None}
-                )
-                scores = data["scores"]
-                b_academic_rep = 90.0
-                b_citations = 20.0
-                b_emp_rep = 90.0
-                b_emp_outcomes = 95.0
-                b_int_research_net = 80.0
-                b_int_faculty_ratio = 15.0
-                b_int_student_ratio = 10.0
-                b_faculty_student_ratio = 12.0
-                b_sustainability = 85.0
-                academic_rep = self._parse_float(scores.get("academic_reputation", "0"))
-                citations = self._parse_float(scores.get("citations_per_faculty", "0"))
-                emp_rep = self._parse_float(scores.get("employer_reputation", "0"))
-                emp_outcomes = self._parse_float(scores.get("employment_outcomes", "0"))
-                int_research_net = self._parse_float(
-                    scores.get("international_research_network", "0")
-                )
-                int_faculty_ratio = self._parse_float(
-                    scores.get("international_faculty_ratio", "0")
-                )
-                int_student_ratio = self._parse_float(
-                    scores.get("international_student_ratio", "0")
-                )
-                faculty_student_ratio = self._parse_float(
-                    scores.get("faculty_student_ratio", "0")
-                )
-                sustainability = self._parse_float(
-                    scores.get("sustainability_metrics", "0")
-                )
-                s_academic_rep = (
-                    min(100, academic_rep / b_academic_rep * 100)
-                    if b_academic_rep
-                    else 0
-                )
-                s_citations = (
-                    min(100, citations / b_citations * 100) if b_citations else 0
-                )
-                s_emp_rep = min(100, emp_rep / b_emp_rep * 100) if b_emp_rep else 0
-                s_emp_outcomes = (
-                    min(100, emp_outcomes / b_emp_outcomes * 100)
-                    if b_emp_outcomes
-                    else 0
-                )
-                s_int_research_net = (
-                    min(100, int_research_net / b_int_research_net * 100)
-                    if b_int_research_net
-                    else 0
-                )
-                s_int_faculty_ratio = (
-                    min(100, int_faculty_ratio / b_int_faculty_ratio * 100)
-                    if b_int_faculty_ratio
-                    else 0
-                )
-                s_int_student_ratio = (
-                    min(100, int_student_ratio / b_int_student_ratio * 100)
-                    if b_int_student_ratio
-                    else 0
-                )
-                s_faculty_student = min(100, faculty_student_ratio)
-                s_sustainability = (
-                    min(100, sustainability / b_sustainability * 100)
-                    if b_sustainability
-                    else 0
-                )
-                research_score = int(s_academic_rep * 0.6 + s_citations * 0.4)
-                employability_score = int(s_emp_rep * 0.75 + s_emp_outcomes * 0.25)
-                global_engagement_score = int(
-                    (s_int_research_net + s_int_faculty_ratio + s_int_student_ratio) / 3
-                )
-                learning_experience_score = int(s_faculty_student)
-                sustainability_score = int(s_sustainability)
-                overall_score = int(
-                    research_score * 0.5
-                    + employability_score * 0.2
-                    + global_engagement_score * 0.15
-                    + learning_experience_score * 0.1
-                    + sustainability_score * 0.05
-                )
-                indicators_count = len(scores.keys())
-                db_status = data.get("review_status")
-                all_dimensions_na = (
-                    research_score == 0
-                    and employability_score == 0
-                    and (global_engagement_score == 0)
-                    and (learning_experience_score == 0)
-                    and (sustainability_score == 0)
-                )
-                has_na_dimension = (
-                    research_score == 0
-                    or employability_score == 0
-                    or global_engagement_score == 0
-                    or (learning_experience_score == 0)
-                    or (sustainability_score == 0)
-                )
-                if db_status in ["Reviewed", "Declined"]:
-                    status = db_status
-                elif (
-                    indicators_count >= 9
-                    and (not has_na_dimension)
-                    and (research_score > 0)
-                    and (employability_score > 0)
-                    and (global_engagement_score > 0)
-                    and (learning_experience_score > 0)
-                    and (sustainability_score > 0)
-                ):
-                    status = "For Review"
-                elif all_dimensions_na and overall_score == 0:
-                    status = "Pending"
-                else:
-                    status = "In Progress"
-                if (
-                    indicators_count > 0
-                    and status != db_status
-                    and (db_status not in ["Reviewed", "Declined"])
-                ):
-                    await session.execute(
-                        text("""
-                        UPDATE institution_scores 
-                        SET review_status = :status, updated_at = CURRENT_TIMESTAMP 
-                        WHERE institution_id = :inst_id AND ranking_year = 2025
-                        """),
-                        {"status": status, "inst_id": int(i_id)},
+        async with self:
+            self.is_loading = True
+        try:
+            async with rx.asession() as session:
+                await session.execute(
+                    text("""
+                    CREATE TABLE IF NOT EXISTS institution_reviews (
+                        id SERIAL PRIMARY KEY,
+                        institution_id INTEGER NOT NULL,
+                        status VARCHAR(50) NOT NULL,
+                        reviewer_name VARCHAR(255),
+                        comments TEXT
                     )
-                    await session.commit()
-                last_gen = (
-                    data["last_update"].strftime("%Y-%m-%d")
-                    if data["last_update"]
-                    else "-"
+                """)
                 )
-                processed_reports.append(
-                    {
-                        "id": str(i_id),
-                        "name": i_name,
-                        "overall_score": overall_score,
-                        "research_score": research_score,
-                        "employability_score": employability_score,
-                        "global_engagement_score": global_engagement_score,
-                        "learning_experience_score": learning_experience_score,
-                        "sustainability_score": sustainability_score,
-                        "status": status,
-                        "last_generated": last_gen,
-                        "evidence_files": list(set(data["files"])),
-                    }
+                await session.commit()
+                await session.execute(
+                    text("""
+                    UPDATE institution_scores 
+                    SET review_status = 'For Review', updated_at = CURRENT_TIMESTAMP
+                    WHERE review_status = 'Completed' AND ranking_year = 2025
+                    """)
                 )
+                await session.commit()
+                inst_result = await session.execute(
+                    text(
+                        "SELECT id, institution_name FROM institutions ORDER BY institution_name ASC"
+                    )
+                )
+                institutions = inst_result.all()
+                scores_result = await session.execute(
+                    text("""
+                    SELECT 
+                        s.institution_id, 
+                        i.code, 
+                        s.value, 
+                        s.evidence_files, 
+                        s.updated_at,
+                        s.review_status,
+                        s.review_comments
+                    FROM institution_scores s
+                    JOIN ranking_indicators i ON s.indicator_id = i.id
+                    WHERE s.ranking_year = 2025
+                    """)
+                )
+                all_scores = scores_result.all()
+                inst_data = {}
+                for (
+                    inst_id,
+                    code,
+                    val,
+                    evidence,
+                    updated,
+                    r_status,
+                    r_comments,
+                ) in all_scores:
+                    if inst_id not in inst_data:
+                        inst_data[inst_id] = {
+                            "scores": {},
+                            "files": [],
+                            "last_update": updated,
+                            "review_status": r_status,
+                        }
+                    inst_data[inst_id]["scores"][code] = val
+                    if evidence:
+                        try:
+                            files = json.loads(evidence)
+                            if isinstance(files, list):
+                                inst_data[inst_id]["files"].extend(files)
+                        except Exception as e:
+                            logging.exception(
+                                f"Error parsing evidence files JSON for institution {inst_id}: {e}"
+                            )
+                            pass
+                    if updated and (
+                        not inst_data[inst_id]["last_update"]
+                        or updated > inst_data[inst_id]["last_update"]
+                    ):
+                        inst_data[inst_id]["last_update"] = updated
+                processed_reports = []
+                for i_id, i_name in institutions:
+                    data = inst_data.get(
+                        i_id, {"scores": {}, "files": [], "last_update": None}
+                    )
+                    scores = data["scores"]
+                    b_academic_rep = 90.0
+                    b_citations = 20.0
+                    b_emp_rep = 90.0
+                    b_emp_outcomes = 95.0
+                    b_int_research_net = 80.0
+                    b_int_faculty_ratio = 15.0
+                    b_int_student_ratio = 10.0
+                    b_faculty_student_ratio = 12.0
+                    b_sustainability = 85.0
+                    academic_rep = self._parse_float(
+                        scores.get("academic_reputation", "0")
+                    )
+                    citations = self._parse_float(
+                        scores.get("citations_per_faculty", "0")
+                    )
+                    emp_rep = self._parse_float(scores.get("employer_reputation", "0"))
+                    emp_outcomes = self._parse_float(
+                        scores.get("employment_outcomes", "0")
+                    )
+                    int_research_net = self._parse_float(
+                        scores.get("international_research_network", "0")
+                    )
+                    int_faculty_ratio = self._parse_float(
+                        scores.get("international_faculty_ratio", "0")
+                    )
+                    int_student_ratio = self._parse_float(
+                        scores.get("international_student_ratio", "0")
+                    )
+                    faculty_student_ratio = self._parse_float(
+                        scores.get("faculty_student_ratio", "0")
+                    )
+                    sustainability = self._parse_float(
+                        scores.get("sustainability_metrics", "0")
+                    )
+                    s_academic_rep = (
+                        min(100, academic_rep / b_academic_rep * 100)
+                        if b_academic_rep
+                        else 0
+                    )
+                    s_citations = (
+                        min(100, citations / b_citations * 100) if b_citations else 0
+                    )
+                    s_emp_rep = min(100, emp_rep / b_emp_rep * 100) if b_emp_rep else 0
+                    s_emp_outcomes = (
+                        min(100, emp_outcomes / b_emp_outcomes * 100)
+                        if b_emp_outcomes
+                        else 0
+                    )
+                    s_int_research_net = (
+                        min(100, int_research_net / b_int_research_net * 100)
+                        if b_int_research_net
+                        else 0
+                    )
+                    s_int_faculty_ratio = (
+                        min(100, int_faculty_ratio / b_int_faculty_ratio * 100)
+                        if b_int_faculty_ratio
+                        else 0
+                    )
+                    s_int_student_ratio = (
+                        min(100, int_student_ratio / b_int_student_ratio * 100)
+                        if b_int_student_ratio
+                        else 0
+                    )
+                    s_faculty_student = min(100, faculty_student_ratio)
+                    s_sustainability = (
+                        min(100, sustainability / b_sustainability * 100)
+                        if b_sustainability
+                        else 0
+                    )
+                    research_score = int(s_academic_rep * 0.6 + s_citations * 0.4)
+                    employability_score = int(s_emp_rep * 0.75 + s_emp_outcomes * 0.25)
+                    global_engagement_score = int(
+                        (s_int_research_net + s_int_faculty_ratio + s_int_student_ratio)
+                        / 3
+                    )
+                    learning_experience_score = int(s_faculty_student)
+                    sustainability_score = int(s_sustainability)
+                    overall_score = int(
+                        research_score * 0.5
+                        + employability_score * 0.2
+                        + global_engagement_score * 0.15
+                        + learning_experience_score * 0.1
+                        + sustainability_score * 0.05
+                    )
+                    indicators_count = len(scores.keys())
+                    db_status = data.get("review_status")
+                    all_dimensions_na = (
+                        research_score == 0
+                        and employability_score == 0
+                        and (global_engagement_score == 0)
+                        and (learning_experience_score == 0)
+                        and (sustainability_score == 0)
+                    )
+                    has_na_dimension = (
+                        research_score == 0
+                        or employability_score == 0
+                        or global_engagement_score == 0
+                        or (learning_experience_score == 0)
+                        or (sustainability_score == 0)
+                    )
+                    if db_status in ["Reviewed", "Declined"]:
+                        status = db_status
+                    elif (
+                        indicators_count >= 9
+                        and (not has_na_dimension)
+                        and (research_score > 0)
+                        and (employability_score > 0)
+                        and (global_engagement_score > 0)
+                        and (learning_experience_score > 0)
+                        and (sustainability_score > 0)
+                    ):
+                        status = "For Review"
+                    elif all_dimensions_na and overall_score == 0:
+                        status = "Pending"
+                    else:
+                        status = "In Progress"
+                    if (
+                        indicators_count > 0
+                        and status != db_status
+                        and (db_status not in ["Reviewed", "Declined"])
+                    ):
+                        await session.execute(
+                            text("""
+                            UPDATE institution_scores 
+                            SET review_status = :status, updated_at = CURRENT_TIMESTAMP 
+                            WHERE institution_id = :inst_id AND ranking_year = 2025
+                            """),
+                            {"status": status, "inst_id": int(i_id)},
+                        )
+                        await session.commit()
+                    last_gen = (
+                        data["last_update"].strftime("%Y-%m-%d")
+                        if data["last_update"]
+                        else "-"
+                    )
+                    processed_reports.append(
+                        {
+                            "id": str(i_id),
+                            "name": i_name,
+                            "overall_score": overall_score,
+                            "research_score": research_score,
+                            "employability_score": employability_score,
+                            "global_engagement_score": global_engagement_score,
+                            "learning_experience_score": learning_experience_score,
+                            "sustainability_score": sustainability_score,
+                            "status": status,
+                            "last_generated": last_gen,
+                            "evidence_files": list(set(data["files"])),
+                        }
+                    )
+                async with self:
+                    self.reports = processed_reports
+        except Exception as e:
+            logging.exception(f"Error in ReportsState.on_load: {e}")
+        finally:
             async with self:
-                self.reports = processed_reports
+                self.is_loading = False
 
     @rx.var(cache=True)
     def filtered_reports(self) -> list[ReportItem]:
