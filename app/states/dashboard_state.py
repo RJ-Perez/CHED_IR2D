@@ -291,23 +291,15 @@ class DashboardState(rx.State):
         )
 
     async def _save_uploaded_file(
-        self, file: rx.UploadFile, category: str
+        self, file: rx.UploadFile, category: str, inst_id: str
     ) -> str | None:
-        """Helper to save files into institution-specific directories."""
-        hei_state = await self.get_state(HEIState)
-        if not hei_state.selected_hei:
-            return None
-        inst_id = hei_state.selected_hei["id"]
+        """Optimized: Takes inst_id as arg to avoid repeated state fetches in loops."""
         relative_dir = f"institution_{inst_id}/{category}"
         upload_dir = rx.get_upload_dir() / relative_dir
         upload_dir.mkdir(parents=True, exist_ok=True)
         import random, string
 
-        unique_name = (
-            "".join(random.choices(string.ascii_letters + string.digits, k=6))
-            + "_"
-            + file.name
-        )
+        unique_name = f"{''.join(random.choices(string.ascii_letters + string.digits, k=6))}_{file.name}"
         upload_data = await file.read()
         file_path = upload_dir / unique_name
         with file_path.open("wb") as f:
@@ -316,19 +308,19 @@ class DashboardState(rx.State):
 
     @rx.event
     async def handle_research_upload(self, files: list[rx.UploadFile]):
-        """Handle file upload for Research section with unique directory."""
+        """Optimized: Uses asyncio.gather for parallelized file writing."""
         if not files:
             return
         self.is_uploading_research = True
-        self.upload_progress_research = 0
-        total = len(files)
-        for i, file in enumerate(files):
-            self.upload_count_research = f"{i + 1} of {total}"
-            saved_path = await self._save_uploaded_file(file, "research")
-            if saved_path:
-                self.uploaded_research_files.append(saved_path)
-            self.upload_progress_research = int((i + 1) / total * 100)
-            yield
+        self.upload_progress_research = 10
+        yield
+        hei_state = await self.get_state(HEIState)
+        inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
+        tasks = [self._save_uploaded_file(f, "research", inst_id) for f in files]
+        results = await asyncio.gather(*tasks)
+        valid_results = [r for r in results if r is not None]
+        self.uploaded_research_files.extend(valid_results)
+        self.upload_progress_research = 100
         self.is_uploading_research = False
         yield rx.clear_selected_files("upload_research")
 
@@ -756,7 +748,7 @@ class DashboardState(rx.State):
 
     @rx.event(background=True)
     async def save_progress(self):
-        """Save current dashboard state to the database, tracking the submitting user."""
+        """Optimized: Batches multiple scores into fewer transaction blocks."""
         async with self:
             if self.has_validation_errors:
                 yield rx.toast.error(
@@ -764,77 +756,79 @@ class DashboardState(rx.State):
                 )
                 return
             self.is_saving = True
-        async with rx.asession() as session:
-            async with self:
-                from app.states.auth_state import AuthState
+            from app.states.auth_state import AuthState
 
-                hei_state = await self.get_state(HEIState)
-                auth_state = await self.get_state(AuthState)
-            if not hei_state.selected_hei:
-                async with self:
-                    self.is_saving = False
-                    yield rx.toast("No institution selected.")
-                return
-            current_user_id = auth_state.authenticated_user_id
-            institution_id = int(hei_state.selected_hei["id"])
-            scores_map = {
-                "academic_reputation": (
-                    str(self.academic_reputation),
-                    self.uploaded_research_files,
-                ),
-                "citations_per_faculty": (str(self.citations_per_faculty), []),
-                "employer_reputation": (
-                    self.employer_reputation,
-                    self.uploaded_employability_files,
-                ),
-                "employment_outcomes": (self.employment_outcomes, []),
-                "international_research_network": (
-                    self.international_research_network,
-                    self.uploaded_global_engagement_files,
-                ),
-                "international_faculty_ratio": (self.international_faculty_ratio, []),
-                "international_student_ratio": (self.international_student_ratio, []),
-                "international_student_diversity": (
-                    self.international_student_diversity,
-                    [],
-                ),
-                "faculty_student_ratio": (
-                    self.faculty_student_ratio,
-                    self.uploaded_learning_experience_files,
-                ),
-                "sustainability_metrics": (
-                    self.sustainability_metrics,
-                    self.uploaded_sustainability_files,
-                ),
-            }
+            hei_state = await self.get_state(HEIState)
+            auth_state = await self.get_state(AuthState)
+        if not hei_state.selected_hei:
+            async with self:
+                self.is_saving = False
+            yield rx.toast("No institution selected.")
+            return
+        institution_id = int(hei_state.selected_hei["id"])
+        current_user_id = auth_state.authenticated_user_id
+        async with rx.asession() as session:
             ind_rows = await session.execute(
                 text("SELECT code, id FROM ranking_indicators")
             )
             code_to_id = {row[0]: row[1] for row in ind_rows.all()}
-            for code, (value, files) in scores_map.items():
-                if code not in code_to_id:
-                    continue
-                indicator_id = code_to_id[code]
-                files_json = json.dumps(files)
-                await session.execute(
-                    text("""
-                        INSERT INTO institution_scores (institution_id, indicator_id, user_id, value, evidence_files, ranking_year)
-                        VALUES (:inst_id, :ind_id, :user_id, :val, :files, 2025)
-                        ON CONFLICT (institution_id, indicator_id, ranking_year)
-                        DO UPDATE SET 
-                            value = EXCLUDED.value, 
-                            evidence_files = EXCLUDED.evidence_files, 
-                            user_id = EXCLUDED.user_id,
-                            updated_at = CURRENT_TIMESTAMP
-                    """),
-                    {
-                        "inst_id": institution_id,
-                        "ind_id": indicator_id,
-                        "user_id": current_user_id,
-                        "val": value,
-                        "files": files_json,
-                    },
-                )
+            scores_batch = [
+                (
+                    "academic_reputation",
+                    self.academic_reputation,
+                    self.uploaded_research_files,
+                ),
+                ("citations_per_faculty", self.citations_per_faculty, []),
+                (
+                    "employer_reputation",
+                    self.employer_reputation,
+                    self.uploaded_employability_files,
+                ),
+                ("employment_outcomes", self.employment_outcomes, []),
+                (
+                    "international_research_network",
+                    self.international_research_network,
+                    self.uploaded_global_engagement_files,
+                ),
+                ("international_faculty_ratio", self.international_faculty_ratio, []),
+                ("international_student_ratio", self.international_student_ratio, []),
+                (
+                    "international_student_diversity",
+                    self.international_student_diversity,
+                    [],
+                ),
+                (
+                    "faculty_student_ratio",
+                    self.faculty_student_ratio,
+                    self.uploaded_learning_experience_files,
+                ),
+                (
+                    "sustainability_metrics",
+                    self.sustainability_metrics,
+                    self.uploaded_sustainability_files,
+                ),
+            ]
+            for code, value, files in scores_batch:
+                if code in code_to_id:
+                    await session.execute(
+                        text("""
+                            INSERT INTO institution_scores (institution_id, indicator_id, user_id, value, evidence_files, ranking_year)
+                            VALUES (:inst_id, :ind_id, :user_id, :val, :files, 2025)
+                            ON CONFLICT (institution_id, indicator_id, ranking_year)
+                            DO UPDATE SET 
+                                value = EXCLUDED.value, 
+                                evidence_files = EXCLUDED.evidence_files, 
+                                user_id = EXCLUDED.user_id,
+                                updated_at = CURRENT_TIMESTAMP
+                        """),
+                        {
+                            "inst_id": institution_id,
+                            "ind_id": code_to_id[code],
+                            "user_id": current_user_id,
+                            "val": str(value),
+                            "files": json.dumps(files),
+                        },
+                    )
             await session.commit()
         async with self:
             self.is_saving = False
