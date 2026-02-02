@@ -1,7 +1,7 @@
 import reflex as rx
 from app.states.dashboard_state import DashboardState
 from app.states.hei_state import HEIState
-from app.components.design_system import DS, ds_card, ds_button
+from app.components.design_system import DS
 
 
 def numeric_input_metric(
@@ -1022,106 +1022,6 @@ def data_entry_forms() -> rx.Component:
     )
 
 
-def initial_assessment_modal() -> rx.Component:
-    """Prompts the user about prior formal assessments."""
-    return rx.el.div(
-        rx.el.div(
-            ds_card(
-                rx.el.div(
-                    rx.el.div(
-                        rx.icon(
-                            "clipboard-list", class_name="h-12 w-12 text-blue-600 mb-4"
-                        ),
-                        rx.el.h2(
-                            "Formal Assessment Check",
-                            class_name="text-2xl font-bold text-gray-900 mb-2",
-                        ),
-                        rx.el.p(
-                            "Has your institution conducted a formal assessment of QS 2025 metrics in the last 6 months?",
-                            class_name="text-gray-600 mb-8",
-                        ),
-                        class_name="text-center",
-                    ),
-                    rx.el.div(
-                        ds_button(
-                            "Yes, I have assessed scores",
-                            on_click=DashboardState.handle_yes_assessment,
-                            class_name="w-full mb-3",
-                        ),
-                        ds_button(
-                            "No, start fresh assessment",
-                            variant="secondary",
-                            on_click=DashboardState.handle_no_assessment,
-                            class_name="w-full",
-                        ),
-                        class_name="flex flex-col w-full",
-                    ),
-                    class_name="flex flex-col items-center",
-                ),
-                class_name="max-w-md w-full p-10",
-            ),
-            class_name="flex items-center justify-center min-h-screen p-4",
-        ),
-        class_name="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[150] overflow-y-auto",
-    )
-
-
-def formal_assessment_form() -> rx.Component:
-    """Simplified form for users with pre-calculated aggregate scores."""
-    return rx.el.div(
-        rx.el.div(
-            rx.el.h2(
-                "Input Formally Assessed Scores",
-                class_name="text-xl font-bold text-gray-900 mb-2",
-            ),
-            rx.el.p(
-                "Enter the aggregate scores (0-100) per category as determined by your formal audit.",
-                class_name="text-sm text-gray-500 mb-8",
-            ),
-            class_name="border-b pb-4 mb-8",
-        ),
-        rx.el.div(
-            numeric_input_metric(
-                "Overall Research Score",
-                DashboardState.academic_reputation,
-                DashboardState.academic_reputation_points,
-                50,
-                DashboardState.set_academic_reputation,
-            ),
-            numeric_input_metric(
-                "Overall Employability Score",
-                DashboardState.employer_reputation,
-                DashboardState.employer_reputation_points,
-                20,
-                DashboardState.set_employer_reputation,
-            ),
-            numeric_input_metric(
-                "Overall Global Engagement Score",
-                DashboardState.international_research_network,
-                DashboardState.international_research_network_points,
-                15,
-                DashboardState.set_international_research_network,
-            ),
-            numeric_input_metric(
-                "Overall Learning Experience Score",
-                DashboardState.faculty_student_ratio,
-                DashboardState.faculty_student_ratio_points,
-                10,
-                DashboardState.set_faculty_student_ratio,
-            ),
-            numeric_input_metric(
-                "Overall Sustainability Score",
-                DashboardState.sustainability_metrics,
-                DashboardState.sustainability_metrics_points,
-                5,
-                DashboardState.set_sustainability_metrics,
-            ),
-            class_name="grid grid-cols-1 md:grid-cols-2 gap-6",
-        ),
-        class_name="animate-in fade-in slide-in-from-bottom-4 duration-500",
-    )
-
-
 def dashboard_stat_cards() -> rx.Component:
     """Row of summary cards for the assessment top-view using DS tokens."""
     from app.components.design_system import ds_stat_card
@@ -1147,10 +1047,179 @@ def dashboard_stat_cards() -> rx.Component:
     )
 
 
-def dashboard_content() -> rx.Component:
-    """Aggregated assessment content view with improved spacing."""
+def initial_assessment_modal() -> rx.Component:
+    """Modal asking the primary question before data entry."""
     return rx.el.div(
-        rx.cond(DashboardState.show_initial_question, initial_assessment_modal(), None),
+        rx.el.div(
+            rx.el.div(
+                rx.icon("moon", class_name="h-12 w-12 text-blue-600 mb-4"),
+                rx.el.h2(
+                    "Assessment Entry Context",
+                    class_name="text-2xl font-bold text-gray-900 mb-4",
+                ),
+                rx.el.p(
+                    "Has your institution conducted a formal assessment of QS 2025 metrics in the last 6 months?",
+                    class_name="text-gray-600 mb-8",
+                ),
+                rx.el.div(
+                    rx.el.button(
+                        "Yes, I have assessed scores",
+                        on_click=lambda: DashboardState.set_formal_path(True),
+                        class_name="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all mb-3",
+                    ),
+                    rx.el.button(
+                        "No, start fresh assessment",
+                        on_click=lambda: DashboardState.set_formal_path(False),
+                        class_name="w-full py-3 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-50 transition-all",
+                    ),
+                    class_name="flex flex-col w-full",
+                ),
+                class_name="bg-white p-10 rounded-[2.5rem] shadow-2xl max-w-md w-full text-center",
+            ),
+            class_name="fixed inset-0 z-[200] flex items-center justify-center bg-gray-900/60 backdrop-blur-md px-4",
+        ),
+        class_name=rx.cond(DashboardState.show_initial_question, "block", "hidden"),
+    )
+
+
+def formal_assessment_form() -> rx.Component:
+    """Streamlined form for users with pre-calculated aggregate scores."""
+    return rx.el.div(
+        rx.el.div(
+            rx.el.div(
+                rx.el.div(
+                    rx.el.h2(
+                        "Pre-Assessed Score Entry",
+                        class_name="text-xl font-bold text-gray-900",
+                    ),
+                    rx.el.p(
+                        "Input your aggregate scores and upload evidence from your formal institutional assessment.",
+                        class_name="text-sm text-gray-500 mt-1",
+                    ),
+                ),
+                rx.el.div(
+                    rx.el.p(
+                        "Total Weighted Score",
+                        class_name="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1",
+                    ),
+                    rx.el.p(
+                        f"{DashboardState.formal_total_weighted_score} / 100",
+                        class_name="text-3xl font-black text-blue-600",
+                    ),
+                    class_name="bg-blue-50 px-6 py-4 rounded-2xl border border-blue-100 text-right",
+                ),
+                class_name="flex items-center justify-between mb-8",
+            )
+        ),
+        rx.el.div(
+            rx.el.div(
+                numeric_input_metric(
+                    "Research & Discovery (50%)",
+                    DashboardState.formal_research_score,
+                    rx.Var.create(DashboardState.formal_research_score.to(float) * 0.5),
+                    50,
+                    DashboardState.set_formal_research_score,
+                ),
+                file_upload_section(
+                    "Research Evidence",
+                    "upload_formal_research",
+                    DashboardState.handle_formal_research_upload,
+                    DashboardState.uploaded_formal_research_files,
+                    DashboardState.is_uploading_formal_research,
+                    DashboardState.delete_formal_research_file,
+                ),
+                class_name="space-y-4",
+            ),
+            rx.el.div(
+                numeric_input_metric(
+                    "Employability & Outcomes (20%)",
+                    DashboardState.formal_employability_score,
+                    rx.Var.create(
+                        DashboardState.formal_employability_score.to(float) * 0.2
+                    ),
+                    20,
+                    DashboardState.set_formal_employability_score,
+                ),
+                file_upload_section(
+                    "Employability Evidence",
+                    "upload_formal_employability",
+                    DashboardState.handle_formal_employability_upload,
+                    DashboardState.uploaded_formal_employability_files,
+                    DashboardState.is_uploading_formal_employability,
+                    DashboardState.delete_formal_employability_file,
+                ),
+                class_name="space-y-4",
+            ),
+            rx.el.div(
+                numeric_input_metric(
+                    "Global Engagement (15%)",
+                    DashboardState.formal_global_engagement_score,
+                    rx.Var.create(
+                        DashboardState.formal_global_engagement_score.to(float) * 0.15
+                    ),
+                    15,
+                    DashboardState.set_formal_global_engagement_score,
+                ),
+                file_upload_section(
+                    "Global Engagement Evidence",
+                    "upload_formal_global",
+                    DashboardState.handle_formal_global_upload,
+                    DashboardState.uploaded_formal_global_files,
+                    DashboardState.is_uploading_formal_global,
+                    DashboardState.delete_formal_global_file,
+                ),
+                class_name="space-y-4",
+            ),
+            rx.el.div(
+                numeric_input_metric(
+                    "Learning Experience (10%)",
+                    DashboardState.formal_learning_experience_score,
+                    rx.Var.create(
+                        DashboardState.formal_learning_experience_score.to(float) * 0.1
+                    ),
+                    10,
+                    DashboardState.set_formal_learning_experience_score,
+                ),
+                file_upload_section(
+                    "Learning Experience Evidence",
+                    "upload_formal_learning",
+                    DashboardState.handle_formal_learning_upload,
+                    DashboardState.uploaded_formal_learning_files,
+                    DashboardState.is_uploading_formal_learning,
+                    DashboardState.delete_formal_learning_file,
+                ),
+                class_name="space-y-4",
+            ),
+            rx.el.div(
+                numeric_input_metric(
+                    "Sustainability (5%)",
+                    DashboardState.formal_sustainability_score,
+                    rx.Var.create(
+                        DashboardState.formal_sustainability_score.to(float) * 0.05
+                    ),
+                    5,
+                    DashboardState.set_formal_sustainability_score,
+                ),
+                file_upload_section(
+                    "Sustainability Evidence",
+                    "upload_formal_sustainability",
+                    DashboardState.handle_formal_sustainability_upload,
+                    DashboardState.uploaded_formal_sustainability_files,
+                    DashboardState.is_uploading_formal_sustainability,
+                    DashboardState.delete_formal_sustainability_file,
+                ),
+                class_name="space-y-4",
+            ),
+            class_name="grid grid-cols-1 md:grid-cols-2 gap-8 items-start",
+        ),
+        class_name="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm",
+    )
+
+
+def dashboard_content() -> rx.Component:
+    """Aggregated assessment content view with improved spacing and dual-path logic."""
+    return rx.el.div(
+        initial_assessment_modal(),
         dashboard_header(),
         dashboard_stat_cards(),
         rx.cond(

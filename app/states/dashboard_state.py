@@ -22,8 +22,28 @@ class DashboardState(rx.State):
     international_student_diversity: str = ""
     faculty_student_ratio: int = 0
     sustainability_metrics: int = 0
+    formal_research_score: int = 0
+    formal_employability_score: int = 0
+    formal_global_engagement_score: int = 0
+    formal_learning_experience_score: int = 0
+    formal_sustainability_score: int = 0
     show_initial_question: bool = True
     has_formal_assessment: bool = False
+    uploaded_formal_research_files: list[str] = []
+    uploaded_formal_employability_files: list[str] = []
+    uploaded_formal_global_files: list[str] = []
+    uploaded_formal_learning_files: list[str] = []
+    uploaded_formal_sustainability_files: list[str] = []
+    is_uploading_formal_research: bool = False
+    is_uploading_formal_employability: bool = False
+    is_uploading_formal_global: bool = False
+    is_uploading_formal_learning: bool = False
+    is_uploading_formal_sustainability: bool = False
+    upload_progress_formal_research: int = 0
+    upload_progress_formal_employability: int = 0
+    upload_progress_formal_global: int = 0
+    upload_progress_formal_learning: int = 0
+    upload_progress_formal_sustainability: int = 0
     uploaded_research_files: list[str] = []
     uploaded_employability_files: list[str] = []
     uploaded_global_engagement_files: list[str] = []
@@ -132,6 +152,18 @@ class DashboardState(rx.State):
         return self.sustainability_metrics_points
 
     @rx.var(cache=True)
+    def formal_total_weighted_score(self) -> float:
+        """Calculate total weighted score for formal assessment path."""
+        return round(
+            float(self.formal_research_score) * 0.5
+            + float(self.formal_employability_score) * 0.2
+            + float(self.formal_global_engagement_score) * 0.15
+            + float(self.formal_learning_experience_score) * 0.1
+            + float(self.formal_sustainability_score) * 0.05,
+            2,
+        )
+
+    @rx.var(cache=True)
     def progress(self) -> int:
         """Calculate completion progress based on filled fields."""
         metrics = [
@@ -226,14 +258,37 @@ class DashboardState(rx.State):
         )
 
     @rx.event
-    def handle_yes_assessment(self):
-        self.has_formal_assessment = True
+    def set_formal_path(self, has_formal: bool):
+        self.has_formal_assessment = has_formal
         self.show_initial_question = False
 
     @rx.event
-    def handle_no_assessment(self):
-        self.has_formal_assessment = False
-        self.show_initial_question = False
+    def set_formal_research_score(self, value: str):
+        self.formal_research_score = self._validate_and_clamp("formal_research", value)
+
+    @rx.event
+    def set_formal_employability_score(self, value: str):
+        self.formal_employability_score = self._validate_and_clamp(
+            "formal_employability", value
+        )
+
+    @rx.event
+    def set_formal_global_engagement_score(self, value: str):
+        self.formal_global_engagement_score = self._validate_and_clamp(
+            "formal_global", value
+        )
+
+    @rx.event
+    def set_formal_learning_experience_score(self, value: str):
+        self.formal_learning_experience_score = self._validate_and_clamp(
+            "formal_learning", value
+        )
+
+    @rx.event
+    def set_formal_sustainability_score(self, value: str):
+        self.formal_sustainability_score = self._validate_and_clamp(
+            "formal_sustainability", value
+        )
 
     async def _save_uploaded_file(
         self, file: rx.UploadFile, category: str
@@ -379,6 +434,116 @@ class DashboardState(rx.State):
             f for f in self.uploaded_sustainability_files if f != filename
         ]
 
+    @rx.event
+    async def handle_formal_research_upload(self, files: list[rx.UploadFile]):
+        if not files:
+            return
+        self.is_uploading_formal_research = True
+        self.upload_progress_formal_research = 0
+        total = len(files)
+        for i, file in enumerate(files):
+            saved_path = await self._save_uploaded_file(file, "formal_research")
+            if saved_path:
+                self.uploaded_formal_research_files.append(saved_path)
+            self.upload_progress_formal_research = int((i + 1) / total * 100)
+            yield
+        self.is_uploading_formal_research = False
+        yield rx.clear_selected_files("upload_formal_research")
+
+    @rx.event
+    async def handle_formal_employability_upload(self, files: list[rx.UploadFile]):
+        if not files:
+            return
+        self.is_uploading_formal_employability = True
+        self.upload_progress_formal_employability = 0
+        total = len(files)
+        for i, file in enumerate(files):
+            saved_path = await self._save_uploaded_file(file, "formal_employability")
+            if saved_path:
+                self.uploaded_formal_employability_files.append(saved_path)
+            self.upload_progress_formal_employability = int((i + 1) / total * 100)
+            yield
+        self.is_uploading_formal_employability = False
+        yield rx.clear_selected_files("upload_formal_employability")
+
+    @rx.event
+    async def handle_formal_global_upload(self, files: list[rx.UploadFile]):
+        if not files:
+            return
+        self.is_uploading_formal_global = True
+        self.upload_progress_formal_global = 0
+        total = len(files)
+        for i, file in enumerate(files):
+            saved_path = await self._save_uploaded_file(file, "formal_global")
+            if saved_path:
+                self.uploaded_formal_global_files.append(saved_path)
+            self.upload_progress_formal_global = int((i + 1) / total * 100)
+            yield
+        self.is_uploading_formal_global = False
+        yield rx.clear_selected_files("upload_formal_global")
+
+    @rx.event
+    async def handle_formal_learning_upload(self, files: list[rx.UploadFile]):
+        if not files:
+            return
+        self.is_uploading_formal_learning = True
+        self.upload_progress_formal_learning = 0
+        total = len(files)
+        for i, file in enumerate(files):
+            saved_path = await self._save_uploaded_file(file, "formal_learning")
+            if saved_path:
+                self.uploaded_formal_learning_files.append(saved_path)
+            self.upload_progress_formal_learning = int((i + 1) / total * 100)
+            yield
+        self.is_uploading_formal_learning = False
+        yield rx.clear_selected_files("upload_formal_learning")
+
+    @rx.event
+    async def handle_formal_sustainability_upload(self, files: list[rx.UploadFile]):
+        if not files:
+            return
+        self.is_uploading_formal_sustainability = True
+        self.upload_progress_formal_sustainability = 0
+        total = len(files)
+        for i, file in enumerate(files):
+            saved_path = await self._save_uploaded_file(file, "formal_sustainability")
+            if saved_path:
+                self.uploaded_formal_sustainability_files.append(saved_path)
+            self.upload_progress_formal_sustainability = int((i + 1) / total * 100)
+            yield
+        self.is_uploading_formal_sustainability = False
+        yield rx.clear_selected_files("upload_formal_sustainability")
+
+    @rx.event
+    def delete_formal_research_file(self, filename: str):
+        self.uploaded_formal_research_files = [
+            f for f in self.uploaded_formal_research_files if f != filename
+        ]
+
+    @rx.event
+    def delete_formal_employability_file(self, filename: str):
+        self.uploaded_formal_employability_files = [
+            f for f in self.uploaded_formal_employability_files if f != filename
+        ]
+
+    @rx.event
+    def delete_formal_global_file(self, filename: str):
+        self.uploaded_formal_global_files = [
+            f for f in self.uploaded_formal_global_files if f != filename
+        ]
+
+    @rx.event
+    def delete_formal_learning_file(self, filename: str):
+        self.uploaded_formal_learning_files = [
+            f for f in self.uploaded_formal_learning_files if f != filename
+        ]
+
+    @rx.event
+    def delete_formal_sustainability_file(self, filename: str):
+        self.uploaded_formal_sustainability_files = [
+            f for f in self.uploaded_formal_sustainability_files if f != filename
+        ]
+
     @rx.event(background=True)
     async def on_load(self):
         """Load existing data for the selected institution."""
@@ -404,8 +569,6 @@ class DashboardState(rx.State):
             )
             data = rows.all()
             async with self:
-                if len(data) > 0:
-                    self.show_initial_question = False
                 for code, value, evidence, r_status in data:
                     if r_status:
                         self.review_status = r_status
