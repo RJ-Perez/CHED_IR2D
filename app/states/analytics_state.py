@@ -68,8 +68,8 @@ class AnalyticsState(rx.State):
             }
 
     def _clean_json_response(self, text: str) -> str:
-        """Sanitizes AI response text to ensure it is valid parseable JSON without corrupting string values.
-        Specifically prevents the removal of spaces within string values.
+        """Sanitizes AI response text to ensure it is valid parseable JSON.
+        Handles markdown blocks, control characters in strings, and single-quoted keys.
         """
         if not text:
             return ""
@@ -81,6 +81,22 @@ class AnalyticsState(rx.State):
         if start != -1 and end != -1:
             text = text[start : end + 1]
         text = re.sub(",(\\s*[}\\]])", "\\1", text)
+        text = text.replace("\t", "\\t")
+
+        @rx.event
+        def escape_string_content(match):
+            content = match.group(1)
+            content = content.replace(
+                """
+""",
+                "\\n",
+            ).replace("\r", "\\r")
+            return f'"{content}"'
+
+        text = re.sub(
+            '"([^"\\\\\\n]*(?:\\\\.[^"\\\\\\n]*)*)"', escape_string_content, text
+        )
+        text = re.sub("'(\\w+)'(\\s*:)", '"\\1"\\2', text)
         return text
 
     def _parse_float(self, value: str) -> float:
