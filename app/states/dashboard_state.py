@@ -22,6 +22,8 @@ class DashboardState(rx.State):
     international_student_diversity: str = ""
     faculty_student_ratio: int = 0
     sustainability_metrics: int = 0
+    show_initial_question: bool = True
+    has_formal_assessment: bool = False
     uploaded_research_files: list[str] = []
     uploaded_employability_files: list[str] = []
     uploaded_global_engagement_files: list[str] = []
@@ -223,6 +225,16 @@ class DashboardState(rx.State):
             "sustainability_metrics", value
         )
 
+    @rx.event
+    def handle_yes_assessment(self):
+        self.has_formal_assessment = True
+        self.show_initial_question = False
+
+    @rx.event
+    def handle_no_assessment(self):
+        self.has_formal_assessment = False
+        self.show_initial_question = False
+
     async def _save_uploaded_file(
         self, file: rx.UploadFile, category: str
     ) -> str | None:
@@ -392,6 +404,8 @@ class DashboardState(rx.State):
             )
             data = rows.all()
             async with self:
+                if len(data) > 0:
+                    self.show_initial_question = False
                 for code, value, evidence, r_status in data:
                     if r_status:
                         self.review_status = r_status

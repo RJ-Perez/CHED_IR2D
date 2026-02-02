@@ -1,7 +1,7 @@
 import reflex as rx
 from app.states.dashboard_state import DashboardState
 from app.states.hei_state import HEIState
-from app.components.design_system import DS
+from app.components.design_system import DS, ds_card, ds_button
 
 
 def numeric_input_metric(
@@ -1022,6 +1022,106 @@ def data_entry_forms() -> rx.Component:
     )
 
 
+def initial_assessment_modal() -> rx.Component:
+    """Prompts the user about prior formal assessments."""
+    return rx.el.div(
+        rx.el.div(
+            ds_card(
+                rx.el.div(
+                    rx.el.div(
+                        rx.icon(
+                            "clipboard-list", class_name="h-12 w-12 text-blue-600 mb-4"
+                        ),
+                        rx.el.h2(
+                            "Formal Assessment Check",
+                            class_name="text-2xl font-bold text-gray-900 mb-2",
+                        ),
+                        rx.el.p(
+                            "Has your institution conducted a formal assessment of QS 2025 metrics in the last 6 months?",
+                            class_name="text-gray-600 mb-8",
+                        ),
+                        class_name="text-center",
+                    ),
+                    rx.el.div(
+                        ds_button(
+                            "Yes, I have assessed scores",
+                            on_click=DashboardState.handle_yes_assessment,
+                            class_name="w-full mb-3",
+                        ),
+                        ds_button(
+                            "No, start fresh assessment",
+                            variant="secondary",
+                            on_click=DashboardState.handle_no_assessment,
+                            class_name="w-full",
+                        ),
+                        class_name="flex flex-col w-full",
+                    ),
+                    class_name="flex flex-col items-center",
+                ),
+                class_name="max-w-md w-full p-10",
+            ),
+            class_name="flex items-center justify-center min-h-screen p-4",
+        ),
+        class_name="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[150] overflow-y-auto",
+    )
+
+
+def formal_assessment_form() -> rx.Component:
+    """Simplified form for users with pre-calculated aggregate scores."""
+    return rx.el.div(
+        rx.el.div(
+            rx.el.h2(
+                "Input Formally Assessed Scores",
+                class_name="text-xl font-bold text-gray-900 mb-2",
+            ),
+            rx.el.p(
+                "Enter the aggregate scores (0-100) per category as determined by your formal audit.",
+                class_name="text-sm text-gray-500 mb-8",
+            ),
+            class_name="border-b pb-4 mb-8",
+        ),
+        rx.el.div(
+            numeric_input_metric(
+                "Overall Research Score",
+                DashboardState.academic_reputation,
+                DashboardState.academic_reputation_points,
+                50,
+                DashboardState.set_academic_reputation,
+            ),
+            numeric_input_metric(
+                "Overall Employability Score",
+                DashboardState.employer_reputation,
+                DashboardState.employer_reputation_points,
+                20,
+                DashboardState.set_employer_reputation,
+            ),
+            numeric_input_metric(
+                "Overall Global Engagement Score",
+                DashboardState.international_research_network,
+                DashboardState.international_research_network_points,
+                15,
+                DashboardState.set_international_research_network,
+            ),
+            numeric_input_metric(
+                "Overall Learning Experience Score",
+                DashboardState.faculty_student_ratio,
+                DashboardState.faculty_student_ratio_points,
+                10,
+                DashboardState.set_faculty_student_ratio,
+            ),
+            numeric_input_metric(
+                "Overall Sustainability Score",
+                DashboardState.sustainability_metrics,
+                DashboardState.sustainability_metrics_points,
+                5,
+                DashboardState.set_sustainability_metrics,
+            ),
+            class_name="grid grid-cols-1 md:grid-cols-2 gap-6",
+        ),
+        class_name="animate-in fade-in slide-in-from-bottom-4 duration-500",
+    )
+
+
 def dashboard_stat_cards() -> rx.Component:
     """Row of summary cards for the assessment top-view using DS tokens."""
     from app.components.design_system import ds_stat_card
@@ -1050,9 +1150,14 @@ def dashboard_stat_cards() -> rx.Component:
 def dashboard_content() -> rx.Component:
     """Aggregated assessment content view with improved spacing."""
     return rx.el.div(
+        rx.cond(DashboardState.show_initial_question, initial_assessment_modal(), None),
         dashboard_header(),
         dashboard_stat_cards(),
-        data_entry_forms(),
+        rx.cond(
+            DashboardState.has_formal_assessment,
+            formal_assessment_form(),
+            data_entry_forms(),
+        ),
         bottom_action_bar(),
         class_name="max-w-7xl mx-auto pb-12 px-4",
     )
