@@ -37,6 +37,7 @@ class AnalyticsState(rx.State):
     sustainability_score: int = 0
     overall_score: int = 0
     review_status: str = ""
+    is_loading: bool = False
     research_comparison_data: list[dict[str, str | int | float]] = []
     employability_comparison_data: list[dict[str, str | int | float]] = []
     global_engagement_comparison_data: list[dict[str, str | int | float]] = []
@@ -111,162 +112,172 @@ class AnalyticsState(rx.State):
     async def on_load(self):
         """Optimized: Batched database queries and reduced context switches."""
         async with self:
-            hei_state = await self.get_state(HEIState)
-            if not hei_state.selected_hei:
-                return
-            institution_id = int(hei_state.selected_hei["id"])
-        async with rx.asession() as session:
-            scores_query = await session.execute(
-                text("""
-                SELECT i.code, s.value, s.review_status
-                FROM institution_scores s
-                JOIN ranking_indicators i ON s.indicator_id = i.id
-                WHERE s.institution_id = :inst_id AND s.ranking_year = 2025
-                """),
-                {"inst_id": institution_id},
+            self.is_loading = True
+        try:
+            async with self:
+                hei_state = await self.get_state(HEIState)
+                if not hei_state.selected_hei:
+                    return
+                institution_id = int(hei_state.selected_hei["id"])
+            async with rx.asession() as session:
+                scores_query = await session.execute(
+                    text("""
+                    SELECT i.code, s.value, s.review_status
+                    FROM institution_scores s
+                    JOIN ranking_indicators i ON s.indicator_id = i.id
+                    WHERE s.institution_id = :inst_id AND s.ranking_year = 2025
+                    """),
+                    {"inst_id": institution_id},
+                )
+                all_rows = scores_query.all()
+            ncr_avgs_task = asyncio.create_task(self._calculate_ncr_averages())
+            score_map = {row[0]: self._parse_float(row[1]) for row in all_rows}
+            review_status = all_rows[0][2] if all_rows else "Pending"
+            academic_rep = score_map.get("academic_reputation", 0.0)
+            citations = score_map.get("citations_per_faculty", 0.0)
+            emp_rep = score_map.get("employer_reputation", 0.0)
+            emp_outcomes = score_map.get("employment_outcomes", 0.0)
+            int_research_net = score_map.get("international_research_network", 0.0)
+            int_faculty_ratio = score_map.get("international_faculty_ratio", 0.0)
+            int_student_ratio = score_map.get("international_student_ratio", 0.0)
+            faculty_student_ratio = score_map.get("faculty_student_ratio", 0.0)
+            sustainability = score_map.get("sustainability_metrics", 0.0)
+            ncr_avgs = await ncr_avgs_task
+            b_academic_rep = 100.0
+            b_citations = 100.0
+            b_emp_rep = 100.0
+            b_emp_outcomes = 100.0
+            b_int_research_net = 100.0
+            b_int_faculty_ratio = 25.0
+            b_int_student_ratio = 25.0
+            b_faculty_student_ratio = 8.0
+            b_sustainability = 100.0
+            s_academic_rep = (
+                min(100, academic_rep / b_academic_rep * 100) if b_academic_rep else 0
             )
-            all_rows = scores_query.all()
-        ncr_avgs_task = asyncio.create_task(self._calculate_ncr_averages())
-        score_map = {row[0]: self._parse_float(row[1]) for row in all_rows}
-        review_status = all_rows[0][2] if all_rows else "Pending"
-        academic_rep = score_map.get("academic_reputation", 0.0)
-        citations = score_map.get("citations_per_faculty", 0.0)
-        emp_rep = score_map.get("employer_reputation", 0.0)
-        emp_outcomes = score_map.get("employment_outcomes", 0.0)
-        int_research_net = score_map.get("international_research_network", 0.0)
-        int_faculty_ratio = score_map.get("international_faculty_ratio", 0.0)
-        int_student_ratio = score_map.get("international_student_ratio", 0.0)
-        faculty_student_ratio = score_map.get("faculty_student_ratio", 0.0)
-        sustainability = score_map.get("sustainability_metrics", 0.0)
-        ncr_avgs = await ncr_avgs_task
-        b_academic_rep = 100.0
-        b_citations = 100.0
-        b_emp_rep = 100.0
-        b_emp_outcomes = 100.0
-        b_int_research_net = 100.0
-        b_int_faculty_ratio = 25.0
-        b_int_student_ratio = 25.0
-        b_faculty_student_ratio = 8.0
-        b_sustainability = 100.0
-        s_academic_rep = (
-            min(100, academic_rep / b_academic_rep * 100) if b_academic_rep else 0
-        )
-        s_citations = min(100, citations / b_citations * 100) if b_citations else 0
-        s_emp_rep = min(100, emp_rep / b_emp_rep * 100) if b_emp_rep else 0
-        s_emp_outcomes = (
-            min(100, emp_outcomes / b_emp_outcomes * 100) if b_emp_outcomes else 0
-        )
-        s_int_research_net = (
-            min(100, int_research_net / b_int_research_net * 100)
-            if b_int_research_net
-            else 0
-        )
-        s_int_faculty_ratio = (
-            min(100, int_faculty_ratio / b_int_faculty_ratio * 100)
-            if b_int_faculty_ratio
-            else 0
-        )
-        s_int_student_ratio = (
-            min(100, int_student_ratio / b_int_student_ratio * 100)
-            if b_int_student_ratio
-            else 0
-        )
-        s_faculty_student = min(100, faculty_student_ratio)
-        s_sustainability = (
-            min(100, sustainability / b_sustainability * 100) if b_sustainability else 0
-        )
-        research_score = int(s_academic_rep * 0.6 + s_citations * 0.4)
-        employability_score = int(s_emp_rep * 0.75 + s_emp_outcomes * 0.25)
-        global_engagement_score = int(
-            (s_int_research_net + s_int_faculty_ratio + s_int_student_ratio) / 3
-        )
-        learning_experience_score = int(s_faculty_student)
-        sustainability_score = int(s_sustainability)
-        overall_score = int(
-            research_score * 0.5
-            + employability_score * 0.2
-            + global_engagement_score * 0.15
-            + learning_experience_score * 0.1
-            + sustainability_score * 0.05
-        )
-        async with self:
-            self.research_score = research_score
-            self.employability_score = employability_score
-            self.global_engagement_score = global_engagement_score
-            self.learning_experience_score = learning_experience_score
-            self.sustainability_score = sustainability_score
-            self.overall_score = overall_score
-            self.research_comparison_data = [
-                {
-                    "metric": "Academic Rep.",
-                    "You": academic_rep,
-                    "NCR Avg": ncr_avgs.get("academic_reputation", 0.0),
-                    "Target": b_academic_rep,
-                },
-                {
-                    "metric": "Citations/Faculty",
-                    "You": citations,
-                    "NCR Avg": ncr_avgs.get("citations_per_faculty", 0.0),
-                    "Target": b_citations,
-                },
-            ]
-            self.employability_comparison_data = [
-                {
-                    "metric": "Emp. Reputation",
-                    "You": emp_rep,
-                    "NCR Avg": ncr_avgs.get("employer_reputation", 0.0),
-                    "Target": b_emp_rep,
-                },
-                {
-                    "metric": "Emp. Outcomes",
-                    "You": emp_outcomes,
-                    "NCR Avg": ncr_avgs.get("employment_outcomes", 0.0),
-                    "Target": b_emp_outcomes,
-                },
-            ]
-            self.global_engagement_comparison_data = [
-                {
-                    "metric": "Research Network",
-                    "You": int_research_net,
-                    "NCR Avg": ncr_avgs.get("international_research_network", 0.0),
-                    "Target": b_int_research_net,
-                },
-                {
-                    "metric": "Int. Faculty %",
-                    "You": int_faculty_ratio,
-                    "NCR Avg": ncr_avgs.get("international_faculty_ratio", 0.0),
-                    "Target": b_int_faculty_ratio,
-                },
-                {
-                    "metric": "Int. Student %",
-                    "You": int_student_ratio,
-                    "NCR Avg": ncr_avgs.get("international_student_ratio", 0.0),
-                    "Target": b_int_student_ratio,
-                },
-            ]
-            self.learning_experience_comparison_data = [
-                {
-                    "metric": "Faculty:Student",
-                    "You": faculty_student_ratio,
-                    "NCR Avg": ncr_avgs.get("faculty_student_ratio", 0.0),
-                    "Target": b_faculty_student_ratio,
-                }
-            ]
-            self.sustainability_comparison_data = [
-                {
-                    "metric": "Sustainability",
-                    "You": sustainability,
-                    "NCR Avg": ncr_avgs.get("sustainability_metrics", 0.0),
-                    "Target": b_sustainability,
-                }
-            ]
-            self.ai_recommendations = self._get_fallback_recommendations(
-                research_score=self.research_score,
-                employability_score=self.employability_score,
-                global_engagement_score=self.global_engagement_score,
-                learning_experience_score=self.learning_experience_score,
-                sustainability_score=self.sustainability_score,
+            s_citations = min(100, citations / b_citations * 100) if b_citations else 0
+            s_emp_rep = min(100, emp_rep / b_emp_rep * 100) if b_emp_rep else 0
+            s_emp_outcomes = (
+                min(100, emp_outcomes / b_emp_outcomes * 100) if b_emp_outcomes else 0
             )
+            s_int_research_net = (
+                min(100, int_research_net / b_int_research_net * 100)
+                if b_int_research_net
+                else 0
+            )
+            s_int_faculty_ratio = (
+                min(100, int_faculty_ratio / b_int_faculty_ratio * 100)
+                if b_int_faculty_ratio
+                else 0
+            )
+            s_int_student_ratio = (
+                min(100, int_student_ratio / b_int_student_ratio * 100)
+                if b_int_student_ratio
+                else 0
+            )
+            s_faculty_student = min(100, faculty_student_ratio)
+            s_sustainability = (
+                min(100, sustainability / b_sustainability * 100)
+                if b_sustainability
+                else 0
+            )
+            research_score = int(s_academic_rep * 0.6 + s_citations * 0.4)
+            employability_score = int(s_emp_rep * 0.75 + s_emp_outcomes * 0.25)
+            global_engagement_score = int(
+                (s_int_research_net + s_int_faculty_ratio + s_int_student_ratio) / 3
+            )
+            learning_experience_score = int(s_faculty_student)
+            sustainability_score = int(s_sustainability)
+            overall_score = int(
+                research_score * 0.5
+                + employability_score * 0.2
+                + global_engagement_score * 0.15
+                + learning_experience_score * 0.1
+                + sustainability_score * 0.05
+            )
+            async with self:
+                self.research_score = research_score
+                self.employability_score = employability_score
+                self.global_engagement_score = global_engagement_score
+                self.learning_experience_score = learning_experience_score
+                self.sustainability_score = sustainability_score
+                self.overall_score = overall_score
+                self.research_comparison_data = [
+                    {
+                        "metric": "Academic Rep.",
+                        "You": academic_rep,
+                        "NCR Avg": ncr_avgs.get("academic_reputation", 0.0),
+                        "Target": b_academic_rep,
+                    },
+                    {
+                        "metric": "Citations/Faculty",
+                        "You": citations,
+                        "NCR Avg": ncr_avgs.get("citations_per_faculty", 0.0),
+                        "Target": b_citations,
+                    },
+                ]
+                self.employability_comparison_data = [
+                    {
+                        "metric": "Emp. Reputation",
+                        "You": emp_rep,
+                        "NCR Avg": ncr_avgs.get("employer_reputation", 0.0),
+                        "Target": b_emp_rep,
+                    },
+                    {
+                        "metric": "Emp. Outcomes",
+                        "You": emp_outcomes,
+                        "NCR Avg": ncr_avgs.get("employment_outcomes", 0.0),
+                        "Target": b_emp_outcomes,
+                    },
+                ]
+                self.global_engagement_comparison_data = [
+                    {
+                        "metric": "Research Network",
+                        "You": int_research_net,
+                        "NCR Avg": ncr_avgs.get("international_research_network", 0.0),
+                        "Target": b_int_research_net,
+                    },
+                    {
+                        "metric": "Int. Faculty %",
+                        "You": int_faculty_ratio,
+                        "NCR Avg": ncr_avgs.get("international_faculty_ratio", 0.0),
+                        "Target": b_int_faculty_ratio,
+                    },
+                    {
+                        "metric": "Int. Student %",
+                        "You": int_student_ratio,
+                        "NCR Avg": ncr_avgs.get("international_student_ratio", 0.0),
+                        "Target": b_int_student_ratio,
+                    },
+                ]
+                self.learning_experience_comparison_data = [
+                    {
+                        "metric": "Faculty:Student",
+                        "You": faculty_student_ratio,
+                        "NCR Avg": ncr_avgs.get("faculty_student_ratio", 0.0),
+                        "Target": b_faculty_student_ratio,
+                    }
+                ]
+                self.sustainability_comparison_data = [
+                    {
+                        "metric": "Sustainability",
+                        "You": sustainability,
+                        "NCR Avg": ncr_avgs.get("sustainability_metrics", 0.0),
+                        "Target": b_sustainability,
+                    }
+                ]
+                self.ai_recommendations = self._get_fallback_recommendations(
+                    research_score=self.research_score,
+                    employability_score=self.employability_score,
+                    global_engagement_score=self.global_engagement_score,
+                    learning_experience_score=self.learning_experience_score,
+                    sustainability_score=self.sustainability_score,
+                )
+        except Exception as e:
+            logging.exception(f"Error in AnalyticsState.on_load: {e}")
+        finally:
+            async with self:
+                self.is_loading = False
         yield AnalyticsState.generate_ai_recommendations(
             research_score=research_score,
             employability_score=employability_score,
