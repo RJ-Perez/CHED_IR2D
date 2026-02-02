@@ -19,7 +19,7 @@ TOOLTIP_PROPS = {
 @rx.memo
 def performance_pie_card(title: str, score: int, color: str, icon: str) -> rx.Component:
     """
-    Renders a donut chart for a specific metric with the score centered, using design system tokens.
+    Optimized: Memoized donut chart component to prevent unnecessary re-renders of the expensive Recharts engine.
     """
     chart_data = [
         {"name": "Score", "value": score, "fill": color},

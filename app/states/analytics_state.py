@@ -93,68 +93,36 @@ class AnalyticsState(rx.State):
 
     @rx.event(background=True)
     async def on_load(self):
-        """Fetch scores from database and calculate metrics."""
+        """Optimized: Batched database queries and reduced context switches."""
         async with self:
             hei_state = await self.get_state(HEIState)
             if not hei_state.selected_hei:
                 return
             institution_id = int(hei_state.selected_hei["id"])
-        ncr_avgs = await self._calculate_ncr_averages()
-        academic_rep = 0.0
-        citations = 0.0
-        emp_rep = 0.0
-        emp_outcomes = 0.0
-        int_research_net = 0.0
-        int_faculty_ratio = 0.0
-        int_student_ratio = 0.0
-        faculty_student_ratio = 0.0
-        sustainability = 0.0
         async with rx.asession() as session:
-            result = await session.execute(
+            scores_query = await session.execute(
                 text("""
-                SELECT 
-                    i.code, 
-                    s.value
+                SELECT i.code, s.value, s.review_status
                 FROM institution_scores s
                 JOIN ranking_indicators i ON s.indicator_id = i.id
                 WHERE s.institution_id = :inst_id AND s.ranking_year = 2025
                 """),
                 {"inst_id": institution_id},
             )
-        rows = result.all()
-        for code, val in rows:
-            async with rx.asession() as status_session:
-                status_result = await status_session.execute(
-                    text("""
-                    SELECT review_status 
-                    FROM institution_scores 
-                    WHERE institution_id = :inst_id 
-                    AND review_status IS NOT NULL 
-                    LIMIT 1
-                    """),
-                    {"inst_id": institution_id},
-                )
-                status_row = status_result.first()
-                async with self:
-                    self.review_status = status_row[0] if status_row else "Pending"
-            if code == "academic_reputation":
-                academic_rep = self._parse_float(val)
-            elif code == "citations_per_faculty":
-                citations = self._parse_float(val)
-            elif code == "employer_reputation":
-                emp_rep = self._parse_float(val)
-            elif code == "employment_outcomes":
-                emp_outcomes = self._parse_float(val)
-            elif code == "international_research_network":
-                int_research_net = self._parse_float(val)
-            elif code == "international_faculty_ratio":
-                int_faculty_ratio = self._parse_float(val)
-            elif code == "international_student_ratio":
-                int_student_ratio = self._parse_float(val)
-            elif code == "faculty_student_ratio":
-                faculty_student_ratio = self._parse_float(val)
-            elif code == "sustainability_metrics":
-                sustainability = self._parse_float(val)
+            all_rows = scores_query.all()
+        ncr_avgs_task = asyncio.create_task(self._calculate_ncr_averages())
+        score_map = {row[0]: self._parse_float(row[1]) for row in all_rows}
+        review_status = all_rows[0][2] if all_rows else "Pending"
+        academic_rep = score_map.get("academic_reputation", 0.0)
+        citations = score_map.get("citations_per_faculty", 0.0)
+        emp_rep = score_map.get("employer_reputation", 0.0)
+        emp_outcomes = score_map.get("employment_outcomes", 0.0)
+        int_research_net = score_map.get("international_research_network", 0.0)
+        int_faculty_ratio = score_map.get("international_faculty_ratio", 0.0)
+        int_student_ratio = score_map.get("international_student_ratio", 0.0)
+        faculty_student_ratio = score_map.get("faculty_student_ratio", 0.0)
+        sustainability = score_map.get("sustainability_metrics", 0.0)
+        ncr_avgs = await ncr_avgs_task
         b_academic_rep = 100.0
         b_citations = 100.0
         b_emp_rep = 100.0
