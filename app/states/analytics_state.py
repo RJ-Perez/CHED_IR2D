@@ -203,6 +203,7 @@ class AnalyticsState(rx.State):
                 self.learning_experience_score = learning_experience_score
                 self.sustainability_score = sustainability_score
                 self.overall_score = overall_score
+                self.review_status = review_status
                 self.research_comparison_data = [
                     {
                         "metric": "Academic Rep.",
