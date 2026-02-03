@@ -74,30 +74,31 @@ class AnalyticsState(rx.State):
         """
         if not text:
             return ""
-        text = re.sub("\\n?", "", text)
-        text = re.sub("\\n?", "", text)
+        text = re.sub("[a-zA-Z]*", "", text)
+        text = re.sub("", "", text)
         text = text.strip()
         start = text.find("{")
         end = text.rfind("}")
         if start != -1 and end != -1:
             text = text[start : end + 1]
-        text = re.sub(",(\\s*[}\\]])", "\\1", text)
-        text = text.replace("\t", "\\t")
+        text = re.sub(",(\\\\s*[}\\\\]])", "\\1", text)
+        text = re.sub("'([^']+)'\\\\s*:", '"\\1":', text)
 
         @rx.event
         def escape_string_content(match):
             content = match.group(1)
-            content = content.replace(
-                """
+            content = (
+                content.replace(
+                    """
 """,
-                "\\n",
-            ).replace("\r", "\\r")
+                    "\\n",
+                )
+                .replace("\r", "\\r")
+                .replace("\t", "\\t")
+            )
             return f'"{content}"'
 
-        text = re.sub(
-            '"([^"\\\\\\n]*(?:\\\\.[^"\\\\\\n]*)*)"', escape_string_content, text
-        )
-        text = re.sub("'(\\w+)'(\\s*:)", '"\\1"\\2', text)
+        text = re.sub('"([^"\\\\]*(?:\\\\.[^"\\\\]*)*)"', escape_string_content, text)
         return text
 
     def _parse_float(self, value: str) -> float:
