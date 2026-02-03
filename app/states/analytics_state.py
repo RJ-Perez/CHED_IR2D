@@ -109,31 +109,36 @@ class AnalyticsState(rx.State):
             logging.exception(f"Error parsing float: {e}")
             return 0.0
 
+    async def _fetch_scores(self, inst_id: int):
+        async with rx.asession() as session:
+            result = await session.execute(
+                text("""
+                SELECT i.code, s.value, s.review_status
+                FROM institution_scores s
+                JOIN ranking_indicators i ON s.indicator_id = i.id
+                WHERE s.institution_id = :inst_id AND s.ranking_year = 2025
+                """),
+                {"inst_id": inst_id},
+            )
+            return result.all()
+
     @rx.event(background=True)
     async def on_load(self):
-        """Optimized: Batched database queries and reduced context switches."""
+        """Optimized: Uses asyncio.gather for parallel database operations and batched state updates."""
         async with self:
             self.is_loading = True
         try:
             async with self:
                 hei_state = await self.get_state(HEIState)
                 if not hei_state.selected_hei:
+                    self.is_loading = False
                     return
                 institution_id = int(hei_state.selected_hei["id"])
-            async with rx.asession() as session:
-                scores_query = await session.execute(
-                    text("""
-                    SELECT i.code, s.value, s.review_status
-                    FROM institution_scores s
-                    JOIN ranking_indicators i ON s.indicator_id = i.id
-                    WHERE s.institution_id = :inst_id AND s.ranking_year = 2025
-                    """),
-                    {"inst_id": institution_id},
-                )
-                all_rows = scores_query.all()
-            ncr_avgs_task = asyncio.create_task(self._calculate_ncr_averages())
-            score_map = {row[0]: self._parse_float(row[1]) for row in all_rows}
-            review_status = all_rows[0][2] if all_rows else "Pending"
+            scores_data, ncr_avgs = await asyncio.gather(
+                self._fetch_scores(institution_id), self._calculate_ncr_averages()
+            )
+            score_map = {row[0]: self._parse_float(row[1]) for row in scores_data}
+            review_status = scores_data[0][2] if scores_data else "Pending"
             academic_rep = score_map.get("academic_reputation", 0.0)
             citations = score_map.get("citations_per_faculty", 0.0)
             emp_rep = score_map.get("employer_reputation", 0.0)
@@ -143,7 +148,6 @@ class AnalyticsState(rx.State):
             int_student_ratio = score_map.get("international_student_ratio", 0.0)
             faculty_student_ratio = score_map.get("faculty_student_ratio", 0.0)
             sustainability = score_map.get("sustainability_metrics", 0.0)
-            ncr_avgs = await ncr_avgs_task
             b_academic_rep = 100.0
             b_citations = 100.0
             b_emp_rep = 100.0
@@ -333,23 +337,25 @@ class AnalyticsState(rx.State):
         now = time.time()
         if inst_id in AI_RECOMMENDATIONS_CACHE:
             cache_entry = AI_RECOMMENDATIONS_CACHE[inst_id]
-            is_corrupt = False
-            if cache_entry.get("recommendations"):
+            is_expired = now - cache_entry["timestamp"] > CACHE_TTL
+            is_invalid = (
+                not cache_entry.get("recommendations")
+                or len(cache_entry["recommendations"]) == 0
+            )
+            if not is_invalid:
                 first_rec = cache_entry["recommendations"][0]
                 desc = first_rec.get("description", "")
-                if len(desc) > 50 and " " not in desc:
-                    is_corrupt = True
-            if now - cache_entry["timestamp"] < CACHE_TTL and (not is_corrupt):
-                logging.info(
-                    f"Using cached AI recommendations for institution {inst_id}"
-                )
+                if len(desc) > 40 and " " not in desc:
+                    is_invalid = True
+            if not is_expired and (not is_invalid):
+                logging.info(f"Using valid cached AI recommendations for {inst_id}")
                 async with self:
                     self.ai_recommendations = cache_entry["recommendations"]
                     self.is_generating_recommendations = False
                 return
-            elif is_corrupt:
+            else:
                 logging.warning(
-                    f"Detected corrupt cache entry for {inst_id}. Forcing refresh."
+                    f"Cache for {inst_id} is {('expired' if is_expired else 'invalid')}. Refreshing..."
                 )
         if not GOOGLE_AI_AVAILABLE:
             async with self:

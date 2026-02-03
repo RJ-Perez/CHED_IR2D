@@ -91,6 +91,7 @@ def chart_legend() -> rx.Component:
     )
 
 
+@rx.memo
 def research_chart() -> rx.Component:
     return rx.el.div(
         rx.el.h4(
@@ -143,6 +144,7 @@ def research_chart() -> rx.Component:
     )
 
 
+@rx.memo
 def employability_chart() -> rx.Component:
     return rx.el.div(
         rx.el.h4(
@@ -195,6 +197,7 @@ def employability_chart() -> rx.Component:
     )
 
 
+@rx.memo
 def global_engagement_chart() -> rx.Component:
     return rx.el.div(
         rx.el.h4(
@@ -247,6 +250,7 @@ def global_engagement_chart() -> rx.Component:
     )
 
 
+@rx.memo
 def learning_experience_chart() -> rx.Component:
     return rx.el.div(
         rx.el.h4(
@@ -299,6 +303,7 @@ def learning_experience_chart() -> rx.Component:
     )
 
 
+@rx.memo
 def sustainability_chart() -> rx.Component:
     return rx.el.div(
         rx.el.h4(
