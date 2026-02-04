@@ -12,12 +12,12 @@ def score_input_historical(
             rx.el.div(
                 rx.el.label(
                     label,
-                    class_name="text-xs font-bold text-amber-800 uppercase tracking-[0.1em] mb-1",
+                    class_name="text-xs font-bold text-emerald-800 uppercase tracking-[0.1em] mb-1",
                 ),
                 rx.cond(
                     tooltip != "",
                     rx.el.span(
-                        rx.icon("info", class_name="h-3 w-3 text-amber-400"),
+                        rx.icon("info", class_name="h-3 w-3 text-emerald-400"),
                         title=tooltip,
                         class_name="cursor-help ml-1.5",
                     ),
@@ -31,7 +31,7 @@ def score_input_historical(
                     placeholder="Enter score (0-100)",
                     on_change=on_change.debounce(300),
                     default_value=rx.cond(value == 0, "", value.to_string()),
-                    class_name="w-full px-4 py-3 bg-white border border-amber-200 rounded-xl focus:ring-4 focus:ring-amber-100/50 focus:border-amber-500 outline-none text-lg font-black text-amber-900 transition-all shadow-sm",
+                    class_name="w-full px-4 py-3 bg-white border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100/50 focus:border-emerald-500 outline-none text-lg font-black text-emerald-900 transition-all shadow-sm",
                 ),
                 class_name="relative",
             ),
@@ -39,18 +39,18 @@ def score_input_historical(
         ),
         rx.el.div(
             rx.el.div(
-                class_name="h-1.5 rounded-full bg-amber-500 transition-all duration-500 ease-out",
+                class_name="h-1.5 rounded-full bg-emerald-500 transition-all duration-500 ease-out",
                 style={"width": rx.cond(value > 0, value.to_string() + "%", "0%")},
             ),
-            class_name="w-full bg-amber-100/50 h-1.5 rounded-full overflow-hidden",
+            class_name="w-full bg-emerald-100/50 h-1.5 rounded-full overflow-hidden",
         ),
         rx.el.div(
-            rx.el.span("0", class_name="text-[8px] font-bold text-amber-300"),
-            rx.el.span("50", class_name="text-[8px] font-bold text-amber-300"),
-            rx.el.span("100", class_name="text-[8px] font-bold text-amber-300"),
+            rx.el.span("0", class_name="text-[8px] font-bold text-emerald-300"),
+            rx.el.span("50", class_name="text-[8px] font-bold text-emerald-300"),
+            rx.el.span("100", class_name="text-[8px] font-bold text-emerald-300"),
             class_name="flex justify-between px-0.5 mt-1",
         ),
-        class_name="group p-5 bg-amber-50/30 rounded-3xl border border-amber-100/50 hover:border-amber-300 hover:bg-white transition-all duration-300",
+        class_name="group p-5 bg-emerald-50/30 rounded-3xl border border-emerald-100/50 hover:border-emerald-300 hover:bg-white transition-all duration-300",
     )
 
 
@@ -62,7 +62,7 @@ def historical_trend_chart() -> rx.Component:
         ),
         rx.el.div(
             rx.el.div(
-                rx.el.span(class_name="w-3 h-3 rounded-full bg-amber-600 mr-2"),
+                rx.el.span(class_name="w-3 h-3 rounded-full bg-emerald-600 mr-2"),
                 rx.el.span("Average Score", class_name="text-xs text-gray-600"),
                 class_name="flex items-center mr-4",
             ),
@@ -72,7 +72,7 @@ def historical_trend_chart() -> rx.Component:
                 class_name="flex items-center mr-4",
             ),
             rx.el.div(
-                rx.el.span(class_name="w-3 h-3 rounded-full bg-emerald-600 mr-2"),
+                rx.el.span(class_name="w-3 h-3 rounded-full bg-emerald-500 mr-2"),
                 rx.el.span("Employer Rep", class_name="text-xs text-gray-600"),
                 class_name="flex items-center",
             ),
@@ -92,7 +92,7 @@ def historical_trend_chart() -> rx.Component:
             ),
             rx.recharts.line(
                 data_key="Average",
-                stroke="#d97706",
+                stroke="#059669",
                 stroke_width=3,
                 dot={"r": 4, "strokeWidth": 2},
                 active_dot={"r": 6},
@@ -127,7 +127,7 @@ def historical_trend_chart() -> rx.Component:
 def summary_table() -> rx.Component:
     return rx.el.div(
         rx.el.div(
-            rx.icon("table", class_name="h-5 w-5 text-amber-600 mr-2"),
+            rx.icon("table", class_name="h-5 w-5 text-emerald-600 mr-2"),
             rx.el.h3(
                 "Audited Data Comparison",
                 class_name="text-xl font-black text-slate-900",
@@ -200,13 +200,13 @@ def summary_table() -> rx.Component:
                                 rx.el.div(
                                     rx.el.span(
                                         row["Average"],
-                                        class_name="px-4 py-1.5 rounded-xl bg-amber-100 text-amber-900 font-black text-sm",
+                                        class_name="px-4 py-1.5 rounded-xl bg-emerald-100 text-emerald-900 font-black text-sm",
                                     ),
                                     class_name="flex justify-end",
                                 ),
                                 class_name="px-8 py-5 whitespace-nowrap",
                             ),
-                            class_name="border-b border-slate-50 last:border-0 hover:bg-amber-50/30 transition-colors duration-150",
+                            class_name="border-b border-slate-50 last:border-0 hover:bg-emerald-50/30 transition-colors duration-150",
                         ),
                     ),
                     class_name="bg-white divide-y divide-slate-50",
@@ -223,7 +223,7 @@ def historical_upload_section() -> rx.Component:
     return rx.el.div(
         rx.el.label(
             "Historical Evidence / Audit Documents",
-            class_name="text-xs font-bold text-amber-700 uppercase mb-3 block",
+            class_name="text-xs font-bold text-emerald-700 uppercase mb-3 block",
         ),
         rx.upload.root(
             rx.el.div(
@@ -231,24 +231,24 @@ def historical_upload_section() -> rx.Component:
                     HistoricalState.is_uploading,
                     rx.el.div(
                         rx.el.div(
-                            class_name="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"
+                            class_name="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"
                         ),
                         class_name="flex items-center justify-center p-8",
                     ),
                     rx.el.div(
-                        rx.icon("history", class_name="h-8 w-8 text-amber-400 mb-2"),
+                        rx.icon("history", class_name="h-8 w-8 text-emerald-400 mb-2"),
                         rx.el.p(
                             "Drop historical evidence files here",
-                            class_name="text-sm text-amber-700 font-medium",
+                            class_name="text-sm text-emerald-700 font-medium",
                         ),
                         rx.el.p(
                             "PDF, JPG, PNG allowed",
-                            class_name="text-xs text-amber-500 mt-1",
+                            class_name="text-xs text-emerald-500 mt-1",
                         ),
                         class_name="flex flex-col items-center p-8",
                     ),
                 ),
-                class_name="border-2 border-dashed border-amber-200 rounded-2xl bg-amber-50/30 hover:bg-amber-50 transition-colors cursor-pointer",
+                class_name="border-2 border-dashed border-emerald-200 rounded-2xl bg-emerald-50/30 hover:bg-emerald-50 transition-colors cursor-pointer",
             ),
             id="historical_upload",
             on_drop=HistoricalState.handle_upload(
@@ -266,18 +266,19 @@ def historical_upload_section() -> rx.Component:
                         ),
                         rx.el.span(
                             f.split("/").reverse()[0],
-                            class_name="text-xs text-amber-900 truncate flex-1",
+                            class_name="text-xs text-emerald-900 truncate flex-1",
                         ),
                         class_name="flex items-center min-w-0",
                     ),
                     rx.el.button(
                         rx.icon(
-                            "x", class_name="h-4 w-4 text-amber-400 hover:text-red-500"
+                            "x",
+                            class_name="h-4 w-4 text-emerald-400 hover:text-red-500",
                         ),
                         on_click=HistoricalState.delete_file(f),
                         class_name="p-1 ml-2",
                     ),
-                    class_name="flex items-center justify-between p-2 bg-white border border-amber-100 rounded-lg mt-2 shadow-sm",
+                    class_name="flex items-center justify-between p-2 bg-white border border-emerald-100 rounded-lg mt-2 shadow-sm",
                 ),
             ),
             class_name="mt-4",
@@ -296,29 +297,29 @@ def year_summary_card() -> rx.Component:
                     rx.el.div(
                         rx.el.p(
                             "Historical Coverage",
-                            class_name="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1",
+                            class_name="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1",
                         ),
                         rx.el.p(
                             f"{HistoricalState.historical_coverage_pct}% Complete",
-                            class_name="text-lg font-black text-amber-900",
+                            class_name="text-lg font-black text-emerald-900",
                         ),
                         class_name="mb-4",
                     ),
                     rx.el.div(
                         rx.el.div(
-                            class_name="bg-amber-500 h-2 rounded-full transition-all duration-500",
+                            class_name="bg-emerald-500 h-2 rounded-full transition-all duration-500",
                             style={
                                 "width": f"{HistoricalState.historical_coverage_pct}%"
                             },
                         ),
-                        class_name="w-full bg-amber-100 rounded-full h-2",
+                        class_name="w-full bg-emerald-100 rounded-full h-2",
                     ),
                     class_name="flex-1",
                 ),
                 rx.el.div(
                     rx.el.p(
                         "Missing Cycles",
-                        class_name="text-[10px] font-bold text-amber-400 uppercase tracking-widest mt-4 mb-2",
+                        class_name="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mt-4 mb-2",
                     ),
                     rx.cond(
                         HistoricalState.missing_years.length() > 0,
@@ -327,7 +328,7 @@ def year_summary_card() -> rx.Component:
                                 HistoricalState.missing_years,
                                 lambda y: rx.el.span(
                                     y,
-                                    class_name="px-2 py-0.5 bg-white text-amber-400 text-[10px] font-bold rounded-md border border-amber-100",
+                                    class_name="px-2 py-0.5 bg-white text-emerald-400 text-[10px] font-bold rounded-md border border-emerald-100",
                                 ),
                             ),
                             class_name="flex flex-wrap gap-1",
@@ -340,7 +341,7 @@ def year_summary_card() -> rx.Component:
                 ),
                 class_name="flex flex-col",
             ),
-            class_name="bg-amber-50/20 border-amber-100 h-full",
+            class_name="bg-emerald-50/20 border-emerald-100 h-full",
         ),
         rx.cond(
             HistoricalState.years_count > 0,
@@ -374,21 +375,21 @@ def guidance_callout() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.icon(
-                "info", class_name="h-6 w-6 text-amber-600 mr-4 flex-shrink-0 mt-1"
+                "info", class_name="h-6 w-6 text-emerald-600 mr-4 flex-shrink-0 mt-1"
             ),
             rx.el.div(
                 rx.el.h4(
                     "Already have previous ranking results?",
-                    class_name="text-lg font-bold text-amber-900 mb-1",
+                    class_name="text-lg font-bold text-emerald-900 mb-1",
                 ),
                 rx.el.p(
                     "Use this module to upload your past scores from 2020-2024. Entering historical data allows the IR²D system to generate trend analysis, track improvements, and provide better AI-driven strategic advice.",
-                    class_name="text-sm text-amber-800 leading-relaxed",
+                    class_name="text-sm text-emerald-800 leading-relaxed",
                 ),
                 rx.el.details(
                     rx.el.summary(
                         "Quick Start Guide & Instructions",
-                        class_name="text-xs font-bold text-amber-700 cursor-pointer mt-4 hover:underline outline-none",
+                        class_name="text-xs font-bold text-emerald-700 cursor-pointer mt-4 hover:underline outline-none",
                     ),
                     rx.el.div(
                         rx.el.ul(
@@ -408,16 +409,16 @@ def guidance_callout() -> rx.Component:
                                 "4. Click 'Commit Historical Data' to save and move to the next incomplete year.",
                                 class_name="mb-2",
                             ),
-                            class_name="text-xs text-amber-700 mt-3 list-decimal pl-4",
+                            class_name="text-xs text-emerald-700 mt-3 list-decimal pl-4",
                         ),
-                        class_name="p-4 bg-white/50 rounded-xl mt-2 border border-amber-200/50",
+                        class_name="p-4 bg-white/50 rounded-xl mt-2 border border-emerald-200/50",
                     ),
                     class_name="mt-2",
                 ),
             ),
             class_name="flex items-start",
         ),
-        class_name="bg-amber-50 border border-amber-200 rounded-[2rem] p-8 mb-10 shadow-sm",
+        class_name="bg-emerald-50 border border-emerald-200 rounded-[2rem] p-8 mb-10 shadow-sm",
     )
 
 
@@ -435,7 +436,7 @@ def year_option_selector(y: str) -> rx.Component:
                         rx.icon("languages", class_name="h-4 w-4 text-emerald-500"),
                         rx.cond(
                             comp_pct > 0,
-                            rx.icon("clock", class_name="h-4 w-4 text-amber-500"),
+                            rx.icon("clock", class_name="h-4 w-4 text-emerald-500"),
                             None,
                         ),
                     ),
@@ -443,7 +444,7 @@ def year_option_selector(y: str) -> rx.Component:
                 ),
                 rx.el.div(
                     rx.el.div(
-                        class_name="bg-amber-500 h-1 rounded-full transition-all duration-700",
+                        class_name="bg-emerald-500 h-1 rounded-full transition-all duration-700",
                         style={"width": comp_pct.to_string() + "%"},
                     ),
                     class_name="w-full bg-slate-100 h-1 rounded-full overflow-hidden mb-1",
@@ -456,8 +457,8 @@ def year_option_selector(y: str) -> rx.Component:
             ),
             class_name=rx.cond(
                 is_selected,
-                "bg-amber-50 border-amber-400 shadow-lg shadow-amber-100/50",
-                "bg-white border-slate-100 hover:border-amber-200 hover:bg-amber-50/20 transition-all duration-200",
+                "bg-emerald-50 border-emerald-400 shadow-lg shadow-emerald-100/50",
+                "bg-white border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/20 transition-all duration-200",
             ),
         ),
         on_click=lambda: HistoricalState.set_selected_year(y),
@@ -490,7 +491,7 @@ def historical_content() -> rx.Component:
                             rx.el.div(
                                 rx.el.span(
                                     "Database Coverage: ",
-                                    class_name="text-amber-200/80",
+                                    class_name="text-emerald-200/80",
                                 ),
                                 rx.el.span(
                                     f"{HistoricalState.historical_coverage_pct}%",
@@ -500,7 +501,7 @@ def historical_content() -> rx.Component:
                             ),
                             rx.el.div(
                                 rx.el.span(
-                                    "Years Audited: ", class_name="text-amber-200/80"
+                                    "Years Audited: ", class_name="text-emerald-200/80"
                                 ),
                                 rx.el.span(
                                     HistoricalState.years_count.to_string(),
@@ -516,7 +517,7 @@ def historical_content() -> rx.Component:
                 ),
                 class_name="relative z-10 max-w-7xl mx-auto",
             ),
-            class_name="relative rounded-[2.5rem] bg-gradient-to-br from-amber-800 via-amber-700 to-orange-800 shadow-2xl mb-12 p-12 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-1000",
+            class_name="relative rounded-[2.5rem] bg-gradient-to-br from-emerald-800 via-emerald-700 to-green-800 shadow-2xl mb-12 p-12 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-1000",
         ),
         guidance_callout(),
         rx.el.div(
@@ -525,7 +526,7 @@ def historical_content() -> rx.Component:
                     rx.el.div(
                         rx.el.p(
                             "Select Ranking Year",
-                            class_name="text-xs font-black text-amber-600 uppercase tracking-[0.2em] mb-4",
+                            class_name="text-xs font-black text-emerald-600 uppercase tracking-[0.2em] mb-4",
                         ),
                         rx.el.div(
                             rx.foreach(
@@ -535,7 +536,7 @@ def historical_content() -> rx.Component:
                         ),
                         class_name="mb-6",
                     ),
-                    class_name="bg-white p-8 rounded-[2.5rem] border border-amber-100 shadow-sm",
+                    class_name="bg-white p-8 rounded-[2.5rem] border border-emerald-100 shadow-sm",
                 ),
                 year_summary_card(),
                 class_name="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8",
@@ -548,7 +549,7 @@ def historical_content() -> rx.Component:
                 rx.el.div(
                     rx.el.h3(
                         "Research & Discovery",
-                        class_name="text-lg font-bold text-amber-900 mb-4 flex items-center",
+                        class_name="text-lg font-bold text-emerald-900 mb-4 flex items-center",
                     ),
                     rx.el.div(
                         score_input_historical(
@@ -570,7 +571,7 @@ def historical_content() -> rx.Component:
                 rx.el.div(
                     rx.el.h3(
                         "Employability & Outcomes",
-                        class_name="text-lg font-bold text-amber-900 mb-4",
+                        class_name="text-lg font-bold text-emerald-900 mb-4",
                     ),
                     rx.el.div(
                         score_input_historical(
@@ -592,7 +593,7 @@ def historical_content() -> rx.Component:
                 rx.el.div(
                     rx.el.h3(
                         "Global Engagement",
-                        class_name="text-lg font-bold text-amber-900 mb-4",
+                        class_name="text-lg font-bold text-emerald-900 mb-4",
                     ),
                     rx.el.div(
                         score_input_historical(
@@ -620,7 +621,7 @@ def historical_content() -> rx.Component:
                 rx.el.div(
                     rx.el.h3(
                         "Learning & Sustainability",
-                        class_name="text-lg font-bold text-amber-900 mb-4",
+                        class_name="text-lg font-bold text-emerald-900 mb-4",
                     ),
                     rx.el.div(
                         score_input_historical(
@@ -658,10 +659,10 @@ def historical_content() -> rx.Component:
                         ),
                         on_click=HistoricalState.save_historical_scores,
                         disabled=HistoricalState.is_saving | HistoricalState.is_loading,
-                        class_name="w-full py-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-2xl font-black text-lg shadow-xl hover:shadow-amber-100 hover:scale-[1.01] active:scale-[0.99] transition-all mt-10",
+                        class_name="w-full py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-2xl font-black text-lg shadow-xl hover:shadow-emerald-100 hover:scale-[1.01] active:scale-[0.99] transition-all mt-10",
                     )
                 ),
-                class_name="bg-white/60 backdrop-blur-sm p-8 rounded-3xl border border-amber-100 shadow-lg",
+                class_name="bg-white/60 backdrop-blur-sm p-8 rounded-3xl border border-emerald-100 shadow-lg",
             ),
             class_name="max-w-5xl mx-auto",
         ),
