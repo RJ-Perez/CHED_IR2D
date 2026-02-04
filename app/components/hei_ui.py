@@ -2,6 +2,7 @@ import reflex as rx
 from app.states.hei_state import HEIState, HEI
 
 
+@rx.memo
 def ranking_framework_option(
     value: str, label: str, description: str, icon: str
 ) -> rx.Component:
@@ -221,6 +222,7 @@ def preliminary_notice_modal() -> rx.Component:
     )
 
 
+@rx.memo
 def hei_dropdown_item(hei: HEI) -> rx.Component:
     return rx.el.button(
         rx.el.div(
@@ -253,6 +255,7 @@ def info_field(label: str, value: str) -> rx.Component:
     )
 
 
+@rx.memo
 def selected_hei_card() -> rx.Component:
     return rx.el.div(
         rx.el.div(
@@ -317,7 +320,10 @@ def hei_selection_dropdown() -> rx.Component:
                 rx.cond(
                     HEIState.search_results.length() > 0,
                     rx.el.div(
-                        rx.foreach(HEIState.search_results, hei_dropdown_item),
+                        rx.foreach(
+                            HEIState.search_results,
+                            lambda hei: hei_dropdown_item(hei=hei, key=hei["id"]),
+                        ),
                         class_name="max-h-[300px] overflow-y-auto",
                     ),
                     rx.cond(
@@ -383,7 +389,7 @@ def selection_screen_content() -> rx.Component:
                                     rx.el.input(
                                         placeholder="Search your institution (e.g. University of Santo Tomas)...",
                                         on_change=HEIState.set_search_query.debounce(
-                                            250
+                                            150
                                         ),
                                         on_focus=rx.cond(
                                             HEIState.search_query != "",
@@ -454,16 +460,16 @@ def selection_screen_content() -> rx.Component:
                 ),
                 rx.el.div(
                     ranking_framework_option(
-                        "QS",
-                        "QS World University Rankings",
-                        "Evaluates based on academic reputation, employer reputation, and faculty impact metrics.",
-                        "sparkles",
+                        value="QS",
+                        label="QS World University Rankings",
+                        description="Evaluates based on academic reputation, employer reputation, and faculty impact metrics.",
+                        icon="sparkles",
                     ),
                     ranking_framework_option(
-                        "THE",
-                        "THE World University Rankings",
-                        "Comprehensive assessment across teaching, research quality, and international outlook.",
-                        "target",
+                        value="THE",
+                        label="THE World University Rankings",
+                        description="Comprehensive assessment across teaching, research quality, and international outlook.",
+                        icon="target",
                     ),
                     class_name="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 animate-in fade-in slide-in-from-bottom-10 duration-700",
                 ),
