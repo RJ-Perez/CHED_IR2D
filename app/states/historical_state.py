@@ -155,146 +155,142 @@ class HistoricalState(rx.State):
 
     async def _ensure_historical_table(self):
         async with rx.asession() as session:
-            result = await session.execute(
-                text("SELECT to_regclass('public.historical_performance')")
-            )
-            if result.scalar() is None:
-                await session.execute(
-                    text("""
-                    CREATE TABLE historical_performance (
-                        id SERIAL PRIMARY KEY,
-                        institution_id INTEGER NOT NULL,
-                        ranking_year INTEGER NOT NULL,
+            await session.execute(
+                text("""
+                CREATE TABLE IF NOT EXISTS historical_performance (
+                    id SERIAL PRIMARY KEY,
+                    institution_id INTEGER NOT NULL,
+                    ranking_year INTEGER NOT NULL,
 
-                        -- Research & Discovery (50%)
-                        academic_reputation DECIMAL(10, 2) DEFAULT 0,
-                        citations_per_faculty DECIMAL(10, 2) DEFAULT 0,
-                        research_score DECIMAL(10, 2) DEFAULT 0,
+                    -- Research & Discovery (50%)
+                    academic_reputation DECIMAL(10, 2) DEFAULT 0,
+                    citations_per_faculty DECIMAL(10, 2) DEFAULT 0,
+                    research_score DECIMAL(10, 2) DEFAULT 0,
 
-                        -- Employability & Outcomes (20%)
-                        employer_reputation DECIMAL(10, 2) DEFAULT 0,
-                        employment_outcomes DECIMAL(10, 2) DEFAULT 0,
-                        employability_score DECIMAL(10, 2) DEFAULT 0,
+                    -- Employability & Outcomes (20%)
+                    employer_reputation DECIMAL(10, 2) DEFAULT 0,
+                    employment_outcomes DECIMAL(10, 2) DEFAULT 0,
+                    employability_score DECIMAL(10, 2) DEFAULT 0,
 
-                        -- Global Engagement (15%)
-                        international_research_network DECIMAL(10, 2) DEFAULT 0,
-                        international_faculty_ratio DECIMAL(10, 2) DEFAULT 0,
-                        international_student_ratio DECIMAL(10, 2) DEFAULT 0,
-                        global_engagement_score DECIMAL(10, 2) DEFAULT 0,
+                    -- Global Engagement (15%)
+                    international_research_network DECIMAL(10, 2) DEFAULT 0,
+                    international_faculty_ratio DECIMAL(10, 2) DEFAULT 0,
+                    international_student_ratio DECIMAL(10, 2) DEFAULT 0,
+                    global_engagement_score DECIMAL(10, 2) DEFAULT 0,
 
-                        -- Learning Experience (10%)
-                        faculty_student_ratio DECIMAL(10, 2) DEFAULT 0,
-                        learning_experience_score DECIMAL(10, 2) DEFAULT 0,
+                    -- Learning Experience (10%)
+                    faculty_student_ratio DECIMAL(10, 2) DEFAULT 0,
+                    learning_experience_score DECIMAL(10, 2) DEFAULT 0,
 
-                        -- Sustainability (5%)
-                        sustainability_metrics DECIMAL(10, 2) DEFAULT 0,
-                        sustainability_score DECIMAL(10, 2) DEFAULT 0,
+                    -- Sustainability (5%)
+                    sustainability_metrics DECIMAL(10, 2) DEFAULT 0,
+                    sustainability_score DECIMAL(10, 2) DEFAULT 0,
 
-                        overall_score DECIMAL(10, 2) DEFAULT 0,
+                    overall_score DECIMAL(10, 2) DEFAULT 0,
 
-                        -- Metadata
-                        evidence_files JSONB DEFAULT '[]',
-                        notes TEXT,
-                        data_source VARCHAR(50) DEFAULT 'Self-Assessment',
-                        verified BOOLEAN DEFAULT FALSE,
-                        user_id INTEGER,
-                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    -- Metadata
+                    evidence_files JSONB DEFAULT '[]',
+                    notes TEXT,
+                    data_source VARCHAR(50) DEFAULT 'Self-Assessment',
+                    verified BOOLEAN DEFAULT FALSE,
+                    user_id INTEGER,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
-                        UNIQUE(institution_id, ranking_year)
-                    )
-                """)
+                    UNIQUE(institution_id, ranking_year)
                 )
-                await session.commit()
+            """)
+            )
+            await session.commit()
+            count_check = await session.execute(
+                text("SELECT COUNT(*) FROM historical_performance")
+            )
+            if count_check.scalar() == 0:
                 old_table_check = await session.execute(
                     text("SELECT to_regclass('public.historical_scores')")
                 )
                 if old_table_check.scalar() is not None:
-                    count_check = await session.execute(
-                        text("SELECT COUNT(*) FROM historical_performance")
-                    )
-                    if count_check.scalar() == 0:
-                        rows = await session.execute(
-                            text(
-                                "SELECT DISTINCT institution_id, ranking_year FROM historical_scores"
-                            )
+                    rows = await session.execute(
+                        text(
+                            "SELECT DISTINCT institution_id, ranking_year FROM historical_scores"
                         )
-                        pairs = rows.all()
-                        for inst_id, year in pairs:
-                            scores_res = await session.execute(
-                                text(
-                                    "SELECT indicator_code, value FROM historical_scores WHERE institution_id = :iid AND ranking_year = :yr"
-                                ),
-                                {"iid": inst_id, "yr": year},
+                    )
+                    pairs = rows.all()
+                    for inst_id, year in pairs:
+                        scores_res = await session.execute(
+                            text(
+                                "SELECT indicator_code, value FROM historical_scores WHERE institution_id = :iid AND ranking_year = :yr"
+                            ),
+                            {"iid": inst_id, "yr": year},
+                        )
+                        scores_map = {
+                            row[0]: float(row[1])
+                            if row[1] and row[1].replace(".", "", 1).isdigit()
+                            else 0.0
+                            for row in scores_res.all()
+                        }
+                        acad_rep = scores_map.get("academic_reputation", 0)
+                        cit_fac = scores_map.get("citations_per_faculty", 0)
+                        research_score = acad_rep * 0.6 + cit_fac * 0.4
+                        emp_rep = scores_map.get("employer_reputation", 0)
+                        emp_out = scores_map.get("employment_outcomes", 0)
+                        emp_score = emp_rep * 0.75 + emp_out * 0.25
+                        irn = scores_map.get("international_research_network", 0)
+                        ifr = scores_map.get("international_faculty_ratio", 0)
+                        isr = scores_map.get("international_student_ratio", 0)
+                        global_score = (irn + ifr + isr) / 3
+                        fsr = scores_map.get("faculty_student_ratio", 0)
+                        learn_score = fsr
+                        sust = scores_map.get("sustainability_metrics", 0)
+                        sust_score = sust
+                        overall = (
+                            research_score * 0.5
+                            + emp_score * 0.2
+                            + global_score * 0.15
+                            + learn_score * 0.1
+                            + sust_score * 0.05
+                        )
+                        await session.execute(
+                            text("""
+                            INSERT INTO historical_performance (
+                                institution_id, ranking_year, 
+                                academic_reputation, citations_per_faculty, research_score,
+                                employer_reputation, employment_outcomes, employability_score,
+                                international_research_network, international_faculty_ratio, international_student_ratio, global_engagement_score,
+                                faculty_student_ratio, learning_experience_score,
+                                sustainability_metrics, sustainability_score,
+                                overall_score, data_source
+                            ) VALUES (
+                                :iid, :yr,
+                                :ar, :cf, :rs,
+                                :er, :eo, :es,
+                                :irn, :ifr, :isr, :gs,
+                                :fsr, :ls,
+                                :sm, :ss,
+                                :ov, 'Historical Import'
                             )
-                            scores_map = {
-                                row[0]: float(row[1])
-                                if row[1] and row[1].replace(".", "", 1).isdigit()
-                                else 0.0
-                                for row in scores_res.all()
-                            }
-                            acad_rep = scores_map.get("academic_reputation", 0)
-                            cit_fac = scores_map.get("citations_per_faculty", 0)
-                            research_score = acad_rep * 0.6 + cit_fac * 0.4
-                            emp_rep = scores_map.get("employer_reputation", 0)
-                            emp_out = scores_map.get("employment_outcomes", 0)
-                            emp_score = emp_rep * 0.75 + emp_out * 0.25
-                            irn = scores_map.get("international_research_network", 0)
-                            ifr = scores_map.get("international_faculty_ratio", 0)
-                            isr = scores_map.get("international_student_ratio", 0)
-                            global_score = (irn + ifr + isr) / 3
-                            fsr = scores_map.get("faculty_student_ratio", 0)
-                            learn_score = fsr
-                            sust = scores_map.get("sustainability_metrics", 0)
-                            sust_score = sust
-                            overall = (
-                                research_score * 0.5
-                                + emp_score * 0.2
-                                + global_score * 0.15
-                                + learn_score * 0.1
-                                + sust_score * 0.05
-                            )
-                            await session.execute(
-                                text("""
-                                INSERT INTO historical_performance (
-                                    institution_id, ranking_year, 
-                                    academic_reputation, citations_per_faculty, research_score,
-                                    employer_reputation, employment_outcomes, employability_score,
-                                    international_research_network, international_faculty_ratio, international_student_ratio, global_engagement_score,
-                                    faculty_student_ratio, learning_experience_score,
-                                    sustainability_metrics, sustainability_score,
-                                    overall_score, data_source
-                                ) VALUES (
-                                    :iid, :yr,
-                                    :ar, :cf, :rs,
-                                    :er, :eo, :es,
-                                    :irn, :ifr, :isr, :gs,
-                                    :fsr, :ls,
-                                    :sm, :ss,
-                                    :ov, 'Historical Import'
-                                )
-                                """),
-                                {
-                                    "iid": inst_id,
-                                    "yr": year,
-                                    "ar": acad_rep,
-                                    "cf": cit_fac,
-                                    "rs": research_score,
-                                    "er": emp_rep,
-                                    "eo": emp_out,
-                                    "es": emp_score,
-                                    "irn": irn,
-                                    "ifr": ifr,
-                                    "isr": isr,
-                                    "gs": global_score,
-                                    "fsr": fsr,
-                                    "ls": learn_score,
-                                    "sm": sust,
-                                    "ss": sust_score,
-                                    "ov": overall,
-                                },
-                            )
-                        await session.commit()
+                            """),
+                            {
+                                "iid": inst_id,
+                                "yr": year,
+                                "ar": acad_rep,
+                                "cf": cit_fac,
+                                "rs": research_score,
+                                "er": emp_rep,
+                                "eo": emp_out,
+                                "es": emp_score,
+                                "irn": irn,
+                                "ifr": ifr,
+                                "isr": isr,
+                                "gs": global_score,
+                                "fsr": fsr,
+                                "ls": learn_score,
+                                "sm": sust,
+                                "ss": sust_score,
+                                "ov": overall,
+                            },
+                        )
+                    await session.commit()
 
     @rx.event(background=True)
     async def fetch_years_with_data(self):
