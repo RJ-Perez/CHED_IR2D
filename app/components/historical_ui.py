@@ -137,7 +137,7 @@ def summary_table() -> rx.Component:
                             class_name="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider",
                         ),
                         rx.el.th(
-                            "Avg Score",
+                            "Overall Score",
                             class_name="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider",
                         ),
                     ),
