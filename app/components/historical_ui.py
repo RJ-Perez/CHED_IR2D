@@ -5,7 +5,7 @@ from app.components.design_system import DS, ds_card
 
 
 def score_input_historical(
-    label: str, value: rx.Var, on_change: rx.event.EventType
+    label: str, value: rx.Var, on_change: rx.event.EventType, weight: str = ""
 ) -> rx.Component:
     field_key_map = {
         "Academic Reputation": "academic_reputation",
@@ -27,6 +27,14 @@ def score_input_historical(
                 rx.el.label(
                     label,
                     class_name="text-sm font-semibold text-emerald-900 tracking-tight",
+                ),
+                rx.cond(
+                    weight != "",
+                    rx.el.span(
+                        weight,
+                        class_name="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full border border-emerald-200 uppercase tracking-tighter shadow-sm",
+                    ),
+                    None,
                 ),
                 class_name="flex items-center justify-between mb-4",
             ),
@@ -624,85 +632,122 @@ def historical_content() -> rx.Component:
                             ),
                             rx.el.div(
                                 rx.el.div(
-                                    rx.el.h3(
-                                        "Research & Discovery",
-                                        class_name="text-lg font-bold text-emerald-900 mb-4 flex items-center",
+                                    rx.el.div(
+                                        rx.el.h3(
+                                            "Research & Discovery",
+                                            class_name="text-lg font-bold text-emerald-900",
+                                        ),
+                                        rx.el.span(
+                                            "Weight: 50%",
+                                            class_name="text-[10px] font-black text-white bg-emerald-600 px-2 py-0.5 rounded-md ml-3 tracking-widest",
+                                        ),
+                                        class_name="flex items-center mb-4",
                                     ),
                                     rx.el.div(
                                         score_input_historical(
                                             "Academic Reputation",
                                             HistoricalState.academic_reputation,
                                             HistoricalState.set_academic_reputation,
+                                            weight="30%",
                                         ),
                                         score_input_historical(
                                             "Citations per Faculty",
                                             HistoricalState.citations_per_faculty,
                                             HistoricalState.set_citations_per_faculty,
+                                            weight="20%",
                                         ),
                                         class_name="grid grid-cols-1 sm:grid-cols-2 gap-4",
                                     ),
                                     class_name="mb-8",
                                 ),
                                 rx.el.div(
-                                    rx.el.h3(
-                                        "Employability & Outcomes",
-                                        class_name="text-lg font-bold text-emerald-900 mb-4",
+                                    rx.el.div(
+                                        rx.el.h3(
+                                            "Employability & Outcomes",
+                                            class_name="text-lg font-bold text-emerald-900",
+                                        ),
+                                        rx.el.span(
+                                            "Weight: 20%",
+                                            class_name="text-[10px] font-black text-white bg-emerald-600 px-2 py-0.5 rounded-md ml-3 tracking-widest",
+                                        ),
+                                        class_name="flex items-center mb-4",
                                     ),
                                     rx.el.div(
                                         score_input_historical(
                                             "Employer Reputation",
                                             HistoricalState.employer_reputation,
                                             HistoricalState.set_employer_reputation,
+                                            weight="15%",
                                         ),
                                         score_input_historical(
                                             "Employment Outcomes",
                                             HistoricalState.employment_outcomes,
                                             HistoricalState.set_employment_outcomes,
+                                            weight="5%",
                                         ),
                                         class_name="grid grid-cols-1 sm:grid-cols-2 gap-4",
                                     ),
                                     class_name="mb-8",
                                 ),
                                 rx.el.div(
-                                    rx.el.h3(
-                                        "Global Engagement",
-                                        class_name="text-lg font-bold text-emerald-900 mb-4",
+                                    rx.el.div(
+                                        rx.el.h3(
+                                            "Global Engagement",
+                                            class_name="text-lg font-bold text-emerald-900",
+                                        ),
+                                        rx.el.span(
+                                            "Weight: 15%",
+                                            class_name="text-[10px] font-black text-white bg-emerald-600 px-2 py-0.5 rounded-md ml-3 tracking-widest",
+                                        ),
+                                        class_name="flex items-center mb-4",
                                     ),
                                     rx.el.div(
                                         score_input_historical(
                                             "Research Network",
                                             HistoricalState.international_research_network,
                                             HistoricalState.set_international_research_network,
+                                            weight="5%",
                                         ),
                                         score_input_historical(
                                             "Int. Faculty Ratio",
                                             HistoricalState.international_faculty_ratio,
                                             HistoricalState.set_international_faculty_ratio,
+                                            weight="5%",
                                         ),
                                         score_input_historical(
                                             "Int. Student Ratio",
                                             HistoricalState.international_student_ratio,
                                             HistoricalState.set_international_student_ratio,
+                                            weight="5%",
                                         ),
                                         class_name="grid grid-cols-1 sm:grid-cols-3 gap-4",
                                     ),
                                     class_name="mb-8",
                                 ),
                                 rx.el.div(
-                                    rx.el.h3(
-                                        "Learning & Sustainability",
-                                        class_name="text-lg font-bold text-emerald-900 mb-4",
+                                    rx.el.div(
+                                        rx.el.h3(
+                                            "Learning & Sustainability",
+                                            class_name="text-lg font-bold text-emerald-900",
+                                        ),
+                                        rx.el.span(
+                                            "Weight: 15%",
+                                            class_name="text-[10px] font-black text-white bg-emerald-600 px-2 py-0.5 rounded-md ml-3 tracking-widest",
+                                        ),
+                                        class_name="flex items-center mb-4",
                                     ),
                                     rx.el.div(
                                         score_input_historical(
                                             "Faculty-Student Ratio",
                                             HistoricalState.faculty_student_ratio,
                                             HistoricalState.set_faculty_student_ratio,
+                                            weight="10%",
                                         ),
                                         score_input_historical(
                                             "Sustainability Score",
                                             HistoricalState.sustainability_metrics,
                                             HistoricalState.set_sustainability_metrics,
+                                            weight="5%",
                                         ),
                                         class_name="grid grid-cols-1 sm:grid-cols-2 gap-4",
                                     ),
@@ -718,13 +763,14 @@ def historical_content() -> rx.Component:
                                                     rx.el.div(
                                                         class_name="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"
                                                     ),
-                                                    "Storing Archives...",
+                                                    "Syncing Archive...",
                                                     class_name="flex items-center",
                                                 ),
                                             ),
                                             rx.el.div(
                                                 rx.icon(
-                                                    "save", class_name="h-5 w-5 mr-3"
+                                                    "cloud-upload",
+                                                    class_name="h-5 w-5 mr-3",
                                                 ),
                                                 "Commit Historical Data",
                                                 class_name="flex items-center",
@@ -736,11 +782,11 @@ def historical_content() -> rx.Component:
                                         | HistoricalState.has_validation_errors,
                                         class_name=rx.cond(
                                             HistoricalState.has_validation_errors,
-                                            "w-64 py-4 bg-slate-200 text-slate-400 rounded-2xl font-black text-lg cursor-not-allowed mt-10",
-                                            "w-64 py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-2xl font-black text-lg shadow-xl hover:shadow-emerald-100 hover:scale-[1.01] active:scale-[0.99] transition-all mt-10",
+                                            "w-full sm:w-80 py-4 bg-slate-200 text-slate-400 rounded-2xl font-black text-lg cursor-not-allowed mt-10 transition-all",
+                                            "w-full sm:w-80 py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-emerald-100 hover:shadow-emerald-200 hover:scale-[1.02] active:scale-[0.98] transition-all mt-10 border border-white/20",
                                         ),
                                     ),
-                                    class_name="flex items-center justify-center",
+                                    class_name="flex items-center justify-center mb-10",
                                 ),
                                 class_name="bg-white/60 backdrop-blur-sm p-8 rounded-3xl border border-emerald-100 shadow-lg",
                             ),
