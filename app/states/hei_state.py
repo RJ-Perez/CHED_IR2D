@@ -24,6 +24,7 @@ class HEIState(rx.State):
     search_results: list[HEI] = []
     search_query: str = ""
     _search_cache: dict[str, list[HEI]] = {}
+    _search_cache_max_size: int = 50
     _search_version: int = 0
     _last_search_query: str = ""
     selected_hei_id: str = ""
@@ -298,22 +299,10 @@ class HEIState(rx.State):
                         SELECT id, institution_name, street_address, city_municipality, 'Private', admin_name 
                         FROM institutions 
                         WHERE institution_name ILIKE :query 
-                           OR street_address ILIKE :query 
-                           OR city_municipality ILIKE :query
-                        ORDER BY 
-                            CASE 
-                                WHEN institution_name ILIKE :exact THEN 1 
-                                WHEN institution_name ILIKE :query_start THEN 2
-                                ELSE 3 
-                            END ASC,
-                            institution_name ASC
-                        LIMIT 10
+                        ORDER BY institution_name ASC
+                        LIMIT 8
                     """),
-                    {
-                        "query": query_text,
-                        "exact": sanitized_query,
-                        "query_start": f"{sanitized_query}%",
-                    },
+                    {"query": query_text},
                 )
                 rows = result.all()
                 results = [
@@ -336,8 +325,10 @@ class HEIState(rx.State):
                 self.search_results = results
                 self.is_searching = False
                 self._last_search_query = sanitized_query
-                if len(results) > 0:
-                    self._search_cache[sanitized_query] = results
+                self._search_cache[sanitized_query] = results
+                if len(self._search_cache) > self._search_cache_max_size:
+                    first_key = next(iter(self._search_cache))
+                    self._search_cache.pop(first_key)
 
     @rx.event
     def set_is_dropdown_open(self, value: bool):
