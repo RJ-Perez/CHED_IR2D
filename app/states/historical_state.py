@@ -572,13 +572,15 @@ class HistoricalState(rx.State):
                 return
             self.selected_year = year
             self.is_loading = True
-        async with self:
             for k in self.validation_errors.keys():
                 self.validation_errors[k] = ""
         yield HistoricalState.fetch_scores_for_year
 
     @rx.event(background=True)
     async def fetch_scores_for_year(self):
+        """Fetches and updates institutional scores for the selected year.
+        Optimized to move all database queries outside of the state lock block.
+        """
         async with self:
             self.is_loading = True
             hei = await self.get_state(HEIState)
@@ -587,19 +589,18 @@ class HistoricalState(rx.State):
                 return
             inst_id = int(hei.selected_hei["id"])
             year = int(self.selected_year)
-        async with self:
-            self.academic_reputation = 0
-            self.citations_per_faculty = 0
-            self.employer_reputation = 0
-            self.employment_outcomes = 0
-            self.international_research_network = 0
-            self.international_faculty_ratio = 0
-            self.international_student_ratio = 0
-            self.faculty_student_ratio = 0
-            self.sustainability_metrics = 0
-            self.uploaded_files = []
-            for k in self.validation_errors.keys():
-                self.validation_errors[k] = ""
+        scores_update = {
+            "academic_reputation": 0,
+            "citations_per_faculty": 0,
+            "employer_reputation": 0,
+            "employment_outcomes": 0,
+            "international_research_network": 0,
+            "international_faculty_ratio": 0,
+            "international_student_ratio": 0,
+            "faculty_student_ratio": 0,
+            "sustainability_metrics": 0,
+            "uploaded_files": [],
+        }
         async with rx.asession() as session:
             result = await session.execute(
                 text("""
@@ -615,66 +616,67 @@ class HistoricalState(rx.State):
                 {"iid": inst_id, "year": year},
             )
             row = result.first()
-            async with self:
-                if row:
-                    self.academic_reputation = int(row[0] or 0)
-                    self.citations_per_faculty = int(row[1] or 0)
-                    self.employer_reputation = int(row[2] or 0)
-                    self.employment_outcomes = int(row[3] or 0)
-                    self.international_research_network = int(row[4] or 0)
-                    self.international_faculty_ratio = int(row[5] or 0)
-                    self.international_student_ratio = int(row[6] or 0)
-                    self.faculty_student_ratio = int(row[7] or 0)
-                    self.sustainability_metrics = int(row[8] or 0)
-                    if row[9]:
-                        self.uploaded_files = (
-                            json.loads(row[9]) if isinstance(row[9], str) else row[9]
+            if row:
+                scores_update["academic_reputation"] = int(row[0] or 0)
+                scores_update["citations_per_faculty"] = int(row[1] or 0)
+                scores_update["employer_reputation"] = int(row[2] or 0)
+                scores_update["employment_outcomes"] = int(row[3] or 0)
+                scores_update["international_research_network"] = int(row[4] or 0)
+                scores_update["international_faculty_ratio"] = int(row[5] or 0)
+                scores_update["international_student_ratio"] = int(row[6] or 0)
+                scores_update["faculty_student_ratio"] = int(row[7] or 0)
+                scores_update["sustainability_metrics"] = int(row[8] or 0)
+                if row[9]:
+                    scores_update["uploaded_files"] = (
+                        json.loads(row[9]) if isinstance(row[9], str) else row[9]
+                    ) or []
+            else:
+                old_res = await session.execute(
+                    text("""
+                    SELECT indicator_code, value, evidence_files 
+                    FROM historical_scores 
+                    WHERE institution_id = :iid AND ranking_year = :year
+                    """),
+                    {"iid": inst_id, "year": year},
+                )
+                rows = old_res.all()
+                all_files = []
+                for r in rows:
+                    code, val, files_json = r
+                    try:
+                        num_val = int(float(val))
+                    except (ValueError, TypeError) as e:
+                        logging.exception(f"Error parsing score value '{val}': {e}")
+                        num_val = 0
+                    if code in scores_update and code != "uploaded_files":
+                        scores_update[code] = num_val
+                    if files_json:
+                        f_list = (
+                            json.loads(files_json)
+                            if isinstance(files_json, str)
+                            else files_json
                         )
-                else:
-                    old_res = await session.execute(
-                        text("""
-                        SELECT indicator_code, value, evidence_files 
-                        FROM historical_scores 
-                        WHERE institution_id = :iid AND ranking_year = :year
-                        """),
-                        {"iid": inst_id, "year": year},
-                    )
-                    rows = old_res.all()
-                    all_files = []
-                    for r in rows:
-                        code, val, files_json = r
-                        try:
-                            num_val = int(float(val))
-                        except (ValueError, TypeError) as e:
-                            logging.exception(f"Error parsing score value '{val}': {e}")
-                            num_val = 0
-                        if code == "academic_reputation":
-                            self.academic_reputation = num_val
-                        elif code == "citations_per_faculty":
-                            self.citations_per_faculty = num_val
-                        elif code == "employer_reputation":
-                            self.employer_reputation = num_val
-                        elif code == "employment_outcomes":
-                            self.employment_outcomes = num_val
-                        elif code == "international_research_network":
-                            self.international_research_network = num_val
-                        elif code == "international_faculty_ratio":
-                            self.international_faculty_ratio = num_val
-                        elif code == "international_student_ratio":
-                            self.international_student_ratio = num_val
-                        elif code == "faculty_student_ratio":
-                            self.faculty_student_ratio = num_val
-                        elif code == "sustainability_metrics":
-                            self.sustainability_metrics = num_val
-                        if files_json:
-                            f_list = (
-                                json.loads(files_json)
-                                if isinstance(files_json, str)
-                                else files_json
-                            )
+                        if isinstance(f_list, list):
                             all_files.extend(f_list)
-                    self.uploaded_files = list(set(all_files))
-                self.is_loading = False
+                scores_update["uploaded_files"] = list(set(all_files))
+        async with self:
+            self.academic_reputation = scores_update["academic_reputation"]
+            self.citations_per_faculty = scores_update["citations_per_faculty"]
+            self.employer_reputation = scores_update["employer_reputation"]
+            self.employment_outcomes = scores_update["employment_outcomes"]
+            self.international_research_network = scores_update[
+                "international_research_network"
+            ]
+            self.international_faculty_ratio = scores_update[
+                "international_faculty_ratio"
+            ]
+            self.international_student_ratio = scores_update[
+                "international_student_ratio"
+            ]
+            self.faculty_student_ratio = scores_update["faculty_student_ratio"]
+            self.sustainability_metrics = scores_update["sustainability_metrics"]
+            self.uploaded_files = scores_update["uploaded_files"]
+            self.is_loading = False
 
     @rx.event
     async def handle_upload(self, files: list[rx.UploadFile]):
