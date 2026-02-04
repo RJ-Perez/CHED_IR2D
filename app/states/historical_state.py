@@ -35,6 +35,20 @@ class HistoricalState(rx.State):
     is_saving: bool = False
     all_years_data: dict[str, dict[str, int]] = {}
     trend_data: list[dict[str, str | int | float]] = []
+    year_completion_map: dict[str, int] = {
+        "2020": 0,
+        "2021": 0,
+        "2022": 0,
+        "2023": 0,
+        "2024": 0,
+    }
+
+    @rx.var(cache=True)
+    def overall_completion_pct(self) -> int:
+        if not self.available_years:
+            return 0
+        total_pct = sum(self.year_completion_map.values())
+        return int(total_pct / len(self.available_years))
 
     @rx.event(background=True)
     async def on_load(self):
@@ -299,6 +313,35 @@ class HistoricalState(rx.State):
             if not hei.selected_hei:
                 return
             inst_id = int(hei.selected_hei["id"])
+        async with rx.asession() as session:
+            result = await session.execute(
+                text("""
+                SELECT ranking_year, 
+                       COUNT(*) filter (WHERE academic_reputation > 0) + 
+                       COUNT(*) filter (WHERE citations_per_faculty > 0) + 
+                       COUNT(*) filter (WHERE employer_reputation > 0) + 
+                       COUNT(*) filter (WHERE employment_outcomes > 0) + 
+                       COUNT(*) filter (WHERE international_research_network > 0) + 
+                       COUNT(*) filter (WHERE international_faculty_ratio > 0) + 
+                       COUNT(*) filter (WHERE international_student_ratio > 0) + 
+                       COUNT(*) filter (WHERE faculty_student_ratio > 0) + 
+                       COUNT(*) filter (WHERE sustainability_metrics > 0) as filled_count
+                FROM historical_performance 
+                WHERE institution_id = :iid
+                GROUP BY ranking_year
+            """),
+                {"iid": inst_id},
+            )
+            rows = result.all()
+            completion_map = {y: 0 for y in self.available_years}
+            years = []
+            for row in rows:
+                year_str = str(row[0])
+                years.append(year_str)
+                completion_map[year_str] = int(row[1] / 9 * 100)
+            async with self:
+                self.years_with_data = years
+                self.year_completion_map = completion_map
         async with rx.asession() as session:
             result = await session.execute(
                 text("""

@@ -9,34 +9,48 @@ def score_input_historical(
 ) -> rx.Component:
     return rx.el.div(
         rx.el.div(
-            rx.el.label(
-                label,
-                class_name="text-xs font-bold text-amber-700 uppercase tracking-wider mb-2 block",
-            ),
-            rx.cond(
-                tooltip != "",
-                rx.el.span(
-                    rx.icon("moon", class_name="h-3 w-3 text-amber-400"),
-                    title=tooltip,
-                    class_name="cursor-help ml-1 mb-2",
+            rx.el.div(
+                rx.el.label(
+                    label,
+                    class_name="text-xs font-bold text-amber-800 uppercase tracking-[0.1em] mb-1",
                 ),
-                rx.fragment(),
+                rx.cond(
+                    tooltip != "",
+                    rx.el.span(
+                        rx.icon("info", class_name="h-3 w-3 text-amber-400"),
+                        title=tooltip,
+                        class_name="cursor-help ml-1.5",
+                    ),
+                    rx.fragment(),
+                ),
+                class_name="flex items-center justify-between",
             ),
-            class_name="flex items-center",
+            rx.el.div(
+                rx.el.input(
+                    type="number",
+                    placeholder="Enter score (0-100)",
+                    on_change=on_change.debounce(300),
+                    default_value=rx.cond(value == 0, "", value.to_string()),
+                    class_name="w-full px-4 py-3 bg-white border border-amber-200 rounded-xl focus:ring-4 focus:ring-amber-100/50 focus:border-amber-500 outline-none text-lg font-black text-amber-900 transition-all shadow-sm",
+                ),
+                class_name="relative",
+            ),
+            class_name="mb-3",
         ),
-        rx.el.input(
-            type="number",
-            placeholder="0-100",
-            on_change=on_change.debounce(300),
-            default_value=rx.cond(value == 0, "", value.to_string()),
-            class_name="w-full px-4 py-2.5 bg-amber-50/50 border border-amber-200 rounded-xl focus:ring-4 focus:ring-amber-100 focus:border-amber-500 outline-none text-center font-bold text-amber-900",
+        rx.el.div(
+            rx.el.div(
+                class_name="h-1.5 rounded-full bg-amber-500 transition-all duration-500 ease-out",
+                style={"width": rx.cond(value > 0, value.to_string() + "%", "0%")},
+            ),
+            class_name="w-full bg-amber-100/50 h-1.5 rounded-full overflow-hidden",
         ),
-        rx.cond(
-            tooltip != "",
-            rx.el.p(tooltip, class_name="text-[10px] text-amber-500/70 mt-2 italic"),
-            rx.fragment(),
+        rx.el.div(
+            rx.el.span("0", class_name="text-[8px] font-bold text-amber-300"),
+            rx.el.span("50", class_name="text-[8px] font-bold text-amber-300"),
+            rx.el.span("100", class_name="text-[8px] font-bold text-amber-300"),
+            class_name="flex justify-between px-0.5 mt-1",
         ),
-        class_name="p-4 bg-white rounded-2xl border border-amber-100 shadow-sm",
+        class_name="group p-5 bg-amber-50/30 rounded-3xl border border-amber-100/50 hover:border-amber-300 hover:bg-white transition-all duration-300",
     )
 
 
@@ -112,9 +126,13 @@ def historical_trend_chart() -> rx.Component:
 
 def summary_table() -> rx.Component:
     return rx.el.div(
-        rx.el.h3(
-            "Historical Data Comparison",
-            class_name="text-lg font-bold text-slate-800 mb-4",
+        rx.el.div(
+            rx.icon("table", class_name="h-5 w-5 text-amber-600 mr-2"),
+            rx.el.h3(
+                "Audited Data Comparison",
+                class_name="text-xl font-black text-slate-900",
+            ),
+            class_name="flex items-center mb-6",
         ),
         rx.el.div(
             rx.el.table(
@@ -122,64 +140,82 @@ def summary_table() -> rx.Component:
                     rx.el.tr(
                         rx.el.th(
                             "Year",
-                            class_name="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider",
+                            class_name="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]",
                         ),
                         rx.el.th(
                             "Academic Rep",
-                            class_name="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider",
+                            class_name="px-8 py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]",
                         ),
                         rx.el.th(
                             "Employer Rep",
-                            class_name="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider",
+                            class_name="px-8 py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]",
                         ),
                         rx.el.th(
                             "Sustainability",
-                            class_name="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider",
+                            class_name="px-8 py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]",
                         ),
                         rx.el.th(
-                            "Overall Score",
-                            class_name="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider",
+                            "Aggregate",
+                            class_name="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]",
                         ),
                     ),
-                    class_name="bg-slate-50",
+                    class_name="bg-slate-50/50 border-b border-slate-100",
                 ),
                 rx.el.tbody(
                     rx.foreach(
                         HistoricalState.trend_data,
                         lambda row: rx.el.tr(
                             rx.el.td(
-                                row["year"],
-                                class_name="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900",
-                            ),
-                            rx.el.td(
-                                row["academic_reputation"],
-                                class_name="px-6 py-4 whitespace-nowrap text-sm text-slate-600",
-                            ),
-                            rx.el.td(
-                                row["employer_reputation"],
-                                class_name="px-6 py-4 whitespace-nowrap text-sm text-slate-600",
-                            ),
-                            rx.el.td(
-                                row["sustainability_metrics"],
-                                class_name="px-6 py-4 whitespace-nowrap text-sm text-slate-600",
+                                rx.el.div(
+                                    rx.el.span(
+                                        row["year"],
+                                        class_name="font-black text-slate-900",
+                                    ),
+                                    class_name="flex items-center",
+                                ),
+                                class_name="px-8 py-5 whitespace-nowrap",
                             ),
                             rx.el.td(
                                 rx.el.span(
-                                    row["Average"],
-                                    class_name="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold",
+                                    row["academic_reputation"],
+                                    class_name="font-bold text-slate-600",
                                 ),
-                                class_name="px-6 py-4 whitespace-nowrap",
+                                class_name="px-8 py-5 whitespace-nowrap text-center",
                             ),
-                            class_name="border-b border-slate-100 last:border-0 hover:bg-slate-50/50",
+                            rx.el.td(
+                                rx.el.span(
+                                    row["employer_reputation"],
+                                    class_name="font-bold text-slate-600",
+                                ),
+                                class_name="px-8 py-5 whitespace-nowrap text-center",
+                            ),
+                            rx.el.td(
+                                rx.el.span(
+                                    row["sustainability_metrics"],
+                                    class_name="font-bold text-slate-600",
+                                ),
+                                class_name="px-8 py-5 whitespace-nowrap text-center",
+                            ),
+                            rx.el.td(
+                                rx.el.div(
+                                    rx.el.span(
+                                        row["Average"],
+                                        class_name="px-4 py-1.5 rounded-xl bg-amber-100 text-amber-900 font-black text-sm",
+                                    ),
+                                    class_name="flex justify-end",
+                                ),
+                                class_name="px-8 py-5 whitespace-nowrap",
+                            ),
+                            class_name="border-b border-slate-50 last:border-0 hover:bg-amber-50/30 transition-colors duration-150",
                         ),
                     ),
-                    class_name="bg-white divide-y divide-slate-100",
+                    class_name="bg-white divide-y divide-slate-50",
                 ),
-                class_name="min-w-full divide-y divide-slate-200",
+                class_name="min-w-full",
             ),
-            class_name="overflow-x-auto rounded-xl border border-slate-200",
+            class_name="overflow-hidden rounded-[2rem] border border-slate-100 shadow-sm bg-white",
         ),
-        class_name="mb-8",
+        class_name="mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700",
     )
 
 
@@ -386,44 +422,49 @@ def guidance_callout() -> rx.Component:
 
 
 def year_option_selector(y: str) -> rx.Component:
-    has_data = HistoricalState.years_with_data.contains(y)
+    comp_pct = HistoricalState.year_completion_map.get(y, 0)
     is_selected = HistoricalState.selected_year == y
-    is_first_incomplete = HistoricalState.first_incomplete_year == y
+    is_complete = comp_pct == 100
     return rx.el.button(
         rx.el.div(
             rx.el.div(
-                rx.cond(
-                    has_data,
-                    rx.icon(
-                        "lamp_wall_down", class_name="h-4 w-4 text-emerald-500 mr-2"
-                    ),
+                rx.el.div(
+                    rx.el.span(y, class_name="text-lg font-black tracking-tight"),
                     rx.cond(
-                        is_first_incomplete,
-                        rx.el.span(
-                            "START HERE",
-                            class_name="text-[8px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded mr-2",
+                        is_complete,
+                        rx.icon("languages", class_name="h-4 w-4 text-emerald-500"),
+                        rx.cond(
+                            comp_pct > 0,
+                            rx.icon("clock", class_name="h-4 w-4 text-amber-500"),
+                            None,
                         ),
-                        rx.fragment(),
                     ),
+                    class_name="flex items-center justify-between w-full mb-2",
                 ),
-                rx.el.span(y, class_name="font-bold"),
-                class_name="flex items-center",
+                rx.el.div(
+                    rx.el.div(
+                        class_name="bg-amber-500 h-1 rounded-full transition-all duration-700",
+                        style={"width": comp_pct.to_string() + "%"},
+                    ),
+                    class_name="w-full bg-slate-100 h-1 rounded-full overflow-hidden mb-1",
+                ),
+                rx.el.span(
+                    f"{comp_pct}% Filled",
+                    class_name="text-[9px] font-bold text-slate-400 uppercase tracking-widest",
+                ),
+                class_name="flex flex-col items-start w-full",
             ),
             class_name=rx.cond(
                 is_selected,
-                "bg-amber-100 text-amber-900 border-amber-300",
-                rx.cond(
-                    has_data,
-                    "bg-emerald-50 text-emerald-700 border-emerald-100",
-                    "bg-white text-slate-400 border-slate-200",
-                ),
+                "bg-amber-50 border-amber-400 shadow-lg shadow-amber-100/50",
+                "bg-white border-slate-100 hover:border-amber-200 hover:bg-amber-50/20 transition-all duration-200",
             ),
         ),
         on_click=lambda: HistoricalState.set_selected_year(y),
         class_name=rx.cond(
             is_selected,
-            "px-6 py-3 rounded-2xl border-2 shadow-md scale-105 transition-all outline-none",
-            "px-6 py-3 rounded-2xl border hover:border-amber-200 hover:bg-amber-50/30 transition-all outline-none",
+            "p-4 rounded-3xl border-2 w-32 shrink-0 transition-all transform scale-105 z-10",
+            "p-4 rounded-3xl border w-32 shrink-0 transition-all transform hover:translate-y-[-2px]",
         ),
     )
 
@@ -432,24 +473,50 @@ def historical_content() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.div(
-                rx.el.div(
-                    rx.icon("history", class_name="h-8 w-8 text-white"),
-                    class_name="p-3 bg-white/20 rounded-2xl backdrop-blur-md border border-white/30 mr-6",
-                ),
-                rx.el.div(
-                    rx.el.h1(
-                        "Historical Ranking Entry",
-                        class_name="text-3xl font-extrabold text-white tracking-tight",
-                    ),
-                    rx.el.p(
-                        "Capture and audit past institutional scores for year-on-year growth analysis.",
-                        class_name="text-amber-50 text-sm mt-1 font-medium",
-                    ),
-                    class_name="flex-1",
-                ),
-                class_name="flex items-center",
+                class_name="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"
             ),
-            class_name="relative rounded-3xl bg-gradient-to-r from-amber-700 via-amber-600 to-orange-700 shadow-xl mb-10 p-10",
+            rx.el.div(
+                rx.el.div(
+                    rx.el.div(
+                        rx.icon("history", class_name="h-8 w-8 text-white"),
+                        class_name="p-4 bg-white/20 rounded-[1.5rem] backdrop-blur-xl border border-white/30 mr-8 shadow-inner",
+                    ),
+                    rx.el.div(
+                        rx.el.h1(
+                            "Historical Performance Archive",
+                            class_name="text-4xl font-black text-white tracking-tighter",
+                        ),
+                        rx.el.div(
+                            rx.el.div(
+                                rx.el.span(
+                                    "Database Coverage: ",
+                                    class_name="text-amber-200/80",
+                                ),
+                                rx.el.span(
+                                    f"{HistoricalState.historical_coverage_pct}%",
+                                    class_name="text-white font-black",
+                                ),
+                                class_name="flex items-center mr-6",
+                            ),
+                            rx.el.div(
+                                rx.el.span(
+                                    "Years Audited: ", class_name="text-amber-200/80"
+                                ),
+                                rx.el.span(
+                                    HistoricalState.years_count.to_string(),
+                                    class_name="text-white font-black",
+                                ),
+                                class_name="flex items-center",
+                            ),
+                            class_name="flex items-center text-xs uppercase tracking-[0.1em] mt-3 font-bold",
+                        ),
+                        class_name="flex-1",
+                    ),
+                    class_name="flex items-center",
+                ),
+                class_name="relative z-10 max-w-7xl mx-auto",
+            ),
+            class_name="relative rounded-[2.5rem] bg-gradient-to-br from-amber-800 via-amber-700 to-orange-800 shadow-2xl mb-12 p-12 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-1000",
         ),
         guidance_callout(),
         rx.el.div(
