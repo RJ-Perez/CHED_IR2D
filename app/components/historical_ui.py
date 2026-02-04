@@ -485,7 +485,17 @@ def year_option_selector(y: str) -> rx.Component:
 def historical_content() -> rx.Component:
     from app.states.historical_analytics_state import HistoricalAnalyticsState
     from app.components.historical_analytics_ui import historical_analytics_view
+    from app.states.hei_state import HEIState
 
+    hei_name = rx.cond(
+        HEIState.is_registration_mode,
+        HEIState.reg_name,
+        rx.cond(
+            HEIState.selected_hei,
+            HEIState.selected_hei["name"],
+            "Institution Not Selected",
+        ),
+    )
     return rx.el.div(
         rx.el.div(
             rx.el.div(
@@ -494,43 +504,54 @@ def historical_content() -> rx.Component:
             rx.el.div(
                 rx.el.div(
                     rx.el.div(
-                        rx.icon("history", class_name="h-8 w-8 text-white"),
-                        class_name="p-4 bg-white/20 rounded-[1.5rem] backdrop-blur-xl border border-white/30 mr-8 shadow-inner",
-                    ),
-                    rx.el.div(
-                        rx.el.h1(
-                            "Historical Performance Archive",
-                            class_name="text-4xl font-black text-white tracking-tighter",
+                        rx.el.div(
+                            rx.icon("history", class_name="h-8 w-8 text-white"),
+                            class_name="p-4 bg-white/20 rounded-[1.5rem] backdrop-blur-xl border border-white/30 mr-8 shadow-inner",
                         ),
                         rx.el.div(
-                            rx.el.div(
-                                rx.el.span(
-                                    "Database Coverage: ",
-                                    class_name="text-emerald-200/80",
-                                ),
-                                rx.el.span(
-                                    f"{HistoricalState.historical_coverage_pct}%",
-                                    class_name="text-white font-black",
-                                ),
-                                class_name="flex items-center mr-6",
+                            rx.el.h1(
+                                hei_name,
+                                class_name="text-3xl md:text-4xl font-black text-white tracking-tighter",
                             ),
                             rx.el.div(
-                                rx.el.span(
-                                    "Years Audited: ", class_name="text-emerald-200/80"
+                                rx.el.h2(
+                                    "Historical Performance Archive",
+                                    class_name="text-lg font-bold text-emerald-100 opacity-90",
                                 ),
-                                rx.el.span(
-                                    HistoricalState.years_count.to_string(),
-                                    class_name="text-white font-black",
+                                rx.el.div(
+                                    rx.el.div(
+                                        rx.el.span(
+                                            "Database Coverage: ",
+                                            class_name="text-emerald-200/80",
+                                        ),
+                                        rx.el.span(
+                                            f"{HistoricalState.historical_coverage_pct}%",
+                                            class_name="text-white font-black",
+                                        ),
+                                        class_name="flex items-center mr-6",
+                                    ),
+                                    rx.el.div(
+                                        rx.el.span(
+                                            "Years Audited: ",
+                                            class_name="text-emerald-200/80",
+                                        ),
+                                        rx.el.span(
+                                            HistoricalState.years_count.to_string(),
+                                            class_name="text-white font-black",
+                                        ),
+                                        class_name="flex items-center",
+                                    ),
+                                    class_name="flex items-center text-[10px] uppercase tracking-[0.1em] mt-2 font-bold",
                                 ),
-                                class_name="flex items-center",
+                                class_name="flex flex-col",
                             ),
-                            class_name="flex items-center text-xs uppercase tracking-[0.1em] mt-3 font-bold",
+                            class_name="flex-1",
                         ),
-                        class_name="flex-1",
+                        class_name="flex items-center",
                     ),
-                    class_name="flex items-center",
+                    class_name="max-w-7xl mx-auto",
                 ),
-                class_name="relative z-10 max-w-7xl mx-auto",
+                class_name="relative z-10",
             ),
             class_name="relative rounded-[2.5rem] bg-gradient-to-br from-emerald-800 via-emerald-700 to-green-800 shadow-2xl mb-12 p-12 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-1000",
         ),
