@@ -448,6 +448,38 @@ class ReportsState(rx.State):
             if count > 0 or len(self.reports) == 0
         ]
 
+    @rx.var(cache=True)
+    def status_distribution_percentages(self) -> list[dict[str, str | int]]:
+        """Returns status distribution data with pre-calculated rounded percentages for display."""
+        total = self.total_reports
+        counts = {
+            "For Review": self.for_review_count,
+            "Reviewed": self.reviewed_count,
+            "In Progress": self.in_progress_count,
+            "Pending": self.pending_count,
+        }
+        colors = {
+            "For Review": "#3b82f6",
+            "Reviewed": "#10b981",
+            "In Progress": "#f59e0b",
+            "Pending": "#64748b",
+        }
+        results = []
+        for status, count in counts.items():
+            if count > 0 or total == 0:
+                percentage = "0"
+                if total > 0:
+                    percentage = str(int(round(count / total * 100)))
+                results.append(
+                    {
+                        "name": status,
+                        "value": count,
+                        "percentage": f"{percentage}%",
+                        "fill": colors.get(status, "#cbd5e1"),
+                    }
+                )
+        return results
+
     @rx.event
     def set_search_query(self, query: str):
         self.search_query = query
