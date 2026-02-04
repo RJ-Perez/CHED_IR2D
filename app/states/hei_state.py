@@ -23,6 +23,9 @@ class HEIState(rx.State):
     hei_database: list[HEI] = []
     search_results: list[HEI] = []
     search_query: str = ""
+    _search_cache: dict[str, list[HEI]] = {}
+    _search_version: int = 0
+    _last_search_query: str = ""
     selected_hei_id: str = ""
     selected_hei: Optional[HEI] = None
     ranking_framework: str = ""
@@ -249,8 +252,9 @@ class HEIState(rx.State):
 
     @rx.event
     def set_search_query(self, query: str):
-        self.search_query = query
-        if query.strip():
+        sanitized_query = query.strip()
+        self.search_query = sanitized_query
+        if len(sanitized_query) >= 2:
             self.is_dropdown_open = True
             return HEIState.perform_search
         else:
@@ -269,14 +273,24 @@ class HEIState(rx.State):
 
     @rx.event(background=True)
     async def perform_search(self):
-        """Search institutions in the database based on query."""
+        """Search institutions in the database based on query with caching and versioning."""
         async with self:
-            if not self.search_query.strip():
+            sanitized_query = self.search_query.strip()
+            if not sanitized_query or len(sanitized_query) < 2:
                 self.is_searching = False
                 self.search_results = []
                 return
+            if sanitized_query == self._last_search_query:
+                return
+            if sanitized_query in self._search_cache:
+                self.search_results = self._search_cache[sanitized_query]
+                self.is_searching = False
+                self._last_search_query = sanitized_query
+                return
             self.is_searching = True
-        query_text = f"%{self.search_query.strip()}%"
+            self._search_version += 1
+            current_version = self._search_version
+        query_text = f"%{sanitized_query}%"
         async with rx.asession() as session:
             try:
                 result = await session.execute(
@@ -286,9 +300,20 @@ class HEIState(rx.State):
                         WHERE institution_name ILIKE :query 
                            OR street_address ILIKE :query 
                            OR city_municipality ILIKE :query
+                        ORDER BY 
+                            CASE 
+                                WHEN institution_name ILIKE :exact THEN 1 
+                                WHEN institution_name ILIKE :query_start THEN 2
+                                ELSE 3 
+                            END ASC,
+                            institution_name ASC
                         LIMIT 10
                     """),
-                    {"query": query_text},
+                    {
+                        "query": query_text,
+                        "exact": sanitized_query,
+                        "query_start": f"{sanitized_query}%",
+                    },
                 )
                 rows = result.all()
                 results = [
@@ -307,8 +332,12 @@ class HEIState(rx.State):
                 logging.exception(f"Search error: {e}")
                 results = []
         async with self:
-            self.search_results = results
-            self.is_searching = False
+            if self._search_version == current_version:
+                self.search_results = results
+                self.is_searching = False
+                self._last_search_query = sanitized_query
+                if len(results) > 0:
+                    self._search_cache[sanitized_query] = results
 
     @rx.event
     def set_is_dropdown_open(self, value: bool):
