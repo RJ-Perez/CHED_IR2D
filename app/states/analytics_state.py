@@ -74,15 +74,15 @@ class AnalyticsState(rx.State):
         """
         if not text:
             return ""
-        text = re.sub("[a-zA-Z]*", "", text)
+        text = re.sub("[a-zA-Z]*\\n?", "", text)
         text = re.sub("", "", text)
         text = text.strip()
         start = text.find("{")
         end = text.rfind("}")
         if start != -1 and end != -1:
             text = text[start : end + 1]
-        text = re.sub(",(\\\\s*[}\\\\]])", "\\1", text)
-        text = re.sub("'([^']+)'\\\\s*:", '"\\1":', text)
+        text = re.sub(",(\\s*[}\\]])", "\\1", text)
+        text = re.sub("'([^']+)'\\s*:", '"\\1":', text)
 
         @rx.event
         def escape_string_content(match):
