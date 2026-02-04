@@ -2,6 +2,7 @@ import reflex as rx
 from typing import TypedDict, Any
 import json
 import logging
+import asyncio
 from sqlalchemy import text
 from app.states.hei_state import HEIState
 from app.states.auth_state import AuthState
@@ -143,14 +144,130 @@ class HistoricalState(rx.State):
 
     @rx.event(background=True)
     async def on_load(self):
-        """Batch loading of all historical data to minimize round-trips and state updates."""
+        """Optimized batch loading of all historical data using parallel queries and single state update."""
         async with self:
             self.is_loading = True
-        yield HistoricalState.fetch_years_with_data
-        yield HistoricalState.fetch_scores_for_year
-        yield HistoricalState.fetch_all_historical_data
-        async with self:
-            self.is_loading = False
+            hei = await self.get_state(HEIState)
+            if not hei.selected_hei:
+                self.is_loading = False
+                return
+            inst_id = int(hei.selected_hei["id"])
+            year = int(self.selected_year)
+        async with rx.asession() as session:
+            years_res = await session.execute(
+                text("""
+                SELECT ranking_year, 
+                       COUNT(*) filter (WHERE academic_reputation > 0) + 
+                       COUNT(*) filter (WHERE citations_per_faculty > 0) + 
+                       COUNT(*) filter (WHERE employer_reputation > 0) + 
+                       COUNT(*) filter (WHERE employment_outcomes > 0) + 
+                       COUNT(*) filter (WHERE international_research_network > 0) + 
+                       COUNT(*) filter (WHERE international_faculty_ratio > 0) + 
+                       COUNT(*) filter (WHERE international_student_ratio > 0) + 
+                       COUNT(*) filter (WHERE faculty_student_ratio > 0) + 
+                       COUNT(*) filter (WHERE sustainability_metrics > 0) as filled_count
+                FROM historical_performance 
+                WHERE institution_id = :iid
+                GROUP BY ranking_year
+                """),
+                {"iid": inst_id},
+            )
+            scores_res = await session.execute(
+                text("""
+                SELECT 
+                    academic_reputation, citations_per_faculty, 
+                    employer_reputation, employment_outcomes,
+                    international_research_network, international_faculty_ratio, international_student_ratio,
+                    faculty_student_ratio, sustainability_metrics,
+                    evidence_files
+                FROM historical_performance 
+                WHERE institution_id = :iid AND ranking_year = :year
+                """),
+                {"iid": inst_id, "year": year},
+            )
+            all_hist_res = await session.execute(
+                text("""
+                SELECT 
+                    ranking_year, 
+                    academic_reputation, employer_reputation, 
+                    sustainability_metrics, overall_score
+                FROM historical_performance 
+                WHERE institution_id = :iid
+                ORDER BY ranking_year ASC
+                """),
+                {"iid": inst_id},
+            )
+            completion_map = {y: 0 for y in self.available_years}
+            years_list = []
+            for row in years_res.all():
+                y_str = str(row[0])
+                years_list.append(y_str)
+                completion_map[y_str] = int(row[1] / 9 * 100)
+            score_row = scores_res.first()
+            year_scores = {
+                "academic_reputation": 0,
+                "citations_per_faculty": 0,
+                "employer_reputation": 0,
+                "employment_outcomes": 0,
+                "international_research_network": 0,
+                "international_faculty_ratio": 0,
+                "international_student_ratio": 0,
+                "faculty_student_ratio": 0,
+                "sustainability_metrics": 0,
+                "uploaded_files": [],
+            }
+            if score_row:
+                year_scores.update(
+                    {
+                        "academic_reputation": int(score_row[0] or 0),
+                        "citations_per_faculty": int(score_row[1] or 0),
+                        "employer_reputation": int(score_row[2] or 0),
+                        "employment_outcomes": int(score_row[3] or 0),
+                        "international_research_network": int(score_row[4] or 0),
+                        "international_faculty_ratio": int(score_row[5] or 0),
+                        "international_student_ratio": int(score_row[6] or 0),
+                        "faculty_student_ratio": int(score_row[7] or 0),
+                        "sustainability_metrics": int(score_row[8] or 0),
+                        "uploaded_files": (
+                            json.loads(score_row[9])
+                            if isinstance(score_row[9], str)
+                            else score_row[9]
+                        )
+                        or [],
+                    }
+                )
+            chart_data = []
+            for yr, ar, er, sm, ov in all_hist_res.all():
+                chart_data.append(
+                    {
+                        "year": str(yr),
+                        "academic_reputation": int(ar or 0),
+                        "employer_reputation": int(er or 0),
+                        "sustainability_metrics": int(sm or 0),
+                        "Average": int(ov or 0),
+                    }
+                )
+            async with self:
+                self.years_with_data = years_list
+                self.year_completion_map = completion_map
+                self.academic_reputation = year_scores["academic_reputation"]
+                self.citations_per_faculty = year_scores["citations_per_faculty"]
+                self.employer_reputation = year_scores["employer_reputation"]
+                self.employment_outcomes = year_scores["employment_outcomes"]
+                self.international_research_network = year_scores[
+                    "international_research_network"
+                ]
+                self.international_faculty_ratio = year_scores[
+                    "international_faculty_ratio"
+                ]
+                self.international_student_ratio = year_scores[
+                    "international_student_ratio"
+                ]
+                self.faculty_student_ratio = year_scores["faculty_student_ratio"]
+                self.sustainability_metrics = year_scores["sustainability_metrics"]
+                self.uploaded_files = year_scores["uploaded_files"]
+                self.trend_data = chart_data
+                self.is_loading = False
 
     @rx.var(cache=True)
     def best_performing_year(self) -> str:

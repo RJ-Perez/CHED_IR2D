@@ -443,7 +443,7 @@ def guidance_callout() -> rx.Component:
 
 
 def year_option_selector(y: str) -> rx.Component:
-    """Improved selector with better performance and direct event binding."""
+    """Optimized lightweight selector for better performance."""
     comp_pct = HistoricalState.year_completion_map[y]
     is_selected = HistoricalState.selected_year == y
     return rx.el.button(
@@ -451,14 +451,14 @@ def year_option_selector(y: str) -> rx.Component:
             rx.el.div(
                 rx.el.span(y, class_name="text-lg font-black tracking-tight"),
                 rx.el.div(
-                    rx.match(
-                        comp_pct,
-                        (
-                            100,
-                            rx.icon("languages", class_name="h-4 w-4 text-emerald-500"),
+                    rx.cond(
+                        comp_pct == 100,
+                        rx.icon("languages", class_name="h-4 w-4 text-emerald-500"),
+                        rx.cond(
+                            comp_pct > 0,
+                            rx.icon("clock", class_name="h-4 w-4 text-emerald-500"),
+                            None,
                         ),
-                        (0, rx.fragment()),
-                        rx.icon("clock", class_name="h-4 w-4 text-emerald-500"),
                     ),
                     class_name="flex items-center",
                 ),
@@ -467,9 +467,7 @@ def year_option_selector(y: str) -> rx.Component:
             rx.el.div(
                 rx.el.div(
                     class_name="bg-emerald-500 h-1 rounded-full",
-                    style={
-                        "width": rx.cond(comp_pct > 0, comp_pct.to_string() + "%", "0%")
-                    },
+                    style={"width": comp_pct.to_string() + "%"},
                 ),
                 class_name="w-full bg-slate-100 h-1 rounded-full overflow-hidden mb-1",
             ),
@@ -480,15 +478,14 @@ def year_option_selector(y: str) -> rx.Component:
             class_name=rx.cond(
                 is_selected,
                 "bg-emerald-50 border-emerald-400 border-2 p-4 rounded-2xl w-full",
-                "bg-white border-slate-100 border p-4 rounded-2xl hover:border-emerald-200 w-full transition-colors",
+                "bg-white border-slate-100 border p-4 rounded-2xl hover:border-emerald-200 transition-colors w-full",
             ),
         ),
         on_click=lambda: HistoricalState.select_year(y),
-        disabled=HistoricalState.is_loading,
         class_name=rx.cond(
             is_selected,
-            "w-32 shrink-0 transition-all transform scale-105 z-10 shadow-lg shadow-emerald-100/50",
-            "w-32 shrink-0 transition-all transform hover:translate-y-[-2px] hover:shadow-sm",
+            "w-32 shrink-0 transform scale-105 z-10 shadow-lg shadow-emerald-100/50 transition-all",
+            "w-32 shrink-0 hover:translate-y-[-2px] hover:shadow-sm transition-all",
         ),
     )
 
