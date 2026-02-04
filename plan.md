@@ -1,21 +1,20 @@
-# Post-Assessment Insights Module Implementation
+# CHED IR²D Historical Ranking Entry Module
 
-## Phase 1: Database Schema & State Foundation ✅
-- [x] Create `qs_stars_assessments` database table for storing audit dates, methodology version, star ratings
-- [x] Create `qs_indicator_scores` table for gap analysis data (points achieved vs max score)
-- [x] Create `qs_action_plans` table for target scores and improvement plans
-- [x] Implement `PostAssessmentState` with all required state variables and data loading
+## Phase 1: Historical Ranking Entry Module ✅
+- [x] Create `historical_state.py` with state management for past scores
+- [x] Create `historical_ui.py` with UI components for data entry
+- [x] Add database table for historical scores storage
+- [x] Build year selection and score entry forms
+- [x] Add file upload for historical evidence documents
 
-## Phase 2: Star Ratings Dashboard & Gap Analysis UI ✅
-- [x] Build visual star rating display component (0-5 stars) for Overall and categories
-- [x] Create audit information header with dates and methodology version
-- [x] Implement gap analysis comparison bars (Points Achieved vs Maximum Score)
-- [x] Add weakness flagging system (< 50% threshold highlighting)
-- [x] Create audit validity countdown timer/status badge
+## Phase 2: Year-on-Year Comparison Analytics ✅
+- [x] Create comparison visualization components (line charts, trend indicators)
+- [x] Build metric delta calculations (improvement/decline percentages)
+- [x] Add historical data to analytics page with trend analysis
+- [x] Implement comparison table showing scores across years
 
-## Phase 3: Action Planning & Integration ✅
-- [x] Build action planning form with target score inputs per indicator
-- [x] Add data threshold guidance display from QS methodology
-- [x] Create sidebar navigation entry for Post-Assessment Insights page
-- [x] Integrate page into main app routing with proper on_load events
-- [x] Test complete workflow from data entry to insights display
+## Phase 3: Integration & Navigation ✅
+- [x] Add Historical Entry link to sidebar navigation
+- [x] Connect historical data to main dashboard insights
+- [x] Add export functionality for historical reports
+- [x] Create summary cards showing multi-year performance trends

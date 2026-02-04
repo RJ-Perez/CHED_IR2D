@@ -7,6 +7,7 @@ from app.states.dashboard_state import DashboardState
 from app.states.analytics_state import AnalyticsState
 from app.states.reports_state import ReportsState
 from app.states.post_assessment_state import PostAssessmentState
+from app.states.historical_state import HistoricalState
 
 
 def branding_section() -> rx.Component:
@@ -214,6 +215,19 @@ def post_assessment_page() -> rx.Component:
     )
 
 
+def historical_page() -> rx.Component:
+    from app.components.historical_ui import historical_content
+
+    return rx.el.div(
+        sidebar(current_page="historical"),
+        rx.el.main(
+            historical_content(), class_name="flex-1 p-8 overflow-y-auto h-full"
+        ),
+        class_name="flex h-screen w-full bg-gray-50 font-['Inter']",
+        on_mount=HistoricalState.on_load,
+    )
+
+
 from app.states.notification_state import NotificationState
 
 app.add_page(
@@ -226,3 +240,4 @@ app.add_page(analytics_page, route="/analytics")
 app.add_page(reports_page, route="/reports")
 app.add_page(settings_page, route="/settings")
 app.add_page(post_assessment_page, route="/post-assessment")
+app.add_page(historical_page, route="/historical")

@@ -432,6 +432,8 @@ def notification_bell() -> rx.Component:
 
 def dashboard_header() -> rx.Component:
     """Dynamic header showing selected HEI context with a modern banner design."""
+    from app.states.historical_state import HistoricalState
+
     hei_name = rx.cond(
         HEIState.is_registration_mode,
         HEIState.reg_name,
@@ -463,6 +465,30 @@ def dashboard_header() -> rx.Component:
                     class_name="flex items-center",
                 ),
                 class_name="bg-blue-50 border-b border-blue-100 px-8 py-3",
+            ),
+        ),
+        rx.cond(
+            HistoricalState.years_count > 0,
+            rx.el.div(
+                rx.el.div(
+                    rx.icon("history", class_name="h-5 w-5 text-amber-600 mr-3"),
+                    rx.el.p(
+                        rx.el.span(
+                            "Historical Data Available: ", class_name="font-bold"
+                        ),
+                        rx.el.span(
+                            f"Records found for {HistoricalState.years_count} previous cycles. "
+                        ),
+                        rx.el.a(
+                            "View multi-year trends →",
+                            href="/historical",
+                            class_name="underline font-bold text-amber-700 hover:text-amber-800 ml-1",
+                        ),
+                        class_name="text-sm text-amber-800",
+                    ),
+                    class_name="flex items-center",
+                ),
+                class_name="bg-amber-50 border-b border-amber-100 px-8 py-2",
             ),
         ),
         rx.el.div(
@@ -1025,6 +1051,7 @@ def data_entry_forms() -> rx.Component:
 def dashboard_stat_cards() -> rx.Component:
     """Row of summary cards for the assessment top-view using DS tokens."""
     from app.components.design_system import ds_stat_card
+    from app.states.historical_state import HistoricalState
 
     return rx.el.div(
         ds_stat_card(
@@ -1043,7 +1070,16 @@ def dashboard_stat_cards() -> rx.Component:
             icon="file-check-2",
             color_variant="primary",
         ),
-        class_name="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10",
+        rx.cond(
+            HistoricalState.years_count > 0,
+            ds_stat_card(
+                title="Historical Data",
+                value=f"{HistoricalState.years_count} Years",
+                icon="history",
+                color_variant="warning",
+            ),
+        ),
+        class_name="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10",
     )
 
 
