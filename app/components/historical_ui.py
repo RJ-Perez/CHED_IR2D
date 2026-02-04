@@ -12,45 +12,36 @@ def score_input_historical(
             rx.el.div(
                 rx.el.label(
                     label,
-                    class_name="text-xs font-bold text-emerald-800 uppercase tracking-[0.1em] mb-1",
+                    class_name="text-sm font-semibold text-emerald-900 tracking-tight",
                 ),
                 rx.cond(
                     tooltip != "",
                     rx.el.span(
-                        rx.icon("info", class_name="h-3 w-3 text-emerald-400"),
+                        rx.icon("info", class_name="h-4 w-4 text-emerald-400"),
                         title=tooltip,
-                        class_name="cursor-help ml-1.5",
+                        class_name="cursor-help",
                     ),
                     rx.fragment(),
                 ),
-                class_name="flex items-center justify-between",
+                class_name="flex items-center justify-between mb-4",
             ),
             rx.el.div(
-                rx.el.input(
-                    type="number",
-                    placeholder="Enter score (0-100)",
-                    on_change=on_change.debounce(300),
-                    default_value=rx.cond(value == 0, "", value.to_string()),
-                    class_name="w-full px-4 py-3 bg-white border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100/50 focus:border-emerald-500 outline-none text-lg font-black text-emerald-900 transition-all shadow-sm",
+                rx.el.div(
+                    rx.el.input(
+                        type="number",
+                        on_change=on_change.debounce(300),
+                        min=0,
+                        max=100,
+                        placeholder="0-100",
+                        class_name="w-full px-4 py-2.5 bg-emerald-50/50 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100/50 focus:border-emerald-500 outline-none transition-all text-center text-lg font-bold text-emerald-950 shadow-sm",
+                        default_value=rx.cond(value == 0, "", value.to_string()),
+                    ),
+                    class_name="relative",
                 ),
-                class_name="relative",
+                class_name="space-y-1",
             ),
-            class_name="mb-3",
         ),
-        rx.el.div(
-            rx.el.div(
-                class_name="h-1.5 rounded-full bg-emerald-500 transition-all duration-500 ease-out",
-                style={"width": rx.cond(value > 0, value.to_string() + "%", "0%")},
-            ),
-            class_name="w-full bg-emerald-100/50 h-1.5 rounded-full overflow-hidden",
-        ),
-        rx.el.div(
-            rx.el.span("0", class_name="text-[8px] font-bold text-emerald-300"),
-            rx.el.span("50", class_name="text-[8px] font-bold text-emerald-300"),
-            rx.el.span("100", class_name="text-[8px] font-bold text-emerald-300"),
-            class_name="flex justify-between px-0.5 mt-1",
-        ),
-        class_name="group p-5 bg-emerald-50/30 rounded-3xl border border-emerald-100/50 hover:border-emerald-300 hover:bg-white transition-all duration-300",
+        class_name="group p-6 bg-white rounded-2xl border border-emerald-100 shadow-sm hover:shadow transition-all duration-300",
     )
 
 
