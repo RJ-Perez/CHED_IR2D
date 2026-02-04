@@ -363,7 +363,7 @@ def selection_screen_content() -> rx.Component:
                         ),
                         rx.el.div(
                             rx.el.h1(
-                                "Select HEI",
+                                "Select Higher Education Institution",
                                 class_name="text-2xl md:text-4xl font-bold text-white tracking-tighter",
                             ),
                             class_name="flex-1",
