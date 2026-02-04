@@ -28,6 +28,11 @@ class NotificationState(rx.State):
 
     @rx.event
     def toggle_notifications(self):
+        """
+        Toggles the visibility of the notification dropdown.
+        When opened, it marks all current notifications as read by adding their IDs
+        to the read_notification_ids list, effectively clearing the red badge.
+        """
         self.show_notifications = not self.show_notifications
         if self.show_notifications:
             for n in self.notifications:
