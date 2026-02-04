@@ -176,30 +176,33 @@ def registration_form() -> rx.Component:
 
 
 def preliminary_notice_modal() -> rx.Component:
-    return rx.el.div(
+    """Optimized notice modal with instant interaction and minimal layout shift."""
+    return rx.cond(
+        HEIState.show_preliminary_notice,
         rx.el.div(
             rx.el.div(
                 rx.el.div(
                     rx.el.div(
                         rx.icon(
-                            "triangle-alert", class_name="h-12 w-12 text-amber-500 mb-4"
+                            "triangle-alert",
+                            class_name="h-12 w-12 text-amber-500 mb-4 mx-auto",
                         ),
                         rx.el.h2(
-                            "⚠️ Preliminary Assessment Notice",
+                            "Preliminary Assessment Notice",
                             class_name="text-xl font-bold text-gray-900 mb-4",
                         ),
                         rx.el.div(
                             rx.el.p(
-                                "Welcome to the HEI Self-Assessment Dashboard. Please note that the scores and benchmarks displayed here are provisional results based on your initial data entry.",
+                                "Please note that all assessment scores and benchmarks displayed in the dashboard are provisional based on your initial input.",
                                 class_name="text-sm text-gray-600 mb-4 leading-relaxed",
                             ),
                             rx.el.p(
-                                "To ensure accuracy and official recognition, all submitted data is subject to a formal verification and audit by the Commission on Higher Education (CHED).",
+                                "Official recognition requires formal verification and audit by the Commission on Higher Education (CHED).",
                                 class_name="text-sm text-gray-600 mb-6 leading-relaxed",
                             ),
                             rx.el.div(
                                 rx.el.p(
-                                    "Key Reminder: Results are not final until you receive official confirmation from CHED.",
+                                    "Reminder: Results are not final until official CHED confirmation.",
                                     class_name="text-sm font-bold text-amber-800",
                                 ),
                                 class_name="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg mb-8",
@@ -211,14 +214,14 @@ def preliminary_notice_modal() -> rx.Component:
                             on_click=HEIState.acknowledge_and_proceed,
                             class_name="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-100 transition-all transform active:scale-[0.98]",
                         ),
-                        class_name="bg-white rounded-[2rem] shadow-2xl p-10 max-w-lg w-full mx-4 text-center border border-gray-100",
+                        class_name="bg-white rounded-[2rem] shadow-2xl p-10 max-w-lg w-full mx-4 text-center border border-gray-100 animate-in zoom-in-95 duration-200",
                     ),
                     class_name="flex items-center justify-center min-h-screen",
                 ),
                 class_name="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-[200] overflow-y-auto",
             )
         ),
-        class_name=rx.cond(HEIState.show_preliminary_notice, "block", "hidden"),
+        rx.fragment(),
     )
 
 

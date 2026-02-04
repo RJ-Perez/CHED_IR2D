@@ -336,12 +336,14 @@ class HEIState(rx.State):
 
     @rx.event
     def select_hei(self, hei: HEI):
+        """Optimistic UI update for instant selection feedback."""
         self.selected_hei = hei
         self.selected_hei_id = hei["id"]
         self.search_query = hei["name"]
         self.is_dropdown_open = False
         self.is_registration_mode = False
-        return rx.toast(f"Selected: {hei['name']}")
+        if not self.ranking_framework:
+            self.ranking_framework = "QS"
 
     @rx.event
     def deselect_hei(self):
@@ -349,6 +351,7 @@ class HEIState(rx.State):
         self.selected_hei_id = ""
         self.search_query = ""
         self.ranking_framework = ""
+        self.is_registration_mode = False
 
     @rx.event
     def set_ranking_framework(self, framework: str):
@@ -419,44 +422,35 @@ class HEIState(rx.State):
 
     @rx.event(background=True)
     async def submit_selection(self):
+        """Batched state updates to minimize synchronization overhead during transition."""
         async with self:
             self.is_loading = True
-        if self.is_registration_mode:
+            reg_mode = self.is_registration_mode
+            reg_data = {
+                "name": self.reg_name,
+                "admin": self.reg_admin,
+                "contact": self.reg_contact,
+                "street": self.reg_street,
+                "city": self.reg_city,
+                "region": self.reg_region,
+                "zip": self.reg_zip,
+                "framework": self.ranking_framework,
+            }
+        if reg_mode:
             async with rx.asession() as session:
                 result = await session.execute(
                     text("""
                     INSERT INTO institutions (
-                        institution_name, 
-                        admin_name, 
-                        contact_number, 
-                        street_address, 
-                        city_municipality, 
-                        region, 
-                        zip_code, 
-                        ranking_framework
+                        institution_name, admin_name, contact_number, 
+                        street_address, city_municipality, region, 
+                        zip_code, ranking_framework
                     )
                     VALUES (
-                        :name, 
-                        :admin, 
-                        :contact, 
-                        :street, 
-                        :city, 
-                        :region, 
-                        :zip, 
-                        :framework
+                        :name, :admin, :contact, :street, :city, :region, :zip, :framework
                     )
                     RETURNING id, institution_name, street_address, city_municipality
                     """),
-                    {
-                        "name": self.reg_name,
-                        "admin": self.reg_admin,
-                        "contact": self.reg_contact,
-                        "street": self.reg_street,
-                        "city": self.reg_city,
-                        "region": self.reg_region,
-                        "zip": self.reg_zip,
-                        "framework": self.ranking_framework,
-                    },
+                    reg_data,
                 )
                 new_hei = result.first()
                 await session.commit()
