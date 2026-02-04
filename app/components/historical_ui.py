@@ -5,23 +5,28 @@ from app.components.design_system import DS, ds_card
 
 
 def score_input_historical(
-    label: str, value: rx.Var, on_change: rx.event.EventType, tooltip: str = ""
+    label: str, value: rx.Var, on_change: rx.event.EventType
 ) -> rx.Component:
+    field_key_map = {
+        "Academic Reputation": "academic_reputation",
+        "Citations per Faculty": "citations_per_faculty",
+        "Employer Reputation": "employer_reputation",
+        "Employment Outcomes": "employment_outcomes",
+        "Research Network": "international_research_network",
+        "Int. Faculty Ratio": "international_faculty_ratio",
+        "Int. Student Ratio": "international_student_ratio",
+        "Faculty-Student Ratio": "faculty_student_ratio",
+        "Sustainability Score": "sustainability_metrics",
+    }
+    field_key = field_key_map.get(label, "")
+    error_msg = HistoricalState.validation_errors[field_key]
+    has_error = error_msg != ""
     return rx.el.div(
         rx.el.div(
             rx.el.div(
                 rx.el.label(
                     label,
                     class_name="text-sm font-semibold text-emerald-900 tracking-tight",
-                ),
-                rx.cond(
-                    tooltip != "",
-                    rx.el.span(
-                        rx.icon("info", class_name="h-4 w-4 text-emerald-400"),
-                        title=tooltip,
-                        class_name="cursor-help",
-                    ),
-                    rx.fragment(),
                 ),
                 class_name="flex items-center justify-between mb-4",
             ),
@@ -33,10 +38,26 @@ def score_input_historical(
                         min=0,
                         max=100,
                         placeholder="0-100",
-                        class_name="w-full px-4 py-2.5 bg-emerald-50/50 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100/50 focus:border-emerald-500 outline-none transition-all text-center text-lg font-bold text-emerald-950 shadow-sm",
+                        class_name=rx.cond(
+                            has_error,
+                            "w-full px-4 py-2.5 bg-red-50 border border-red-500 rounded-xl focus:ring-4 focus:ring-red-100 outline-none transition-all text-center text-lg font-bold text-red-900 shadow-sm",
+                            "w-full px-4 py-2.5 bg-emerald-50/50 border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-100/50 focus:border-emerald-500 outline-none transition-all text-center text-lg font-bold text-emerald-950 shadow-sm",
+                        ),
                         default_value=rx.cond(value == 0, "", value.to_string()),
                     ),
                     class_name="relative",
+                ),
+                rx.cond(
+                    has_error,
+                    rx.el.div(
+                        rx.icon("wheat", class_name="h-3 w-3 text-red-500 mr-1.5"),
+                        rx.el.span(
+                            error_msg,
+                            class_name="text-[10px] font-bold text-red-500 uppercase",
+                        ),
+                        class_name="flex items-center mt-2 animate-in fade-in slide-in-from-top-1",
+                    ),
+                    None,
                 ),
                 class_name="space-y-1",
             ),
@@ -547,13 +568,11 @@ def historical_content() -> rx.Component:
                             "Academic Reputation",
                             HistoricalState.academic_reputation,
                             HistoricalState.set_academic_reputation,
-                            tooltip="Reputation score based on QS Academic Survey results.",
                         ),
                         score_input_historical(
                             "Citations per Faculty",
                             HistoricalState.citations_per_faculty,
                             HistoricalState.set_citations_per_faculty,
-                            tooltip="Normalized number of citations for the 5-year period.",
                         ),
                         class_name="grid grid-cols-1 sm:grid-cols-2 gap-4",
                     ),
@@ -569,13 +588,11 @@ def historical_content() -> rx.Component:
                             "Employer Reputation",
                             HistoricalState.employer_reputation,
                             HistoricalState.set_employer_reputation,
-                            tooltip="Reputation score based on QS Employer Survey results.",
                         ),
                         score_input_historical(
                             "Employment Outcomes",
                             HistoricalState.employment_outcomes,
                             HistoricalState.set_employment_outcomes,
-                            tooltip="Scores derived from graduate employment rates.",
                         ),
                         class_name="grid grid-cols-1 sm:grid-cols-2 gap-4",
                     ),
@@ -591,19 +608,16 @@ def historical_content() -> rx.Component:
                             "Research Network",
                             HistoricalState.international_research_network,
                             HistoricalState.set_international_research_network,
-                            tooltip="Number of unique international partners in collaborative research.",
                         ),
                         score_input_historical(
                             "Int. Faculty Ratio",
                             HistoricalState.international_faculty_ratio,
                             HistoricalState.set_international_faculty_ratio,
-                            tooltip="Percentage of faculty members from foreign countries.",
                         ),
                         score_input_historical(
                             "Int. Student Ratio",
                             HistoricalState.international_student_ratio,
                             HistoricalState.set_international_student_ratio,
-                            tooltip="Percentage of students from foreign countries.",
                         ),
                         class_name="grid grid-cols-1 sm:grid-cols-3 gap-4",
                     ),
@@ -619,13 +633,11 @@ def historical_content() -> rx.Component:
                             "Faculty-Student Ratio",
                             HistoricalState.faculty_student_ratio,
                             HistoricalState.set_faculty_student_ratio,
-                            tooltip="Number of students per one faculty member.",
                         ),
                         score_input_historical(
                             "Sustainability Score",
                             HistoricalState.sustainability_metrics,
                             HistoricalState.set_sustainability_metrics,
-                            tooltip="Overall ESG performance score from previous audits.",
                         ),
                         class_name="grid grid-cols-1 sm:grid-cols-2 gap-4",
                     ),
@@ -649,8 +661,14 @@ def historical_content() -> rx.Component:
                             ),
                         ),
                         on_click=HistoricalState.save_historical_scores,
-                        disabled=HistoricalState.is_saving | HistoricalState.is_loading,
-                        class_name="w-full py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-2xl font-black text-lg shadow-xl hover:shadow-emerald-100 hover:scale-[1.01] active:scale-[0.99] transition-all mt-10",
+                        disabled=HistoricalState.is_saving
+                        | HistoricalState.is_loading
+                        | HistoricalState.has_validation_errors,
+                        class_name=rx.cond(
+                            HistoricalState.has_validation_errors,
+                            "w-full py-4 bg-slate-200 text-slate-400 rounded-2xl font-black text-lg cursor-not-allowed mt-10",
+                            "w-full py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-2xl font-black text-lg shadow-xl hover:shadow-emerald-100 hover:scale-[1.01] active:scale-[0.99] transition-all mt-10",
+                        ),
                     )
                 ),
                 class_name="bg-white/60 backdrop-blur-sm p-8 rounded-3xl border border-emerald-100 shadow-lg",

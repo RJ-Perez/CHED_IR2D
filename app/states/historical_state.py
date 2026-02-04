@@ -42,6 +42,97 @@ class HistoricalState(rx.State):
         "2023": 0,
         "2024": 0,
     }
+    validation_errors: dict[str, str] = {
+        "academic_reputation": "",
+        "citations_per_faculty": "",
+        "employer_reputation": "",
+        "employment_outcomes": "",
+        "international_research_network": "",
+        "international_faculty_ratio": "",
+        "international_student_ratio": "",
+        "faculty_student_ratio": "",
+        "sustainability_metrics": "",
+    }
+
+    @rx.var(cache=True)
+    def has_validation_errors(self) -> bool:
+        """Checks if any field in validation_errors has a non-empty string."""
+        for key in self.validation_errors.keys():
+            if self.validation_errors[key]:
+                return True
+        return False
+
+    def _validate_and_clamp(self, field_name: str, value: str) -> int:
+        """Helper to convert string to int, clamp values, and set validation errors."""
+        try:
+            if not value:
+                self.validation_errors[field_name] = ""
+                return 0
+            num_float = float(value)
+            num = int(num_float)
+            if num_float < 0 or num_float > 100:
+                self.validation_errors[field_name] = "Value must be between 0 and 100"
+            else:
+                self.validation_errors[field_name] = ""
+            return max(0, min(100, num))
+        except (ValueError, TypeError) as e:
+            logging.exception(f"Validation error for {field_name}: {e}")
+            self.validation_errors[field_name] = "Please enter a valid number"
+            return 0
+
+    @rx.event
+    def set_academic_reputation(self, value: str):
+        self.academic_reputation = self._validate_and_clamp(
+            "academic_reputation", value
+        )
+
+    @rx.event
+    def set_citations_per_faculty(self, value: str):
+        self.citations_per_faculty = self._validate_and_clamp(
+            "citations_per_faculty", value
+        )
+
+    @rx.event
+    def set_employer_reputation(self, value: str):
+        self.employer_reputation = self._validate_and_clamp(
+            "employer_reputation", value
+        )
+
+    @rx.event
+    def set_employment_outcomes(self, value: str):
+        self.employment_outcomes = self._validate_and_clamp(
+            "employment_outcomes", value
+        )
+
+    @rx.event
+    def set_international_research_network(self, value: str):
+        self.international_research_network = self._validate_and_clamp(
+            "international_research_network", value
+        )
+
+    @rx.event
+    def set_international_faculty_ratio(self, value: str):
+        self.international_faculty_ratio = self._validate_and_clamp(
+            "international_faculty_ratio", value
+        )
+
+    @rx.event
+    def set_international_student_ratio(self, value: str):
+        self.international_student_ratio = self._validate_and_clamp(
+            "international_student_ratio", value
+        )
+
+    @rx.event
+    def set_faculty_student_ratio(self, value: str):
+        self.faculty_student_ratio = self._validate_and_clamp(
+            "faculty_student_ratio", value
+        )
+
+    @rx.event
+    def set_sustainability_metrics(self, value: str):
+        self.sustainability_metrics = self._validate_and_clamp(
+            "sustainability_metrics", value
+        )
 
     @rx.var(cache=True)
     def overall_completion_pct(self) -> int:
@@ -383,6 +474,8 @@ class HistoricalState(rx.State):
             self.faculty_student_ratio = 0
             self.sustainability_metrics = 0
             self.uploaded_files = []
+            for k in self.validation_errors.keys():
+                self.validation_errors[k] = ""
         async with rx.asession() as session:
             result = await session.execute(
                 text("""
@@ -489,6 +582,11 @@ class HistoricalState(rx.State):
     @rx.event(background=True)
     async def save_historical_scores(self):
         async with self:
+            if self.has_validation_errors:
+                yield rx.toast.error(
+                    "Please correct the validation errors before saving."
+                )
+                return
             self.is_saving = True
             hei = await self.get_state(HEIState)
             auth = await self.get_state(AuthState)
