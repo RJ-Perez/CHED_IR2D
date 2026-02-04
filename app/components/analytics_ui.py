@@ -509,7 +509,42 @@ def analytics_content_ui() -> rx.Component:
         ),
         rx.el.div(
             rx.el.div(sustainability_chart(), class_name="w-full lg:w-1/2"),
-            class_name="grid grid-cols-1 gap-6 mb-8",
+            rx.cond(
+                AnalyticsState.historical_trend_data.length() > 1,
+                rx.el.div(
+                    rx.el.h4(
+                        "Historical Performance Trend (2020-2025)",
+                        class_name="text-base font-semibold text-gray-800 mb-4",
+                    ),
+                    rx.recharts.line_chart(
+                        rx.recharts.cartesian_grid(
+                            stroke_dasharray="3 3", vertical=False
+                        ),
+                        rx.recharts.x_axis(data_key="year"),
+                        rx.recharts.y_axis(domain=[0, 100]),
+                        rx.recharts.tooltip(
+                            content_style={
+                                "backgroundColor": "white",
+                                "borderRadius": "12px",
+                                "boxShadow": "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                            }
+                        ),
+                        rx.recharts.line(
+                            data_key="score",
+                            name="Overall Score",
+                            stroke="#2563eb",
+                            stroke_width=3,
+                            dot=True,
+                            type_="monotone",
+                        ),
+                        data=AnalyticsState.historical_trend_data,
+                        width="100%",
+                        height=300,
+                    ),
+                    class_name="bg-white p-6 rounded-xl border border-gray-200 shadow-sm w-full lg:w-1/2",
+                ),
+            ),
+            class_name="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8",
         ),
         rx.el.div(
             rx.el.div(

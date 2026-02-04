@@ -569,38 +569,48 @@ class ReportsState(rx.State):
             )
         return rx.toast("Report not found", duration=3000)
 
-    @rx.event
-    def download_all_reports(self):
-        """Generate and download CSV for all reports."""
+    @rx.event(background=True)
+    async def download_all_reports(self):
+        """Generate and download CSV for all reports with historical context."""
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow(
             [
                 "Institution",
-                "Overall Readiness Score",
+                "2025 Overall Readiness",
                 "Research & Discovery (50%)",
                 "Employability & Outcomes (20%)",
                 "Global Engagement (15%)",
                 "Learning Experience (10%)",
                 "Sustainability (5%)",
+                "Historical Records Found",
                 "Status",
                 "Last Generated",
             ]
         )
-        for report in self.reports:
-            writer.writerow(
-                [
-                    report["name"],
-                    report["overall_score"],
-                    report["research_score"],
-                    report["employability_score"],
-                    report["global_engagement_score"],
-                    report["learning_experience_score"],
-                    report["sustainability_score"],
-                    report["status"],
-                    report["last_generated"],
-                ]
+        async with rx.asession() as session:
+            hist_res = await session.execute(
+                text(
+                    "SELECT institution_id, COUNT(DISTINCT ranking_year) FROM historical_scores GROUP BY institution_id"
+                )
             )
+            hist_counts = {str(row[0]): row[1] for row in hist_res.all()}
+        async with self:
+            for report in self.reports:
+                writer.writerow(
+                    [
+                        report["name"],
+                        report["overall_score"],
+                        report["research_score"],
+                        report["employability_score"],
+                        report["global_engagement_score"],
+                        report["learning_experience_score"],
+                        report["sustainability_score"],
+                        hist_counts.get(report["id"], 0),
+                        report["status"],
+                        report["last_generated"],
+                    ]
+                )
         return rx.download(
             data=output.getvalue(),
             filename=f"all_institutions_report_{datetime.date.today()}.csv",

@@ -48,6 +48,8 @@ class AnalyticsState(rx.State):
     ncr_average_color: str = "#94a3b8"
     target_color: str = "#10b981"
     your_color: str = "#2563eb"
+    historical_trend_data: list[dict[str, str | int | float]] = []
+    year_over_year_changes: dict[str, float] = {}
 
     async def _calculate_ncr_averages(self) -> dict[str, float]:
         """Queries all scores for 2025 and calculates real NCR averages per indicator."""
@@ -200,7 +202,57 @@ class AnalyticsState(rx.State):
                 + learning_experience_score * 0.1
                 + sustainability_score * 0.05
             )
+            hist_result = await session.execute(
+                text("""
+                SELECT ranking_year, indicator_code, value
+                FROM historical_scores
+                WHERE institution_id = :iid
+                ORDER BY ranking_year ASC
+                """),
+                {"iid": institution_id},
+            )
+            hist_rows = hist_result.all()
+            hist_data_map = {}
+            for y, c, v in hist_rows:
+                y_str = str(y)
+                if y_str not in hist_data_map:
+                    hist_data_map[y_str] = {}
+                try:
+                    hist_data_map[y_str][c] = int(float(v))
+                except Exception as e:
+                    logging.exception(f"Error parsing historical score: {e}")
+                    hist_data_map[y_str][c] = 0
+            trend_data = []
+            for year in sorted(hist_data_map.keys()):
+                scores = list(hist_data_map[year].values())
+                avg = int(sum(scores) / len(scores)) if scores else 0
+                trend_data.append(
+                    {
+                        "year": year,
+                        "score": avg,
+                        "research": hist_data_map[year].get("academic_reputation", 0),
+                    }
+                )
+            trend_data.append(
+                {
+                    "year": "2025",
+                    "score": overall_score,
+                    "research": int(s_academic_rep),
+                }
+            )
+            yoy_changes = {}
+            if len(trend_data) >= 2:
+                last = trend_data[-1]
+                prev = trend_data[-2]
+                yoy_changes["overall"] = round(
+                    (last["score"] - prev["score"])
+                    / (prev["score"] if prev["score"] else 1)
+                    * 100,
+                    1,
+                )
             async with self:
+                self.historical_trend_data = trend_data
+                self.year_over_year_changes = yoy_changes
                 self.research_score = research_score
                 self.employability_score = employability_score
                 self.global_engagement_score = global_engagement_score
