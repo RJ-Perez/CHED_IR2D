@@ -123,9 +123,25 @@ class SettingsState(rx.State):
     def set_ranking_framework(self, value: str):
         self.ranking_framework = value
 
+    def _validate_password(self, password: str) -> str | None:
+        """Standard password security validation."""
+        if len(password) < 8:
+            return "Password must be at least 8 characters long."
+        import re
+
+        if not re.search("[a-z]", password):
+            return "Password must contain at least one lowercase letter."
+        if not re.search("[A-Z]", password):
+            return "Password must contain at least one uppercase letter."
+        if not re.search("[0-9]", password):
+            return "Password must contain at least one digit."
+        if not re.search('[!@#$%^&*(),.?":{}|<>]', password):
+            return "Password must contain at least one special character."
+        return None
+
     @rx.event(background=True)
     async def save_account_settings(self):
-        """Persist account changes to the users table."""
+        """Persist account changes to the users table with full validation."""
         async with self:
             self.is_saving_account = True
             auth = await self.get_state(AuthState)
@@ -139,45 +155,66 @@ class SettingsState(rx.State):
             async with self:
                 self.is_saving_account = False
             return
+        if not first.strip() or not last.strip():
+            async with self:
+                self.is_saving_account = False
+            yield rx.toast.error("First and last names are required.")
+            return
         async with rx.asession() as session:
-            if new_pass:
+            if new_pass or current_pass or confirm_pass:
+                if not current_pass or not new_pass or (not confirm_pass):
+                    async with self:
+                        self.is_saving_account = False
+                    yield rx.toast.error(
+                        "All password fields are required to change your password."
+                    )
+                    return
                 if new_pass != confirm_pass:
                     async with self:
                         self.is_saving_account = False
                     yield rx.toast.error("New passwords do not match.")
+                    return
+                strength_error = self._validate_password(new_pass)
+                if strength_error:
+                    async with self:
+                        self.is_saving_account = False
+                    yield rx.toast.error(strength_error)
                     return
                 user_check = await session.execute(
                     text("SELECT password_hash FROM users WHERE id = :uid"),
                     {"uid": user_id},
                 )
                 row = user_check.first()
-                if (
-                    not row
-                    or not row[0]
-                    or (
-                        not bcrypt.checkpw(
-                            current_pass.encode("utf-8"), row[0].encode("utf-8")
-                        )
-                    )
+                if not row or not row[0]:
+                    async with self:
+                        self.is_saving_account = False
+                    yield rx.toast.error("User account data is corrupted.")
+                    return
+                if not bcrypt.checkpw(
+                    current_pass.encode("utf-8"), row[0].encode("utf-8")
                 ):
                     async with self:
                         self.is_saving_account = False
-                    yield rx.toast.error("Incorrect current password.")
+                    yield rx.toast.error("Current password is incorrect.")
                     return
                 new_hash = bcrypt.hashpw(
                     new_pass.encode("utf-8"), bcrypt.gensalt()
                 ).decode("utf-8")
                 await session.execute(
-                    text(
-                        "UPDATE users SET first_name = :f, last_name = :l, password_hash = :h WHERE id = :uid"
-                    ),
+                    text("""
+                        UPDATE users 
+                        SET first_name = :f, last_name = :l, password_hash = :h 
+                        WHERE id = :uid
+                    """),
                     {"f": first, "l": last, "h": new_hash, "uid": user_id},
                 )
             else:
                 await session.execute(
-                    text(
-                        "UPDATE users SET first_name = :f, last_name = :l WHERE id = :uid"
-                    ),
+                    text("""
+                        UPDATE users 
+                        SET first_name = :f, last_name = :l 
+                        WHERE id = :uid
+                    """),
                     {"f": first, "l": last, "uid": user_id},
                 )
             await session.commit()
@@ -186,7 +223,7 @@ class SettingsState(rx.State):
             self.new_password = ""
             self.confirm_password = ""
             self.is_saving_account = False
-            yield rx.toast("Account details synchronized.")
+            yield rx.toast("Account and password updated successfully!", duration=3000)
 
     @rx.event(background=True)
     async def save_institution_profile(self):
