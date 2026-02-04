@@ -435,49 +435,52 @@ def guidance_callout() -> rx.Component:
 
 
 def year_option_selector(y: str) -> rx.Component:
-    comp_pct = HistoricalState.year_completion_map.get(y, 0)
+    """Improved selector with better performance and direct event binding."""
+    comp_pct = HistoricalState.year_completion_map[y]
     is_selected = HistoricalState.selected_year == y
-    is_complete = comp_pct == 100
     return rx.el.button(
         rx.el.div(
             rx.el.div(
+                rx.el.span(y, class_name="text-lg font-black tracking-tight"),
                 rx.el.div(
-                    rx.el.span(y, class_name="text-lg font-black tracking-tight"),
-                    rx.cond(
-                        is_complete,
-                        rx.icon("languages", class_name="h-4 w-4 text-emerald-500"),
-                        rx.cond(
-                            comp_pct > 0,
-                            rx.icon("clock", class_name="h-4 w-4 text-emerald-500"),
-                            None,
+                    rx.match(
+                        comp_pct,
+                        (
+                            100,
+                            rx.icon("languages", class_name="h-4 w-4 text-emerald-500"),
                         ),
+                        (0, rx.fragment()),
+                        rx.icon("clock", class_name="h-4 w-4 text-emerald-500"),
                     ),
-                    class_name="flex items-center justify-between w-full mb-2",
+                    class_name="flex items-center",
                 ),
+                class_name="flex items-center justify-between w-full mb-2",
+            ),
+            rx.el.div(
                 rx.el.div(
-                    rx.el.div(
-                        class_name="bg-emerald-500 h-1 rounded-full transition-all duration-700",
-                        style={"width": comp_pct.to_string() + "%"},
-                    ),
-                    class_name="w-full bg-slate-100 h-1 rounded-full overflow-hidden mb-1",
+                    class_name="bg-emerald-500 h-1 rounded-full",
+                    style={
+                        "width": rx.cond(comp_pct > 0, comp_pct.to_string() + "%", "0%")
+                    },
                 ),
-                rx.el.span(
-                    f"{comp_pct}% Filled",
-                    class_name="text-[9px] font-bold text-slate-400 uppercase tracking-widest",
-                ),
-                class_name="flex flex-col items-start w-full",
+                class_name="w-full bg-slate-100 h-1 rounded-full overflow-hidden mb-1",
+            ),
+            rx.el.span(
+                f"{comp_pct}% Filled",
+                class_name="text-[9px] font-bold text-slate-400 uppercase tracking-widest",
             ),
             class_name=rx.cond(
                 is_selected,
-                "bg-emerald-50 border-emerald-400 shadow-lg shadow-emerald-100/50",
-                "bg-white border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/20 transition-all duration-200",
+                "bg-emerald-50 border-emerald-400 border-2 p-4 rounded-2xl w-full",
+                "bg-white border-slate-100 border p-4 rounded-2xl hover:border-emerald-200 w-full transition-colors",
             ),
         ),
-        on_click=lambda: HistoricalState.set_selected_year(y),
+        on_click=lambda: HistoricalState.select_year(y),
+        disabled=HistoricalState.is_loading,
         class_name=rx.cond(
             is_selected,
-            "p-4 rounded-3xl border-2 w-32 shrink-0 transition-all transform scale-105 z-10",
-            "p-4 rounded-3xl border w-32 shrink-0 transition-all transform hover:translate-y-[-2px]",
+            "w-32 shrink-0 transition-all transform scale-105 z-10 shadow-lg shadow-emerald-100/50",
+            "w-32 shrink-0 transition-all transform hover:translate-y-[-2px] hover:shadow-sm",
         ),
     )
 
@@ -608,121 +611,140 @@ def historical_content() -> rx.Component:
                         rx.el.div(historical_trend_chart(), summary_table()),
                     ),
                     rx.el.div(
-                        rx.el.div(
-                            rx.el.h3(
-                                "Research & Discovery",
-                                class_name="text-lg font-bold text-emerald-900 mb-4 flex items-center",
+                        rx.cond(
+                            HistoricalState.is_loading,
+                            rx.el.div(
+                                rx.foreach(
+                                    rx.Var.range(4),
+                                    lambda _: rx.el.div(
+                                        class_name="h-24 bg-slate-100 animate-pulse rounded-2xl"
+                                    ),
+                                ),
+                                class_name="grid grid-cols-1 md:grid-cols-2 gap-6 p-8",
                             ),
                             rx.el.div(
-                                score_input_historical(
-                                    "Academic Reputation",
-                                    HistoricalState.academic_reputation,
-                                    HistoricalState.set_academic_reputation,
-                                ),
-                                score_input_historical(
-                                    "Citations per Faculty",
-                                    HistoricalState.citations_per_faculty,
-                                    HistoricalState.set_citations_per_faculty,
-                                ),
-                                class_name="grid grid-cols-1 sm:grid-cols-2 gap-4",
-                            ),
-                            class_name="mb-8",
-                        ),
-                        rx.el.div(
-                            rx.el.h3(
-                                "Employability & Outcomes",
-                                class_name="text-lg font-bold text-emerald-900 mb-4",
-                            ),
-                            rx.el.div(
-                                score_input_historical(
-                                    "Employer Reputation",
-                                    HistoricalState.employer_reputation,
-                                    HistoricalState.set_employer_reputation,
-                                ),
-                                score_input_historical(
-                                    "Employment Outcomes",
-                                    HistoricalState.employment_outcomes,
-                                    HistoricalState.set_employment_outcomes,
-                                ),
-                                class_name="grid grid-cols-1 sm:grid-cols-2 gap-4",
-                            ),
-                            class_name="mb-8",
-                        ),
-                        rx.el.div(
-                            rx.el.h3(
-                                "Global Engagement",
-                                class_name="text-lg font-bold text-emerald-900 mb-4",
-                            ),
-                            rx.el.div(
-                                score_input_historical(
-                                    "Research Network",
-                                    HistoricalState.international_research_network,
-                                    HistoricalState.set_international_research_network,
-                                ),
-                                score_input_historical(
-                                    "Int. Faculty Ratio",
-                                    HistoricalState.international_faculty_ratio,
-                                    HistoricalState.set_international_faculty_ratio,
-                                ),
-                                score_input_historical(
-                                    "Int. Student Ratio",
-                                    HistoricalState.international_student_ratio,
-                                    HistoricalState.set_international_student_ratio,
-                                ),
-                                class_name="grid grid-cols-1 sm:grid-cols-3 gap-4",
-                            ),
-                            class_name="mb-8",
-                        ),
-                        rx.el.div(
-                            rx.el.h3(
-                                "Learning & Sustainability",
-                                class_name="text-lg font-bold text-emerald-900 mb-4",
-                            ),
-                            rx.el.div(
-                                score_input_historical(
-                                    "Faculty-Student Ratio",
-                                    HistoricalState.faculty_student_ratio,
-                                    HistoricalState.set_faculty_student_ratio,
-                                ),
-                                score_input_historical(
-                                    "Sustainability Score",
-                                    HistoricalState.sustainability_metrics,
-                                    HistoricalState.set_sustainability_metrics,
-                                ),
-                                class_name="grid grid-cols-1 sm:grid-cols-2 gap-4",
-                            ),
-                        ),
-                        historical_upload_section(),
-                        rx.el.div(
-                            rx.el.button(
-                                rx.cond(
-                                    HistoricalState.is_saving,
+                                rx.el.div(
+                                    rx.el.h3(
+                                        "Research & Discovery",
+                                        class_name="text-lg font-bold text-emerald-900 mb-4 flex items-center",
+                                    ),
                                     rx.el.div(
-                                        rx.el.div(
-                                            class_name="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"
+                                        score_input_historical(
+                                            "Academic Reputation",
+                                            HistoricalState.academic_reputation,
+                                            HistoricalState.set_academic_reputation,
                                         ),
-                                        "Storing Archives...",
-                                        class_name="flex items-center",
+                                        score_input_historical(
+                                            "Citations per Faculty",
+                                            HistoricalState.citations_per_faculty,
+                                            HistoricalState.set_citations_per_faculty,
+                                        ),
+                                        class_name="grid grid-cols-1 sm:grid-cols-2 gap-4",
+                                    ),
+                                    class_name="mb-8",
+                                ),
+                                rx.el.div(
+                                    rx.el.h3(
+                                        "Employability & Outcomes",
+                                        class_name="text-lg font-bold text-emerald-900 mb-4",
                                     ),
                                     rx.el.div(
-                                        rx.icon("save", class_name="h-5 w-5 mr-3"),
-                                        "Commit Historical Data",
-                                        class_name="flex items-center",
+                                        score_input_historical(
+                                            "Employer Reputation",
+                                            HistoricalState.employer_reputation,
+                                            HistoricalState.set_employer_reputation,
+                                        ),
+                                        score_input_historical(
+                                            "Employment Outcomes",
+                                            HistoricalState.employment_outcomes,
+                                            HistoricalState.set_employment_outcomes,
+                                        ),
+                                        class_name="grid grid-cols-1 sm:grid-cols-2 gap-4",
+                                    ),
+                                    class_name="mb-8",
+                                ),
+                                rx.el.div(
+                                    rx.el.h3(
+                                        "Global Engagement",
+                                        class_name="text-lg font-bold text-emerald-900 mb-4",
+                                    ),
+                                    rx.el.div(
+                                        score_input_historical(
+                                            "Research Network",
+                                            HistoricalState.international_research_network,
+                                            HistoricalState.set_international_research_network,
+                                        ),
+                                        score_input_historical(
+                                            "Int. Faculty Ratio",
+                                            HistoricalState.international_faculty_ratio,
+                                            HistoricalState.set_international_faculty_ratio,
+                                        ),
+                                        score_input_historical(
+                                            "Int. Student Ratio",
+                                            HistoricalState.international_student_ratio,
+                                            HistoricalState.set_international_student_ratio,
+                                        ),
+                                        class_name="grid grid-cols-1 sm:grid-cols-3 gap-4",
+                                    ),
+                                    class_name="mb-8",
+                                ),
+                                rx.el.div(
+                                    rx.el.h3(
+                                        "Learning & Sustainability",
+                                        class_name="text-lg font-bold text-emerald-900 mb-4",
+                                    ),
+                                    rx.el.div(
+                                        score_input_historical(
+                                            "Faculty-Student Ratio",
+                                            HistoricalState.faculty_student_ratio,
+                                            HistoricalState.set_faculty_student_ratio,
+                                        ),
+                                        score_input_historical(
+                                            "Sustainability Score",
+                                            HistoricalState.sustainability_metrics,
+                                            HistoricalState.set_sustainability_metrics,
+                                        ),
+                                        class_name="grid grid-cols-1 sm:grid-cols-2 gap-4",
                                     ),
                                 ),
-                                on_click=HistoricalState.save_historical_scores,
-                                disabled=HistoricalState.is_saving
-                                | HistoricalState.is_loading
-                                | HistoricalState.has_validation_errors,
-                                class_name=rx.cond(
-                                    HistoricalState.has_validation_errors,
-                                    "w-64 py-4 bg-slate-200 text-slate-400 rounded-2xl font-black text-lg cursor-not-allowed mt-10",
-                                    "w-64 py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-2xl font-black text-lg shadow-xl hover:shadow-emerald-100 hover:scale-[1.01] active:scale-[0.99] transition-all mt-10",
+                                historical_upload_section(),
+                                rx.el.div(
+                                    rx.el.button(
+                                        rx.match(
+                                            HistoricalState.is_saving,
+                                            (
+                                                True,
+                                                rx.el.div(
+                                                    rx.el.div(
+                                                        class_name="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"
+                                                    ),
+                                                    "Storing Archives...",
+                                                    class_name="flex items-center",
+                                                ),
+                                            ),
+                                            rx.el.div(
+                                                rx.icon(
+                                                    "save", class_name="h-5 w-5 mr-3"
+                                                ),
+                                                "Commit Historical Data",
+                                                class_name="flex items-center",
+                                            ),
+                                        ),
+                                        on_click=HistoricalState.save_historical_scores,
+                                        disabled=HistoricalState.is_saving
+                                        | HistoricalState.is_loading
+                                        | HistoricalState.has_validation_errors,
+                                        class_name=rx.cond(
+                                            HistoricalState.has_validation_errors,
+                                            "w-64 py-4 bg-slate-200 text-slate-400 rounded-2xl font-black text-lg cursor-not-allowed mt-10",
+                                            "w-64 py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-2xl font-black text-lg shadow-xl hover:shadow-emerald-100 hover:scale-[1.01] active:scale-[0.99] transition-all mt-10",
+                                        ),
+                                    ),
+                                    class_name="flex items-center justify-center",
                                 ),
+                                class_name="bg-white/60 backdrop-blur-sm p-8 rounded-3xl border border-emerald-100 shadow-lg",
                             ),
-                            class_name="flex items-center justify-center",
-                        ),
-                        class_name="bg-white/60 backdrop-blur-sm p-8 rounded-3xl border border-emerald-100 shadow-lg",
+                        )
                     ),
                     class_name="max-w-5xl mx-auto",
                 ),

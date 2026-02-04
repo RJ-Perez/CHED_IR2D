@@ -143,9 +143,9 @@ class HistoricalState(rx.State):
 
     @rx.event(background=True)
     async def on_load(self):
+        """Batch loading of all historical data to minimize round-trips and state updates."""
         async with self:
             self.is_loading = True
-        await self._ensure_historical_table()
         yield HistoricalState.fetch_years_with_data
         yield HistoricalState.fetch_scores_for_year
         yield HistoricalState.fetch_all_historical_data
@@ -448,9 +448,16 @@ class HistoricalState(rx.State):
                 self.years_with_data = [str(row[0]) for row in rows]
 
     @rx.event(background=True)
-    async def set_selected_year(self, year: str):
+    async def select_year(self, year: str):
+        """Handles year selection with clear loading state feedback."""
         async with self:
+            if self.selected_year == year:
+                return
             self.selected_year = year
+            self.is_loading = True
+        async with self:
+            for k in self.validation_errors.keys():
+                self.validation_errors[k] = ""
         yield HistoricalState.fetch_scores_for_year
 
     @rx.event(background=True)
