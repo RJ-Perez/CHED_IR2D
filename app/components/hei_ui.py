@@ -383,7 +383,7 @@ def selection_screen_content() -> rx.Component:
                                     rx.el.input(
                                         placeholder="Search your institution (e.g. University of Santo Tomas)...",
                                         on_change=HEIState.set_search_query.debounce(
-                                            500
+                                            250
                                         ),
                                         on_focus=rx.cond(
                                             HEIState.search_query != "",
