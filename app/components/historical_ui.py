@@ -666,10 +666,11 @@ def historical_content() -> rx.Component:
                         | HistoricalState.has_validation_errors,
                         class_name=rx.cond(
                             HistoricalState.has_validation_errors,
-                            "w-full py-4 bg-slate-200 text-slate-400 rounded-2xl font-black text-lg cursor-not-allowed mt-10",
-                            "w-full py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-2xl font-black text-lg shadow-xl hover:shadow-emerald-100 hover:scale-[1.01] active:scale-[0.99] transition-all mt-10",
+                            "w-64 py-4 bg-slate-200 text-slate-400 rounded-2xl font-black text-lg cursor-not-allowed mt-10",
+                            "w-64 py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-2xl font-black text-lg shadow-xl hover:shadow-emerald-100 hover:scale-[1.01] active:scale-[0.99] transition-all mt-10",
                         ),
-                    )
+                    ),
+                    class_name="flex items-center justify-center",
                 ),
                 class_name="bg-white/60 backdrop-blur-sm p-8 rounded-3xl border border-emerald-100 shadow-lg",
             ),
