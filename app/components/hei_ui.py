@@ -496,7 +496,7 @@ def selection_screen_content() -> rx.Component:
                             class_name="flex items-center justify-center",
                         ),
                         rx.el.div(
-                            rx.el.span("Access Dashboard"),
+                            rx.el.span("Readiness Assessment Dashboard"),
                             rx.icon(
                                 "arrow-right",
                                 class_name="ml-2 md:ml-3 h-5 md:h-6 w-5 md:w-6 inline-block group-hover:translate-x-1 transition-transform",
