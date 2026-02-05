@@ -204,40 +204,14 @@ class AnalyticsState(rx.State):
             )
             hist_result = await session.execute(
                 text("""
-<<<<<<< HEAD
-                SELECT ranking_year, indicator_code, value
-                FROM historical_scores
-=======
                 SELECT ranking_year, overall_score, academic_reputation
                 FROM historical_performance
->>>>>>> version2
                 WHERE institution_id = :iid
                 ORDER BY ranking_year ASC
                 """),
                 {"iid": institution_id},
             )
             hist_rows = hist_result.all()
-<<<<<<< HEAD
-            hist_data_map = {}
-            for y, c, v in hist_rows:
-                y_str = str(y)
-                if y_str not in hist_data_map:
-                    hist_data_map[y_str] = {}
-                try:
-                    hist_data_map[y_str][c] = int(float(v))
-                except Exception as e:
-                    logging.exception(f"Error parsing historical score: {e}")
-                    hist_data_map[y_str][c] = 0
-            trend_data = []
-            for year in sorted(hist_data_map.keys()):
-                scores = list(hist_data_map[year].values())
-                avg = int(sum(scores) / len(scores)) if scores else 0
-                trend_data.append(
-                    {
-                        "year": year,
-                        "score": avg,
-                        "research": hist_data_map[year].get("academic_reputation", 0),
-=======
             trend_data = []
             for y, ov, ar in hist_rows:
                 trend_data.append(
@@ -245,7 +219,6 @@ class AnalyticsState(rx.State):
                         "year": str(y),
                         "score": int(ov) if ov else 0,
                         "research": int(ar) if ar else 0,
->>>>>>> version2
                     }
                 )
             trend_data.append(

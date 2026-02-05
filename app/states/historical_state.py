@@ -2,161 +2,6 @@ import reflex as rx
 from typing import TypedDict, Any
 import json
 import logging
-<<<<<<< HEAD
-=======
-import asyncio
->>>>>>> version2
-from sqlalchemy import text
-from app.states.hei_state import HEIState
-from app.states.auth_state import AuthState
-
-
-class HistoricalScore(TypedDict):
-    year: int
-    indicator_code: str
-    value: str
-    evidence_files: list[str]
-
-
-class HistoricalState(rx.State):
-    """Manages historical ranking data entry and storage for past years (2020-2024)."""
-
-    selected_year: str = "2024"
-    available_years: list[str] = ["2020", "2021", "2022", "2023", "2024"]
-    years_with_data: list[str] = []
-    academic_reputation: int = 0
-    citations_per_faculty: int = 0
-    employer_reputation: int = 0
-    employment_outcomes: int = 0
-    international_research_network: int = 0
-    international_faculty_ratio: int = 0
-    international_student_ratio: int = 0
-    faculty_student_ratio: int = 0
-    sustainability_metrics: int = 0
-    uploaded_files: list[str] = []
-    is_uploading: bool = False
-    is_loading: bool = False
-    is_saving: bool = False
-    all_years_data: dict[str, dict[str, int]] = {}
-    trend_data: list[dict[str, str | int | float]] = []
-    year_completion_map: dict[str, int] = {
-        "2020": 0,
-        "2021": 0,
-        "2022": 0,
-        "2023": 0,
-        "2024": 0,
-    }
-    validation_errors: dict[str, str] = {
-        "academic_reputation": "",
-        "citations_per_faculty": "",
-        "employer_reputation": "",
-        "employment_outcomes": "",
-        "international_research_network": "",
-        "international_faculty_ratio": "",
-        "international_student_ratio": "",
-        "faculty_student_ratio": "",
-        "sustainability_metrics": "",
-    }
-
-    @rx.var(cache=True)
-    def has_validation_errors(self) -> bool:
-        """Checks if any field in validation_errors has a non-empty string."""
-        for key in self.validation_errors.keys():
-            if self.validation_errors[key]:
-                return True
-        return False
-
-    def _validate_and_clamp(self, field_name: str, value: str) -> int:
-        """Helper to convert string to int, clamp values, and set validation errors."""
-        try:
-            if not value:
-                self.validation_errors[field_name] = ""
-                return 0
-            num_float = float(value)
-            num = int(num_float)
-            if num_float < 0 or num_float > 100:
-                self.validation_errors[field_name] = "Value must be between 0 and 100"
-            else:
-                self.validation_errors[field_name] = ""
-            return max(0, min(100, num))
-        except (ValueError, TypeError) as e:
-            logging.exception(f"Validation error for {field_name}: {e}")
-            self.validation_errors[field_name] = "Please enter a valid number"
-            return 0
-
-    @rx.event
-    def set_academic_reputation(self, value: str):
-        self.academic_reputation = self._validate_and_clamp(
-            "academic_reputation", value
-        )
-
-    @rx.event
-    def set_citations_per_faculty(self, value: str):
-        self.citations_per_faculty = self._validate_and_clamp(
-            "citations_per_faculty", value
-        )
-
-    @rx.event
-    def set_employer_reputation(self, value: str):
-        self.employer_reputation = self._validate_and_clamp(
-            "employer_reputation", value
-        )
-
-    @rx.event
-    def set_employment_outcomes(self, value: str):
-        self.employment_outcomes = self._validate_and_clamp(
-            "employment_outcomes", value
-        )
-
-    @rx.event
-    def set_international_research_network(self, value: str):
-        self.international_research_network = self._validate_and_clamp(
-            "international_research_network", value
-        )
-
-    @rx.event
-    def set_international_faculty_ratio(self, value: str):
-        self.international_faculty_ratio = self._validate_and_clamp(
-            "international_faculty_ratio", value
-        )
-
-    @rx.event
-    def set_international_student_ratio(self, value: str):
-        self.international_student_ratio = self._validate_and_clamp(
-            "international_student_ratio", value
-        )
-
-    @rx.event
-    def set_faculty_student_ratio(self, value: str):
-        self.faculty_student_ratio = self._validate_and_clamp(
-            "faculty_student_ratio", value
-        )
-
-    @rx.event
-    def set_sustainability_metrics(self, value: str):
-        self.sustainability_metrics = self._validate_and_clamp(
-            "sustainability_metrics", value
-        )
-
-    @rx.var(cache=True)
-    def overall_completion_pct(self) -> int:
-        if not self.available_years:
-            return 0
-        total_pct = sum(self.year_completion_map.values())
-        return int(total_pct / len(self.available_years))
-
-    @rx.event(background=True)
-    async def on_load(self):
-<<<<<<< HEAD
-        async with self:
-            self.is_loading = True
-        await self._ensure_historical_table()
-        yield HistoricalState.fetch_years_with_data
-        yield HistoricalState.fetch_scores_for_year
-        yield HistoricalState.fetch_all_historical_data
-        async with self:
-            self.is_loading = False
-=======
         """Optimized batch loading of all historical data using parallel queries and single state update."""
         async with self:
             self.is_loading = True
@@ -281,7 +126,6 @@ class HistoricalState(rx.State):
                 self.uploaded_files = year_scores["uploaded_files"]
                 self.trend_data = chart_data
                 self.is_loading = False
->>>>>>> version2
 
     @rx.var(cache=True)
     def best_performing_year(self) -> str:
@@ -579,11 +423,6 @@ class HistoricalState(rx.State):
                 self.years_with_data = [str(row[0]) for row in rows]
 
     @rx.event(background=True)
-<<<<<<< HEAD
-    async def set_selected_year(self, year: str):
-        async with self:
-            self.selected_year = year
-=======
     async def select_year(self, year: str):
         """Handles year selection with clear loading state feedback."""
         async with self:
@@ -593,40 +432,10 @@ class HistoricalState(rx.State):
             self.is_loading = True
             for k in self.validation_errors.keys():
                 self.validation_errors[k] = ""
->>>>>>> version2
         yield HistoricalState.fetch_scores_for_year
 
     @rx.event(background=True)
     async def fetch_scores_for_year(self):
-<<<<<<< HEAD
-=======
-        """Fetches and updates institutional scores for the selected year.
-        Optimized to move all database queries outside of the state lock block.
-        """
->>>>>>> version2
-        async with self:
-            self.is_loading = True
-            hei = await self.get_state(HEIState)
-            if not hei.selected_hei:
-                self.is_loading = False
-                return
-            inst_id = int(hei.selected_hei["id"])
-            year = int(self.selected_year)
-<<<<<<< HEAD
-        async with self:
-            self.academic_reputation = 0
-            self.citations_per_faculty = 0
-            self.employer_reputation = 0
-            self.employment_outcomes = 0
-            self.international_research_network = 0
-            self.international_faculty_ratio = 0
-            self.international_student_ratio = 0
-            self.faculty_student_ratio = 0
-            self.sustainability_metrics = 0
-            self.uploaded_files = []
-            for k in self.validation_errors.keys():
-                self.validation_errors[k] = ""
-=======
         scores_update = {
             "academic_reputation": 0,
             "citations_per_faculty": 0,
@@ -639,7 +448,6 @@ class HistoricalState(rx.State):
             "sustainability_metrics": 0,
             "uploaded_files": [],
         }
->>>>>>> version2
         async with rx.asession() as session:
             result = await session.execute(
                 text("""
@@ -655,68 +463,6 @@ class HistoricalState(rx.State):
                 {"iid": inst_id, "year": year},
             )
             row = result.first()
-<<<<<<< HEAD
-            async with self:
-                if row:
-                    self.academic_reputation = int(row[0] or 0)
-                    self.citations_per_faculty = int(row[1] or 0)
-                    self.employer_reputation = int(row[2] or 0)
-                    self.employment_outcomes = int(row[3] or 0)
-                    self.international_research_network = int(row[4] or 0)
-                    self.international_faculty_ratio = int(row[5] or 0)
-                    self.international_student_ratio = int(row[6] or 0)
-                    self.faculty_student_ratio = int(row[7] or 0)
-                    self.sustainability_metrics = int(row[8] or 0)
-                    if row[9]:
-                        self.uploaded_files = (
-                            json.loads(row[9]) if isinstance(row[9], str) else row[9]
-                        )
-                else:
-                    old_res = await session.execute(
-                        text("""
-                        SELECT indicator_code, value, evidence_files 
-                        FROM historical_scores 
-                        WHERE institution_id = :iid AND ranking_year = :year
-                        """),
-                        {"iid": inst_id, "year": year},
-                    )
-                    rows = old_res.all()
-                    all_files = []
-                    for r in rows:
-                        code, val, files_json = r
-                        try:
-                            num_val = int(float(val))
-                        except (ValueError, TypeError) as e:
-                            logging.exception(f"Error parsing score value '{val}': {e}")
-                            num_val = 0
-                        if code == "academic_reputation":
-                            self.academic_reputation = num_val
-                        elif code == "citations_per_faculty":
-                            self.citations_per_faculty = num_val
-                        elif code == "employer_reputation":
-                            self.employer_reputation = num_val
-                        elif code == "employment_outcomes":
-                            self.employment_outcomes = num_val
-                        elif code == "international_research_network":
-                            self.international_research_network = num_val
-                        elif code == "international_faculty_ratio":
-                            self.international_faculty_ratio = num_val
-                        elif code == "international_student_ratio":
-                            self.international_student_ratio = num_val
-                        elif code == "faculty_student_ratio":
-                            self.faculty_student_ratio = num_val
-                        elif code == "sustainability_metrics":
-                            self.sustainability_metrics = num_val
-                        if files_json:
-                            f_list = (
-                                json.loads(files_json)
-                                if isinstance(files_json, str)
-                                else files_json
-                            )
-                            all_files.extend(f_list)
-                    self.uploaded_files = list(set(all_files))
-                self.is_loading = False
-=======
             if row:
                 scores_update["academic_reputation"] = int(row[0] or 0)
                 scores_update["citations_per_faculty"] = int(row[1] or 0)
@@ -778,7 +524,6 @@ class HistoricalState(rx.State):
             self.sustainability_metrics = scores_update["sustainability_metrics"]
             self.uploaded_files = scores_update["uploaded_files"]
             self.is_loading = False
->>>>>>> version2
 
     @rx.event
     async def handle_upload(self, files: list[rx.UploadFile]):

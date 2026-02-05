@@ -289,20 +289,8 @@ class HEIState(rx.State):
 
     @rx.event
     def set_search_query(self, query: str):
-<<<<<<< HEAD
-        sanitized_query = query.strip()
-        self.search_query = sanitized_query
-        if len(sanitized_query) >= 2:
-            self.is_dropdown_open = True
-            return HEIState.perform_search
-        else:
-            self.is_dropdown_open = False
-            self.search_results = []
-            self.is_searching = False
-=======
         self.search_query = query.strip()
         self.current_page = 1
->>>>>>> version2
 
     @rx.event
     def clear_search(self):

@@ -599,11 +599,7 @@ def status_distribution_chart() -> rx.Component:
                 ),
                 rx.el.div(
                     rx.foreach(
-<<<<<<< HEAD
-                        ReportsState.status_distribution_data,
-=======
                         ReportsState.status_distribution_percentages,
->>>>>>> version2
                         lambda item: rx.el.div(
                             rx.el.div(
                                 rx.el.span(
@@ -622,11 +618,7 @@ def status_distribution_chart() -> rx.Component:
                                     class_name="text-xs font-bold text-gray-900",
                                 ),
                                 rx.el.span(
-<<<<<<< HEAD
-                                    f" ({(item['value'].to(float) / ReportsState.total_reports.to(float) * 100).to(int)}%)",
-=======
                                     f" ({item['percentage']})",
->>>>>>> version2
                                     class_name="text-[10px] text-gray-400 font-medium",
                                 ),
                                 class_name="flex items-center",

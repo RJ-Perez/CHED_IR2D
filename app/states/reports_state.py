@@ -448,8 +448,6 @@ class ReportsState(rx.State):
             if count > 0 or len(self.reports) == 0
         ]
 
-<<<<<<< HEAD
-=======
     @rx.var(cache=True)
     def status_distribution_percentages(self) -> list[dict[str, str | int]]:
         """Returns status distribution data with pre-calculated rounded percentages for display."""
@@ -482,7 +480,6 @@ class ReportsState(rx.State):
                 )
         return results
 
->>>>>>> version2
     @rx.event
     def set_search_query(self, query: str):
         self.search_query = query

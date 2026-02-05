@@ -179,57 +179,6 @@ def preliminary_notice_modal() -> rx.Component:
     """Optimized notice modal with instant interaction and minimal layout shift."""
     return rx.cond(
         HEIState.show_preliminary_notice,
-<<<<<<< HEAD
-        rx.el.div(
-            rx.el.div(
-                rx.el.div(
-                    rx.el.div(
-                        rx.icon(
-                            "triangle-alert",
-                            class_name="h-10 md:h-12 w-10 md:w-12 text-amber-500 mb-4 mx-auto",
-                        ),
-                        rx.el.h2(
-                            "Preliminary Assessment Notice",
-                            class_name="text-lg md:text-xl font-bold text-gray-900 mb-4",
-                        ),
-                        rx.el.div(
-                            rx.el.p(
-                                "Please note that all assessment scores and benchmarks displayed in the dashboard are provisional based on your initial input.",
-                                class_name="text-xs md:text-sm text-gray-600 mb-4 leading-relaxed",
-                            ),
-                            rx.el.p(
-                                "Official recognition requires formal verification and audit by the Commission on Higher Education (CHED).",
-                                class_name="text-xs md:text-sm text-gray-600 mb-6 leading-relaxed",
-                            ),
-                            rx.el.div(
-                                rx.el.p(
-                                    "Reminder: Results are not final until official CHED confirmation.",
-                                    class_name="text-xs md:text-sm font-bold text-amber-800",
-                                ),
-                                class_name="bg-amber-50 border-l-4 border-amber-400 p-3 md:p-4 rounded-r-lg mb-6 md:mb-8",
-                            ),
-                            class_name="text-left",
-                        ),
-                        rx.el.button(
-                            "I Understand, Proceed to Dashboard",
-                            on_click=HEIState.acknowledge_and_proceed,
-                            class_name="w-full py-3 md:py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs md:text-sm shadow-lg shadow-blue-100 transition-all transform active:scale-[0.98]",
-                        ),
-                        class_name="bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl p-6 md:p-10 max-w-lg w-full mx-4 text-center border border-gray-100 animate-in zoom-in-95 duration-200",
-                    ),
-                    class_name="flex items-center justify-center min-h-screen p-4",
-                ),
-                class_name="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-[200] overflow-y-auto",
-            )
-        ),
-        rx.fragment(),
-    )
-
-
-@rx.memo
-def hei_dropdown_item(hei: HEI) -> rx.Component:
-    return rx.el.button(
-=======
 >>>>>>> version2
         rx.el.div(
             rx.el.div(
@@ -369,20 +318,6 @@ def hei_table_list() -> rx.Component:
     from app.components.design_system import ds_pagination
 
     return rx.el.div(
-<<<<<<< HEAD
-        rx.cond(
-            HEIState.is_dropdown_open,
-            rx.el.div(
-                rx.cond(
-                    HEIState.search_results.length() > 0,
-                    rx.el.div(
-                        rx.foreach(
-                            HEIState.search_results,
-                            lambda hei: hei_dropdown_item(hei=hei, key=hei["id"]),
-                        ),
-                        class_name="max-h-[300px] overflow-y-auto",
-                    ),
-=======
         rx.el.div(
             rx.el.table(
                 rx.el.thead(
@@ -400,7 +335,6 @@ def hei_table_list() -> rx.Component:
                     )
                 ),
                 rx.el.tbody(
->>>>>>> version2
                     rx.cond(
                         HEIState.is_fetching,
                         rx.foreach(rx.Var.range(5), lambda _: table_skeleton_row()),
@@ -505,14 +439,7 @@ def selection_screen_content() -> rx.Component:
                                         on_change=HEIState.set_search_query.debounce(
                                             150
                                         ),
-<<<<<<< HEAD
-                                        on_focus=rx.cond(
-                                            HEIState.search_query != "",
-                                            HEIState.set_is_dropdown_open(True),
-                                            rx.noop(),
-                                        ),
-=======
->>>>>>> version2
+
                                         class_name="w-full pl-12 md:pl-16 pr-12 md:pr-16 py-4 md:py-5 bg-white/80 backdrop-blur-xl border border-slate-200 rounded-2xl md:rounded-[2.5rem] focus:ring-4 md:focus:ring-8 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all shadow-[0_15px_40px_-15px_rgba(0,0,0,0.1)] text-base md:text-xl font-medium placeholder-slate-400",
                                         default_value=HEIState.search_query,
                                     ),
@@ -532,7 +459,6 @@ def selection_screen_content() -> rx.Component:
                                 hei_selection_dropdown(),
 =======
                                 hei_table_list(),
->>>>>>> version2
                                 class_name="relative mb-8 md:mb-12",
                             ),
                             rx.el.div(
