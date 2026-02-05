@@ -179,6 +179,7 @@ def preliminary_notice_modal() -> rx.Component:
     """Optimized notice modal with instant interaction and minimal layout shift."""
     return rx.cond(
         HEIState.show_preliminary_notice,
+<<<<<<< HEAD
         rx.el.div(
             rx.el.div(
                 rx.el.div(
@@ -228,22 +229,51 @@ def preliminary_notice_modal() -> rx.Component:
 @rx.memo
 def hei_dropdown_item(hei: HEI) -> rx.Component:
     return rx.el.button(
+=======
+>>>>>>> version2
         rx.el.div(
             rx.el.div(
-                rx.el.p(hei["name"], class_name="text-sm font-semibold text-gray-900"),
-                class_name="text-left",
-            ),
-            rx.el.div(
-                rx.el.span(
-                    hei["address"],
-                    class_name="text-xs text-gray-500 truncate block max-w-[200px]",
+                rx.el.div(
+                    rx.el.div(
+                        rx.icon(
+                            "triangle-alert",
+                            class_name="h-10 md:h-12 w-10 md:w-12 text-amber-500 mb-4 mx-auto",
+                        ),
+                        rx.el.h2(
+                            "Preliminary Assessment Notice",
+                            class_name="text-lg md:text-xl font-bold text-gray-900 mb-4",
+                        ),
+                        rx.el.div(
+                            rx.el.p(
+                                "Please note that all assessment scores and benchmarks displayed in the dashboard are provisional based on your initial input.",
+                                class_name="text-xs md:text-sm text-gray-600 mb-4 leading-relaxed",
+                            ),
+                            rx.el.p(
+                                "Official recognition requires formal verification and audit by the Commission on Higher Education (CHED).",
+                                class_name="text-xs md:text-sm text-gray-600 mb-6 leading-relaxed",
+                            ),
+                            rx.el.div(
+                                rx.el.p(
+                                    "Reminder: Results are not final until official CHED confirmation.",
+                                    class_name="text-xs md:text-sm font-bold text-amber-800",
+                                ),
+                                class_name="bg-amber-50 border-l-4 border-amber-400 p-3 md:p-4 rounded-r-lg mb-6 md:mb-8",
+                            ),
+                            class_name="text-left",
+                        ),
+                        rx.el.button(
+                            "I Understand, Proceed to Dashboard",
+                            on_click=HEIState.acknowledge_and_proceed,
+                            class_name="w-full py-3 md:py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs md:text-sm shadow-lg shadow-blue-100 transition-all transform active:scale-[0.98]",
+                        ),
+                        class_name="bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl p-6 md:p-10 max-w-lg w-full mx-4 text-center border border-gray-100 animate-in zoom-in-95 duration-200",
+                    ),
+                    class_name="flex items-center justify-center min-h-screen p-4",
                 ),
-                class_name="text-right ml-auto",
-            ),
-            class_name="flex items-center justify-between w-full",
+                class_name="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-[200] overflow-y-auto",
+            )
         ),
-        on_click=HEIState.select_hei(hei),
-        class_name="w-full px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-0",
+        rx.fragment(),
     )
 
 
@@ -317,8 +347,29 @@ def selected_hei_card() -> rx.Component:
     )
 
 
-def hei_selection_dropdown() -> rx.Component:
+def table_skeleton_row() -> rx.Component:
+    return rx.el.tr(
+        rx.el.td(
+            rx.el.div(class_name="h-4 bg-gray-100 rounded-full w-3/4 animate-pulse"),
+            class_name="px-6 py-4",
+        ),
+        rx.el.td(
+            rx.el.div(class_name="h-4 bg-gray-100 rounded-full w-1/2 animate-pulse"),
+            class_name="px-6 py-4",
+        ),
+        rx.el.td(
+            rx.el.div(class_name="h-8 bg-gray-100 rounded-lg w-20 animate-pulse"),
+            class_name="px-6 py-4 text-right",
+        ),
+        class_name="border-b border-gray-50",
+    )
+
+
+def hei_table_list() -> rx.Component:
+    from app.components.design_system import ds_pagination
+
     return rx.el.div(
+<<<<<<< HEAD
         rx.cond(
             HEIState.is_dropdown_open,
             rx.el.div(
@@ -331,20 +382,76 @@ def hei_selection_dropdown() -> rx.Component:
                         ),
                         class_name="max-h-[300px] overflow-y-auto",
                     ),
+=======
+        rx.el.div(
+            rx.el.table(
+                rx.el.thead(
+                    rx.el.tr(
+                        rx.el.th(
+                            "Institution Name",
+                            class_name="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest",
+                        ),
+                        rx.el.th(
+                            "Location",
+                            class_name="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest",
+                        ),
+                        rx.el.th("", class_name="px-6 py-4 text-right"),
+                        class_name="bg-gray-50 border-b border-gray-100",
+                    )
+                ),
+                rx.el.tbody(
+>>>>>>> version2
                     rx.cond(
-                        ~HEIState.is_searching,
-                        rx.el.div(
-                            rx.el.p(
-                                "No institutions found matching your criteria.",
-                                class_name="text-sm text-gray-500 p-4 text-center",
-                            )
+                        HEIState.is_fetching,
+                        rx.foreach(rx.Var.range(5), lambda _: table_skeleton_row()),
+                        rx.foreach(
+                            HEIState.paginated_database,
+                            lambda hei: rx.el.tr(
+                                rx.el.td(
+                                    rx.el.span(
+                                        hei["name"],
+                                        class_name="text-sm font-bold text-gray-900",
+                                    ),
+                                    class_name="px-6 py-4",
+                                ),
+                                rx.el.td(
+                                    rx.el.span(
+                                        hei["address"],
+                                        class_name="text-sm text-gray-500",
+                                    ),
+                                    class_name="px-6 py-4",
+                                ),
+                                rx.el.td(
+                                    rx.el.button(
+                                        "Select",
+                                        on_click=lambda: HEIState.select_hei(hei),
+                                        class_name="px-4 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg hover:bg-blue-600 hover:text-white transition-all",
+                                    ),
+                                    class_name="px-6 py-4 text-right",
+                                ),
+                                class_name="hover:bg-blue-50/30 transition-colors border-b border-gray-50 last:border-0",
+                            ),
                         ),
                     ),
+                    class_name="bg-white divide-y divide-gray-50",
                 ),
-                class_name="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl animate-in fade-in slide-in-from-top-2",
+                class_name="min-w-full",
             ),
+            class_name="overflow-hidden border border-gray-100 rounded-2xl shadow-sm",
         ),
-        class_name="relative",
+        rx.el.div(
+            ds_pagination(
+                current_page=HEIState.current_page,
+                total_pages=HEIState.total_pages,
+                on_prev=HEIState.prev_page,
+                on_next=HEIState.next_page,
+                on_page_change=rx.noop(),
+                page_size=HEIState.page_size,
+                on_page_size_change=rx.noop(),
+            ),
+            class_name="mt-4",
+        ),
+        class_name="animate-in fade-in slide-in-from-bottom-2 duration-500",
     )
 
 
@@ -398,11 +505,14 @@ def selection_screen_content() -> rx.Component:
                                         on_change=HEIState.set_search_query.debounce(
                                             150
                                         ),
+<<<<<<< HEAD
                                         on_focus=rx.cond(
                                             HEIState.search_query != "",
                                             HEIState.set_is_dropdown_open(True),
                                             rx.noop(),
                                         ),
+=======
+>>>>>>> version2
                                         class_name="w-full pl-12 md:pl-16 pr-12 md:pr-16 py-4 md:py-5 bg-white/80 backdrop-blur-xl border border-slate-200 rounded-2xl md:rounded-[2.5rem] focus:ring-4 md:focus:ring-8 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all shadow-[0_15px_40px_-15px_rgba(0,0,0,0.1)] text-base md:text-xl font-medium placeholder-slate-400",
                                         default_value=HEIState.search_query,
                                     ),
@@ -418,7 +528,11 @@ def selection_screen_content() -> rx.Component:
                                     ),
                                     class_name="relative mb-2",
                                 ),
+<<<<<<< HEAD
                                 hei_selection_dropdown(),
+=======
+                                hei_table_list(),
+>>>>>>> version2
                                 class_name="relative mb-8 md:mb-12",
                             ),
                             rx.el.div(

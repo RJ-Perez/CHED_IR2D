@@ -33,6 +33,8 @@ class HEIState(rx.State):
     is_registration_mode: bool = False
     is_searching: bool = False
     is_dropdown_open: bool = False
+    page_size: int = 10
+    current_page: int = 1
     reg_name: str = ""
     reg_street: str = ""
     reg_region: str = ""
@@ -230,6 +232,40 @@ class HEIState(rx.State):
     def available_cities(self) -> list[str]:
         return self.regions_map.get(self.reg_region, [])
 
+    @rx.var(cache=True)
+    def filtered_database(self) -> list[HEI]:
+        if not self.search_query.strip():
+            return self.hei_database
+        query = self.search_query.lower()
+        return [
+            hei
+            for hei in self.hei_database
+            if query in hei["name"].lower() or query in hei["address"].lower()
+        ]
+
+    @rx.var(cache=True)
+    def total_pages(self) -> int:
+        filtered = self.filtered_database
+        if not filtered:
+            return 1
+        return (len(filtered) + self.page_size - 1) // self.page_size
+
+    @rx.var(cache=True)
+    def paginated_database(self) -> list[HEI]:
+        start = (self.current_page - 1) * self.page_size
+        end = start + self.page_size
+        return self.filtered_database[start:end]
+
+    @rx.event
+    def next_page(self):
+        if self.current_page < self.total_pages:
+            self.current_page += 1
+
+    @rx.event
+    def prev_page(self):
+        if self.current_page > 1:
+            self.current_page -= 1
+
     @rx.var
     def reg_address(self) -> str:
         """Combines address components into a single string."""
@@ -253,6 +289,7 @@ class HEIState(rx.State):
 
     @rx.event
     def set_search_query(self, query: str):
+<<<<<<< HEAD
         sanitized_query = query.strip()
         self.search_query = sanitized_query
         if len(sanitized_query) >= 2:
@@ -262,6 +299,10 @@ class HEIState(rx.State):
             self.is_dropdown_open = False
             self.search_results = []
             self.is_searching = False
+=======
+        self.search_query = query.strip()
+        self.current_page = 1
+>>>>>>> version2
 
     @rx.event
     def clear_search(self):

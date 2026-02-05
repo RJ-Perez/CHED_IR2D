@@ -204,14 +204,20 @@ class AnalyticsState(rx.State):
             )
             hist_result = await session.execute(
                 text("""
+<<<<<<< HEAD
                 SELECT ranking_year, indicator_code, value
                 FROM historical_scores
+=======
+                SELECT ranking_year, overall_score, academic_reputation
+                FROM historical_performance
+>>>>>>> version2
                 WHERE institution_id = :iid
                 ORDER BY ranking_year ASC
                 """),
                 {"iid": institution_id},
             )
             hist_rows = hist_result.all()
+<<<<<<< HEAD
             hist_data_map = {}
             for y, c, v in hist_rows:
                 y_str = str(y)
@@ -231,6 +237,15 @@ class AnalyticsState(rx.State):
                         "year": year,
                         "score": avg,
                         "research": hist_data_map[year].get("academic_reputation", 0),
+=======
+            trend_data = []
+            for y, ov, ar in hist_rows:
+                trend_data.append(
+                    {
+                        "year": str(y),
+                        "score": int(ov) if ov else 0,
+                        "research": int(ar) if ar else 0,
+>>>>>>> version2
                     }
                 )
             trend_data.append(

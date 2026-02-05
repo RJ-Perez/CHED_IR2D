@@ -235,9 +235,19 @@ app.add_page(
     route="/dashboard",
     on_load=[DashboardState.on_load, NotificationState.fetch_notifications],
 )
+<<<<<<< HEAD
 app.add_page(institutions_page, route="/institutions")
 app.add_page(analytics_page, route="/analytics")
 app.add_page(reports_page, route="/reports")
+=======
+from app.states.institutions_state import InstitutionsState
+
+app.add_page(
+    institutions_page, route="/institutions", on_load=InstitutionsState.on_load
+)
+app.add_page(analytics_page, route="/analytics")
+app.add_page(reports_page, route="/reports", on_load=ReportsState.on_load)
+>>>>>>> version2
 app.add_page(settings_page, route="/settings")
 app.add_page(post_assessment_page, route="/post-assessment")
 app.add_page(historical_page, route="/historical")

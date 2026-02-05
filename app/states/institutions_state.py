@@ -302,6 +302,14 @@ class InstitutionsState(rx.State):
             self.show_edit_modal = True
 
     @rx.event
+    async def on_load(self):
+        """Triggers data fetching when the institutions management page is visited."""
+        from app.states.hei_state import HEIState
+
+        hei_state = await self.get_state(HEIState)
+        yield HEIState.fetch_institutions
+
+    @rx.event
     def close_modals(self):
         self.show_view_modal = False
         self.show_edit_modal = False
