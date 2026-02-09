@@ -28,6 +28,37 @@ def score_input_historical(
                     label,
                     class_name="text-sm font-semibold text-emerald-900 tracking-tight",
                 ),
+                rx.cond(
+                    weight != "",
+                    rx.el.span(
+                        weight, class_name="text-[10px] text-emerald-500 font-bold ml-2"
+                    ),
+                    rx.fragment(),
+                ),
+                class_name="flex items-baseline",
+            ),
+            rx.el.input(
+                type="number",
+                on_change=on_change,
+                default_value=value.to_string(),
+                class_name=rx.cond(
+                    has_error,
+                    "w-full mt-2 p-2 border-2 border-red-500 rounded-xl",
+                    "w-full mt-2 p-2 border border-emerald-100 rounded-xl",
+                ),
+            ),
+            rx.cond(
+                has_error,
+                rx.el.p(error_msg, class_name="text-red-500 text-xs mt-1"),
+                rx.fragment(),
+            ),
+            class_name="flex flex-col",
+        ),
+        class_name="p-4 bg-emerald-50/30 rounded-2xl border border-emerald-100",
+    )
+
+
+def year_option_selector(y: str) -> rx.Component:
     """Optimized lightweight selector for better performance."""
     comp_pct = HistoricalState.year_completion_map[y]
     is_selected = HistoricalState.selected_year == y
@@ -72,6 +103,175 @@ def score_input_historical(
             "w-32 shrink-0 transform scale-105 z-10 shadow-lg shadow-emerald-100/50 transition-all",
             "w-32 shrink-0 hover:translate-y-[-2px] hover:shadow-sm transition-all",
         ),
+    )
+
+
+def guidance_callout() -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.icon("info", class_name="h-5 w-5 text-emerald-600 mr-3 mt-0.5"),
+            rx.el.div(
+                rx.el.p(
+                    "Historical data is used to establish performance benchmarks and generate year-over-year growth analytics.",
+                    class_name="text-sm font-bold text-emerald-900",
+                ),
+                rx.el.p(
+                    "Ensure scores entered here match official submission records for accurate trend analysis.",
+                    class_name="text-xs text-emerald-700 mt-1",
+                ),
+            ),
+            class_name="flex items-start",
+        ),
+        class_name="bg-emerald-50 border border-emerald-100 p-6 rounded-3xl mb-8 max-w-5xl mx-auto",
+    )
+
+
+def year_summary_card() -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.el.p(
+                "Overall Weighted Score",
+                class_name="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1",
+            ),
+            rx.el.h3(
+                f"{HistoricalState.selected_year_overall_score}%",
+                class_name="text-4xl font-black text-emerald-600",
+            ),
+            class_name="flex-1",
+        ),
+        rx.el.div(
+            rx.icon(
+                "target",
+                class_name="h-10 w-10 text-emerald-500 opacity-20 absolute right-6 top-6",
+            )
+        ),
+        class_name="bg-white p-8 rounded-[2.5rem] border border-emerald-100 shadow-sm relative overflow-hidden",
+    )
+
+
+def historical_trend_chart() -> rx.Component:
+    return rx.el.div(
+        rx.el.h3(
+            "Historical Performance Trend",
+            class_name="text-lg font-bold text-emerald-900 mb-6",
+        ),
+        rx.recharts.line_chart(
+            rx.recharts.cartesian_grid(stroke_dasharray="3 3", vertical=False),
+            rx.recharts.graphing_tooltip(),
+            rx.recharts.x_axis(data_key="year"),
+            rx.recharts.y_axis(domain=[0, 100]),
+            rx.recharts.line(
+                data_key="Average",
+                stroke="#059669",
+                stroke_width=3,
+                dot=True,
+                type_="monotone",
+            ),
+            data=HistoricalState.trend_data,
+            width="100%",
+            height=300,
+        ),
+        class_name="bg-white p-8 rounded-[2.5rem] border border-emerald-100 shadow-sm mb-8",
+    )
+
+
+def summary_table() -> rx.Component:
+    return rx.el.div(
+        rx.el.table(
+            rx.el.thead(
+                rx.el.tr(
+                    rx.el.th(
+                        "Year",
+                        class_name="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase",
+                    ),
+                    rx.el.th(
+                        "Score",
+                        class_name="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase",
+                    ),
+                    rx.el.th(
+                        "Research",
+                        class_name="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase",
+                    ),
+                    class_name="border-b border-slate-100",
+                )
+            ),
+            rx.el.tbody(
+                rx.foreach(
+                    HistoricalState.trend_data,
+                    lambda row: rx.el.tr(
+                        rx.el.td(
+                            row["year"],
+                            class_name="px-6 py-4 text-sm font-bold text-slate-900",
+                        ),
+                        rx.el.td(
+                            f"{row['Average']}%",
+                            class_name="px-6 py-4 text-sm font-medium text-emerald-600",
+                        ),
+                        rx.el.td(
+                            f"{row['academic_reputation']}%",
+                            class_name="px-6 py-4 text-sm text-slate-500",
+                        ),
+                        class_name="border-b border-slate-50 last:border-0",
+                    ),
+                )
+            ),
+            class_name="w-full",
+        ),
+        class_name="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden mb-8",
+    )
+
+
+def historical_upload_section() -> rx.Component:
+    return rx.el.div(
+        rx.el.label(
+            "Historical Evidence (Audit Reports, Scopus Certifications)",
+            class_name="block text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4",
+        ),
+        rx.upload.root(
+            rx.el.div(
+                rx.cond(
+                    HistoricalState.is_uploading,
+                    rx.el.p(
+                        "Syncing files...",
+                        class_name="text-emerald-600 font-bold animate-pulse",
+                    ),
+                    rx.el.div(
+                        rx.icon(
+                            "cloud-upload", class_name="h-8 w-8 text-emerald-400 mb-2"
+                        ),
+                        rx.el.p(
+                            "Drag evidence files here",
+                            class_name="text-sm text-slate-500 font-medium",
+                        ),
+                    ),
+                ),
+                class_name="flex flex-col items-center justify-center p-8 border-2 border-dashed border-emerald-100 rounded-3xl bg-emerald-50/20 hover:bg-emerald-50 transition-colors cursor-pointer",
+            ),
+            id="historical_upload",
+            multiple=True,
+            on_drop=HistoricalState.handle_upload(
+                rx.upload_files(upload_id="historical_upload")
+            ),
+        ),
+        rx.el.div(
+            rx.foreach(
+                HistoricalState.uploaded_files,
+                lambda f: rx.el.div(
+                    rx.el.span(
+                        f.split("/").reverse()[0],
+                        class_name="text-xs font-medium text-emerald-700 truncate flex-1",
+                    ),
+                    rx.el.button(
+                        rx.icon("x", class_name="h-3 w-3"),
+                        on_click=lambda: HistoricalState.delete_file(f),
+                        class_name="ml-2 text-slate-400 hover:text-red-500",
+                    ),
+                    class_name="flex items-center px-3 py-1.5 bg-white border border-emerald-100 rounded-lg",
+                ),
+            ),
+            class_name="mt-4 flex flex-wrap gap-2",
+        ),
+        class_name="mt-8 pt-8 border-t border-emerald-100",
     )
 
 

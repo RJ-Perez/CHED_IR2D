@@ -2,6 +2,50 @@ import reflex as rx
 from typing import TypedDict, Any
 import json
 import logging
+from sqlalchemy import text
+from app.states.hei_state import HEIState
+from app.states.auth_state import AuthState
+
+
+class HistoricalState(rx.State):
+    """Manages historical ranking data entry and analysis."""
+
+    available_years: list[str] = [str(y) for y in range(2020, 2025)]
+    selected_year: str = "2024"
+    years_with_data: list[str] = []
+    year_completion_map: dict[str, int] = {}
+    trend_data: list[dict[str, str | int]] = []
+    academic_reputation: int = 0
+    citations_per_faculty: int = 0
+    employer_reputation: int = 0
+    employment_outcomes: int = 0
+    international_research_network: int = 0
+    international_faculty_ratio: int = 0
+    international_student_ratio: int = 0
+    faculty_student_ratio: int = 0
+    sustainability_metrics: int = 0
+    uploaded_files: list[str] = []
+    is_loading: bool = False
+    is_saving: bool = False
+    is_uploading: bool = False
+    validation_errors: dict[str, str] = {
+        "academic_reputation": "",
+        "citations_per_faculty": "",
+        "employer_reputation": "",
+        "employment_outcomes": "",
+        "international_research_network": "",
+        "international_faculty_ratio": "",
+        "international_student_ratio": "",
+        "faculty_student_ratio": "",
+        "sustainability_metrics": "",
+    }
+
+    @rx.var(cache=True)
+    def has_validation_errors(self) -> bool:
+        return any((v != "" for v in self.validation_errors.values()))
+
+    @rx.event(background=True)
+    async def on_load(self):
         """Optimized batch loading of all historical data using parallel queries and single state update."""
         async with self:
             self.is_loading = True
@@ -170,6 +214,13 @@ import logging
         if first == 0:
             return 0.0
         return round((last - first) / first * 100, 1)
+
+    @rx.var(cache=True)
+    def selected_year_overall_score(self) -> int:
+        for entry in self.trend_data:
+            if str(entry.get("year")) == self.selected_year:
+                return int(entry.get("Average", 0))
+        return 0
 
     @rx.event(background=True)
     async def fetch_all_historical_data(self):

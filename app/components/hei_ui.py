@@ -179,7 +179,6 @@ def preliminary_notice_modal() -> rx.Component:
     """Optimized notice modal with instant interaction and minimal layout shift."""
     return rx.cond(
         HEIState.show_preliminary_notice,
->>>>>>> version2
         rx.el.div(
             rx.el.div(
                 rx.el.div(
@@ -439,7 +438,6 @@ def selection_screen_content() -> rx.Component:
                                         on_change=HEIState.set_search_query.debounce(
                                             150
                                         ),
-
                                         class_name="w-full pl-12 md:pl-16 pr-12 md:pr-16 py-4 md:py-5 bg-white/80 backdrop-blur-xl border border-slate-200 rounded-2xl md:rounded-[2.5rem] focus:ring-4 md:focus:ring-8 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all shadow-[0_15px_40px_-15px_rgba(0,0,0,0.1)] text-base md:text-xl font-medium placeholder-slate-400",
                                         default_value=HEIState.search_query,
                                     ),
@@ -455,9 +453,6 @@ def selection_screen_content() -> rx.Component:
                                     ),
                                     class_name="relative mb-2",
                                 ),
-<<<<<<< HEAD
-                                hei_selection_dropdown(),
-=======
                                 hei_table_list(),
                                 class_name="relative mb-8 md:mb-12",
                             ),
