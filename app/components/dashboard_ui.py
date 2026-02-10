@@ -14,6 +14,8 @@ def numeric_input_metric(
     """Numeric text input for weighted metrics with real-time feedback and validation warnings."""
     field_key_map = {
         "Academic Reputation": "academic_reputation",
+        "Domestic Nominations": "domestic_nominations",
+        "International Nominations": "international_nominations",
         "Citations per Faculty": "citations_per_faculty",
         "Employer Reputation": "employer_reputation",
         "Employment Outcomes": "employment_outcomes",
@@ -709,12 +711,50 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    numeric_input_metric(
-                        label="Academic Reputation",
-                        value=DashboardState.academic_reputation,
-                        points=DashboardState.academic_reputation_points,
-                        max_points=30,
-                        on_change=DashboardState.set_academic_reputation,
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.div(
+                                rx.el.h4(
+                                    "Academic Reputation (30%)",
+                                    class_name="text-base font-bold text-slate-900",
+                                ),
+                                rx.el.p(
+                                    "Weights: International (85%) | Domestic (15%)",
+                                    class_name="text-[10px] font-bold text-slate-400 uppercase",
+                                ),
+                                class_name="flex flex-col",
+                            ),
+                            rx.el.div(
+                                rx.el.span(
+                                    DashboardState.academic_reputation_points,
+                                    class_name=f"text-lg font-black text-{DS.PRIMARY}",
+                                ),
+                                rx.el.span(
+                                    " / 30 pts",
+                                    class_name="text-xs font-bold text-slate-400 ml-1",
+                                ),
+                                class_name="bg-blue-50 px-3 py-1 rounded-xl border border-blue-100",
+                            ),
+                            class_name="flex items-center justify-between mb-6 border-b border-slate-50 pb-4",
+                        ),
+                        rx.el.div(
+                            numeric_input_metric(
+                                label="International Nominations",
+                                value=DashboardState.international_nominations,
+                                points=DashboardState.international_nominations_points,
+                                max_points=25.5,
+                                on_change=DashboardState.set_international_nominations,
+                            ),
+                            numeric_input_metric(
+                                label="Domestic Nominations",
+                                value=DashboardState.domestic_nominations,
+                                points=DashboardState.domestic_nominations_points,
+                                max_points=4.5,
+                                on_change=DashboardState.set_domestic_nominations,
+                            ),
+                            class_name="grid grid-cols-1 sm:grid-cols-2 gap-4",
+                        ),
+                        class_name="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm mb-4",
                     ),
                     numeric_input_metric(
                         label="Citations per Faculty",

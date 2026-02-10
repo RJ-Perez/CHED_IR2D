@@ -72,22 +72,30 @@ class AnalyticsState(rx.State):
 
     def _clean_json_response(self, text: str) -> str:
         """Sanitizes AI response text to ensure it is valid parseable JSON.
-        Preserves Unicode characters and handles markdown code blocks.
+        Implements robust repair logic for common LLM output issues like truncated responses,
+        missing commas, and unescaped characters.
         """
         if not text:
             return ""
-        text = re.sub("|", "", text).strip()
+        text = re.sub("(?:json)?", "", text)
+        text = re.sub("", "", text).strip()
         start = text.find("{")
         end = text.rfind("}")
-        if start != -1 and end != -1:
-            text = text[start : end + 1]
+        if start != -1:
+            if end == -1 or end < start:
+                text = text[start:]
+                open_brackets = text.count("[") - text.count("]")
+                open_braces = text.count("{") - text.count("}")
+                text += "]" * max(0, open_brackets) + "}" * max(0, open_braces)
+            else:
+                text = text[start : end + 1]
         text = re.sub("'([^']+)'\\s*:", '"\\1":', text)
-        prev_text = ""
-        while prev_text != text:
-            prev_text = text
-            text = re.sub(",\\s*([}\\]])", "\\1", text)
-        if not text.startswith("{") or not text.endswith("}"):
-            return ""
+        text = re.sub('("|\\d|true|false|null)\\s*\\n\\s*"', '\\1,\\n"', text)
+        text = re.sub(",\\s*([}\\]])", "\\1", text)
+        if not text.startswith("{"):
+            text = "{" + text
+        if not text.endswith("}"):
+            text = text + "}"
         return text
 
     def _is_valid_ai_response(self, text: str) -> bool:
@@ -505,8 +513,10 @@ class AnalyticsState(rx.State):
             response_text = self._clean_json_response(response_text)
             try:
                 recommendations_data = json.loads(response_text)
-            except (json.JSONDecodeError, TypeError, ValueError) as e:
-                logging.exception(f"JSON parsing failed for AI response: {e}")
+            except json.JSONDecodeError as parse_err:
+                logging.exception(
+                    f"AI response parsing failed, using fallback: {str(parse_err)[:50]}"
+                )
                 async with self:
                     self.ai_recommendations = self._get_fallback_recommendations(
                         research_score,

@@ -12,6 +12,8 @@ class DashboardState(rx.State):
     """
 
     academic_reputation: int = 0
+    domestic_nominations: int = 0
+    international_nominations: int = 0
     review_status: str = ""
     citations_per_faculty: int = 0
     employer_reputation: int = 0
@@ -69,6 +71,8 @@ class DashboardState(rx.State):
     is_loading: bool = False
     validation_errors: dict[str, str] = {
         "academic_reputation": "",
+        "domestic_nominations": "",
+        "international_nominations": "",
         "citations_per_faculty": "",
         "employer_reputation": "",
         "employment_outcomes": "",
@@ -88,8 +92,19 @@ class DashboardState(rx.State):
         return False
 
     @rx.var(cache=True)
+    def domestic_nominations_points(self) -> float:
+        return round(float(self.domestic_nominations) * 0.15 * 0.3, 1)
+
+    @rx.var(cache=True)
+    def international_nominations_points(self) -> float:
+        return round(float(self.international_nominations) * 0.85 * 0.3, 1)
+
+    @rx.var(cache=True)
     def academic_reputation_points(self) -> float:
-        return round(float(self.academic_reputation) * 0.3, 1)
+        domestic_contribution = float(self.domestic_nominations) * 0.15
+        international_contribution = float(self.international_nominations) * 0.85
+        combined_score = domestic_contribution + international_contribution
+        return round(combined_score * 0.3, 1)
 
     @rx.var(cache=True)
     def citations_per_faculty_points(self) -> float:
@@ -204,6 +219,18 @@ class DashboardState(rx.State):
     def set_academic_reputation(self, value: str):
         self.academic_reputation = self._validate_and_clamp(
             "academic_reputation", value
+        )
+
+    @rx.event
+    def set_domestic_nominations(self, value: str):
+        self.domestic_nominations = self._validate_and_clamp(
+            "domestic_nominations", value
+        )
+
+    @rx.event
+    def set_international_nominations(self, value: str):
+        self.international_nominations = self._validate_and_clamp(
+            "international_nominations", value
         )
 
     @rx.event
@@ -609,6 +636,22 @@ class DashboardState(rx.State):
                             self.uploaded_research_files = (
                                 json.loads(evidence) if evidence else []
                             )
+                        elif code == "domestic_nominations":
+                            try:
+                                self.domestic_nominations = int(float(value))
+                            except (ValueError, TypeError) as e:
+                                logging.exception(
+                                    f"Error loading domestic nominations: {e}"
+                                )
+                                self.domestic_nominations = 0
+                        elif code == "international_nominations":
+                            try:
+                                self.international_nominations = int(float(value))
+                            except (ValueError, TypeError) as e:
+                                logging.exception(
+                                    f"Error loading international nominations: {e}"
+                                )
+                                self.international_nominations = 0
                         elif code == "citations_per_faculty":
                             try:
                                 self.citations_per_faculty = int(float(value))
@@ -817,6 +860,8 @@ class DashboardState(rx.State):
                     self.academic_reputation,
                     self.uploaded_research_files,
                 ),
+                ("domestic_nominations", self.domestic_nominations, []),
+                ("international_nominations", self.international_nominations, []),
                 ("citations_per_faculty", self.citations_per_faculty, []),
                 (
                     "employer_reputation",
