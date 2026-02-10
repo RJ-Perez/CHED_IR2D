@@ -718,6 +718,23 @@ class DashboardState(rx.State):
                                     f"Error loading employer international nominations: {e}"
                                 )
                                 self.employer_international_nominations = 0
+                            try:
+                                self.employer_domestic_nominations = int(float(value))
+                            except (ValueError, TypeError) as e:
+                                logging.exception(
+                                    f"Error loading employer domestic nominations: {e}"
+                                )
+                                self.employer_domestic_nominations = 0
+                        elif code == "employer_international_nominations":
+                            try:
+                                self.employer_international_nominations = int(
+                                    float(value)
+                                )
+                            except (ValueError, TypeError) as e:
+                                logging.exception(
+                                    f"Error loading employer international nominations: {e}"
+                                )
+                                self.employer_international_nominations = 0
                         elif code == "employment_outcomes":
                             try:
                                 self.employment_outcomes = int(float(value))
@@ -901,10 +918,18 @@ class DashboardState(rx.State):
                 text("SELECT code, id FROM ranking_indicators")
             )
             code_to_id = {row[0]: row[1] for row in ind_rows.all()}
+            calc_academic_rep = int(
+                float(self.international_nominations) * 0.85
+                + float(self.domestic_nominations) * 0.15
+            )
+            calc_employer_rep = int(
+                float(self.employer_domestic_nominations) * 0.5
+                + float(self.employer_international_nominations) * 0.5
+            )
             scores_batch = [
                 (
                     "academic_reputation",
-                    self.academic_reputation,
+                    calc_academic_rep,
                     self.uploaded_research_files,
                 ),
                 ("domestic_nominations", self.domestic_nominations, []),
@@ -912,7 +937,7 @@ class DashboardState(rx.State):
                 ("citations_per_faculty", self.citations_per_faculty, []),
                 (
                     "employer_reputation",
-                    self.employer_reputation,
+                    calc_employer_rep,
                     self.uploaded_employability_files,
                 ),
                 (

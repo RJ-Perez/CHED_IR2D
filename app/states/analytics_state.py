@@ -175,7 +175,9 @@ class AnalyticsState(rx.State):
             )
             score_map = {row[0]: self._parse_float(row[1]) for row in scores_data}
             review_status = scores_data[0][2] if scores_data else "Pending"
-            academic_rep = score_map.get("academic_reputation", 0.0)
+            int_nominations = score_map.get("international_nominations", 0.0)
+            dom_nominations = score_map.get("domestic_nominations", 0.0)
+            academic_rep = int_nominations * 0.85 + dom_nominations * 0.15
             citations = score_map.get("citations_per_faculty", 0.0)
             emp_domestic = score_map.get("employer_domestic_nominations", 0.0)
             emp_international = score_map.get("employer_international_nominations", 0.0)
@@ -287,10 +289,16 @@ class AnalyticsState(rx.State):
                 self.review_status = review_status
                 self.research_comparison_data = [
                     {
-                        "metric": "Academic Rep.",
-                        "You": academic_rep,
-                        "NCR Avg": ncr_avgs.get("academic_reputation", 0.0),
-                        "Target": b_academic_rep,
+                        "metric": "Intl. Nominations",
+                        "You": int_nominations,
+                        "NCR Avg": ncr_avgs.get("international_nominations", 0.0),
+                        "Target": 100.0,
+                    },
+                    {
+                        "metric": "Dom. Nominations",
+                        "You": dom_nominations,
+                        "NCR Avg": ncr_avgs.get("domestic_nominations", 0.0),
+                        "Target": 100.0,
                     },
                     {
                         "metric": "Citations/Faculty",
