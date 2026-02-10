@@ -177,7 +177,9 @@ class AnalyticsState(rx.State):
             review_status = scores_data[0][2] if scores_data else "Pending"
             academic_rep = score_map.get("academic_reputation", 0.0)
             citations = score_map.get("citations_per_faculty", 0.0)
-            emp_rep = score_map.get("employer_reputation", 0.0)
+            emp_domestic = score_map.get("employer_domestic_nominations", 0.0)
+            emp_international = score_map.get("employer_international_nominations", 0.0)
+            emp_rep = emp_domestic * 0.5 + emp_international * 0.5
             emp_outcomes = score_map.get("employment_outcomes", 0.0)
             int_research_net = score_map.get("international_research_network", 0.0)
             int_faculty_ratio = score_map.get("international_faculty_ratio", 0.0)
@@ -299,16 +301,24 @@ class AnalyticsState(rx.State):
                 ]
                 self.employability_comparison_data = [
                     {
-                        "metric": "Emp. Reputation",
-                        "You": emp_rep,
-                        "NCR Avg": ncr_avgs.get("employer_reputation", 0.0),
-                        "Target": b_emp_rep,
+                        "metric": "Emp. Domestic",
+                        "You": emp_domestic,
+                        "NCR Avg": ncr_avgs.get("employer_domestic_nominations", 0.0),
+                        "Target": 100.0,
+                    },
+                    {
+                        "metric": "Emp. International",
+                        "You": emp_international,
+                        "NCR Avg": ncr_avgs.get(
+                            "employer_international_nominations", 0.0
+                        ),
+                        "Target": 100.0,
                     },
                     {
                         "metric": "Emp. Outcomes",
                         "You": emp_outcomes,
                         "NCR Avg": ncr_avgs.get("employment_outcomes", 0.0),
-                        "Target": b_emp_outcomes,
+                        "Target": 100.0,
                     },
                 ]
                 self.global_engagement_comparison_data = [

@@ -24,6 +24,8 @@ def numeric_input_metric(
         "International Student Ratio": "international_student_ratio",
         "Faculty-Student Ratio": "faculty_student_ratio",
         "Sustainability Metrics Score": "sustainability_metrics",
+        "Employer Domestic Nominations": "employer_domestic_nominations",
+        "Employer International Nominations": "employer_international_nominations",
     }
     field_key = field_key_map.get(label, "")
     error_msg = DashboardState.validation_errors[field_key]
@@ -820,12 +822,53 @@ def data_entry_forms() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    numeric_input_metric(
-                        label="Employer Reputation",
-                        value=DashboardState.employer_reputation,
-                        points=DashboardState.employer_reputation_points,
-                        max_points=15,
-                        on_change=DashboardState.set_employer_reputation,
+                    rx.el.div(
+                        rx.el.div(
+                            rx.el.div(
+                                rx.el.div(
+                                    rx.el.h4(
+                                        "Employer Reputation (15%)",
+                                        class_name="text-base font-bold text-slate-900",
+                                    ),
+                                    rx.el.p(
+                                        "Weights: Domestic (50%) | International (50%)",
+                                        class_name="text-[10px] font-bold text-slate-400 uppercase",
+                                    ),
+                                    class_name="flex flex-col",
+                                ),
+                                rx.el.div(
+                                    rx.el.span(
+                                        DashboardState.employer_reputation_points,
+                                        class_name=f"text-lg font-black text-{DS.PRIMARY}",
+                                    ),
+                                    rx.el.span(
+                                        " / 15 pts",
+                                        class_name="text-xs font-bold text-slate-400 ml-1",
+                                    ),
+                                    class_name="bg-blue-50 px-3 py-1 rounded-xl border border-blue-100",
+                                ),
+                                class_name="flex items-center justify-between mb-6 border-b border-slate-50 pb-4",
+                            ),
+                            rx.el.div(
+                                numeric_input_metric(
+                                    label="Employer Domestic Nominations",
+                                    value=DashboardState.employer_domestic_nominations,
+                                    points=DashboardState.employer_domestic_nominations_points,
+                                    max_points=7.5,
+                                    on_change=DashboardState.set_employer_domestic_nominations,
+                                ),
+                                numeric_input_metric(
+                                    label="Employer International Nominations",
+                                    value=DashboardState.employer_international_nominations,
+                                    points=DashboardState.employer_international_nominations_points,
+                                    max_points=7.5,
+                                    on_change=DashboardState.set_employer_international_nominations,
+                                ),
+                                class_name="grid grid-cols-1 sm:grid-cols-2 gap-4",
+                            ),
+                            class_name="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm mb-4",
+                        ),
+                        class_name="mb-4",
                     ),
                     numeric_input_metric(
                         label="Employment Outcomes",

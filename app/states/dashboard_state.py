@@ -14,6 +14,8 @@ class DashboardState(rx.State):
     academic_reputation: int = 0
     domestic_nominations: int = 0
     international_nominations: int = 0
+    employer_domestic_nominations: int = 0
+    employer_international_nominations: int = 0
     review_status: str = ""
     citations_per_faculty: int = 0
     employer_reputation: int = 0
@@ -75,6 +77,8 @@ class DashboardState(rx.State):
         "international_nominations": "",
         "citations_per_faculty": "",
         "employer_reputation": "",
+        "employer_domestic_nominations": "",
+        "employer_international_nominations": "",
         "employment_outcomes": "",
         "international_research_network": "",
         "international_faculty_ratio": "",
@@ -117,8 +121,21 @@ class DashboardState(rx.State):
         )
 
     @rx.var(cache=True)
+    def employer_domestic_nominations_points(self) -> float:
+        return round(float(self.employer_domestic_nominations) * 0.5 * 0.15, 1)
+
+    @rx.var(cache=True)
+    def employer_international_nominations_points(self) -> float:
+        return round(float(self.employer_international_nominations) * 0.5 * 0.15, 1)
+
+    @rx.var(cache=True)
     def employer_reputation_points(self) -> float:
-        return round(float(self.employer_reputation) * 0.15, 1)
+        domestic_contribution = float(self.employer_domestic_nominations) * 0.5
+        international_contribution = (
+            float(self.employer_international_nominations) * 0.5
+        )
+        combined_score = domestic_contribution + international_contribution
+        return round(combined_score * 0.15, 1)
 
     @rx.var(cache=True)
     def employment_outcomes_points(self) -> float:
@@ -243,6 +260,18 @@ class DashboardState(rx.State):
     def set_employer_reputation(self, value: str):
         self.employer_reputation = self._validate_and_clamp(
             "employer_reputation", value
+        )
+
+    @rx.event
+    def set_employer_domestic_nominations(self, value: str):
+        self.employer_domestic_nominations = self._validate_and_clamp(
+            "employer_domestic_nominations", value
+        )
+
+    @rx.event
+    def set_employer_international_nominations(self, value: str):
+        self.employer_international_nominations = self._validate_and_clamp(
+            "employer_international_nominations", value
         )
 
     @rx.event
@@ -671,6 +700,24 @@ class DashboardState(rx.State):
                             self.uploaded_employability_files = (
                                 json.loads(evidence) if evidence else []
                             )
+                        elif code == "employer_domestic_nominations":
+                            try:
+                                self.employer_domestic_nominations = int(float(value))
+                            except (ValueError, TypeError) as e:
+                                logging.exception(
+                                    f"Error loading employer domestic nominations: {e}"
+                                )
+                                self.employer_domestic_nominations = 0
+                        elif code == "employer_international_nominations":
+                            try:
+                                self.employer_international_nominations = int(
+                                    float(value)
+                                )
+                            except (ValueError, TypeError) as e:
+                                logging.exception(
+                                    f"Error loading employer international nominations: {e}"
+                                )
+                                self.employer_international_nominations = 0
                         elif code == "employment_outcomes":
                             try:
                                 self.employment_outcomes = int(float(value))
@@ -867,6 +914,16 @@ class DashboardState(rx.State):
                     "employer_reputation",
                     self.employer_reputation,
                     self.uploaded_employability_files,
+                ),
+                (
+                    "employer_domestic_nominations",
+                    self.employer_domestic_nominations,
+                    [],
+                ),
+                (
+                    "employer_international_nominations",
+                    self.employer_international_nominations,
+                    [],
                 ),
                 ("employment_outcomes", self.employment_outcomes, []),
                 (
