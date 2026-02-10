@@ -73,11 +73,11 @@ class AnalyticsState(rx.State):
     def _clean_json_response(self, text: str) -> str:
         """Sanitizes AI response text to ensure it is valid parseable JSON.
         Implements robust repair logic for common LLM output issues like truncated responses,
-        missing commas, and unescaped characters.
+        missing commas, trailing commas, and unescaped characters.
         """
         if not text:
             return ""
-        text = re.sub("(?:json)?", "", text)
+        text = re.sub("(?:json)?\\n?", "", text)
         text = re.sub("", "", text).strip()
         start = text.find("{")
         end = text.rfind("}")
@@ -90,8 +90,12 @@ class AnalyticsState(rx.State):
             else:
                 text = text[start : end + 1]
         text = re.sub("'([^']+)'\\s*:", '"\\1":', text)
-        text = re.sub('("|\\d|true|false|null)\\s*\\n\\s*"', '\\1,\\n"', text)
+        text = re.sub(":\\s*'([^']*)'(\\s*[,}\\]])", ': "\\1"\\2', text)
         text = re.sub(",\\s*([}\\]])", "\\1", text)
+        text = re.sub('(")\\s*\\n\\s*(")', "\\1,\\n\\2", text)
+        text = re.sub('(\\d|true|false|null)\\s*\\n\\s*"', '\\1,\\n"', text)
+        text = re.sub("[\\x00-\\x1f\\x7f-\\x9f]", " ", text)
+        text = text.strip()
         if not text.startswith("{"):
             text = "{" + text
         if not text.endswith("}"):
