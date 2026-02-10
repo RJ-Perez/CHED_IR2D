@@ -60,12 +60,7 @@ def sidebar(current_page: str) -> rx.Component:
                 "/historical",
                 is_active=current_page == "historical",
             ),
-            sidebar_item(
-                "Analytics",
-                "bar-chart-3",
-                "/analytics",
-                is_active=current_page == "analytics",
-            ),
+    
             sidebar_section_label("CHED Modules"),
             sidebar_item(
                 "Institutions",
