@@ -133,8 +133,35 @@ class AnalyticsState(rx.State):
             async with self:
                 hei_state = await self.get_state(HEIState)
                 if not hei_state.selected_hei:
-                    self.is_loading = False
-                    return
+                    async with rx.asession() as session:
+                        result = await session.execute(
+                            text("""
+                                SELECT DISTINCT i.id, i.institution_name, i.street_address, i.city_municipality 
+                                FROM institutions i
+                                INNER JOIN institution_scores s ON s.institution_id = i.id
+                                WHERE s.ranking_year = 2025
+                                ORDER BY i.id ASC LIMIT 1
+                            """)
+                        )
+                        row = result.first()
+                        if not row:
+                            result = await session.execute(
+                                text(
+                                    "SELECT id, institution_name, street_address, city_municipality FROM institutions ORDER BY id ASC LIMIT 1"
+                                )
+                            )
+                            row = result.first()
+                        if row:
+                            hei_state.selected_hei = {
+                                "id": str(row[0]),
+                                "name": row[1],
+                                "address": f"{row[2]}, {row[3]}",
+                                "street": row[2],
+                                "city": row[3],
+                            }
+                        else:
+                            self.is_loading = False
+                            return
                 institution_id = int(hei_state.selected_hei["id"])
             scores_data, ncr_avgs = await asyncio.gather(
                 self._fetch_scores(institution_id), self._calculate_ncr_averages()
@@ -202,16 +229,17 @@ class AnalyticsState(rx.State):
                 + learning_experience_score * 0.1
                 + sustainability_score * 0.05
             )
-            hist_result = await session.execute(
-                text("""
-                SELECT ranking_year, overall_score, academic_reputation
-                FROM historical_performance
-                WHERE institution_id = :iid
-                ORDER BY ranking_year ASC
-                """),
-                {"iid": institution_id},
-            )
-            hist_rows = hist_result.all()
+            async with rx.asession() as session:
+                hist_result = await session.execute(
+                    text("""
+                    SELECT ranking_year, overall_score, academic_reputation
+                    FROM historical_performance
+                    WHERE institution_id = :iid
+                    ORDER BY ranking_year ASC
+                    """),
+                    {"iid": institution_id},
+                )
+                hist_rows = hist_result.all()
             trend_data = []
             for y, ov, ar in hist_rows:
                 trend_data.append(

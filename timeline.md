@@ -5,3 +5,5 @@ Created institution management interface for HEI registration and selection
 Resolved 'session' NameError in AnalyticsState.on_load
 Added missing on_load trigger to /analytics route in app.py
 Implemented auto-selection of first available HEI in AnalyticsState for direct page access
+Reinforced analytics_state.py fixes using write_code to ensure persistence across server restarts
+Implemented exponential backoff retry logic and graceful fallback for Google AI API calls in HistoricalAnalyticsState to handle 429 rate limit errors
