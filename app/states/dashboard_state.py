@@ -894,7 +894,7 @@ class DashboardState(rx.State):
 
     @rx.event(background=True)
     async def save_progress(self):
-        """Optimized: Batches multiple scores into fewer transaction blocks."""
+        """Batch saves assessment scores and updates review status based on completion."""
         async with self:
             if self.has_validation_errors:
                 yield rx.toast.error(
@@ -913,6 +913,21 @@ class DashboardState(rx.State):
             return
         institution_id = int(hei_state.selected_hei["id"])
         current_user_id = auth_state.authenticated_user_id
+        primary_indicators = [
+            self.international_nominations,
+            self.domestic_nominations,
+            self.citations_per_faculty,
+            self.employer_domestic_nominations,
+            self.employer_international_nominations,
+            self.employment_outcomes,
+            self.international_research_network,
+            self.international_faculty_ratio,
+            self.international_student_ratio,
+            self.faculty_student_ratio,
+            self.sustainability_metrics,
+        ]
+        filled_count = sum((1 for v in primary_indicators if v > 0))
+        review_status = "For Review" if filled_count >= 11 else "In Progress"
         async with rx.asession() as session:
             ind_rows = await session.execute(
                 text("SELECT code, id FROM ranking_indicators")
@@ -978,13 +993,14 @@ class DashboardState(rx.State):
                 if code in code_to_id:
                     await session.execute(
                         text("""
-                            INSERT INTO institution_scores (institution_id, indicator_id, user_id, value, evidence_files, ranking_year)
-                            VALUES (:inst_id, :ind_id, :user_id, :val, :files, 2025)
+                            INSERT INTO institution_scores (institution_id, indicator_id, user_id, value, evidence_files, ranking_year, review_status)
+                            VALUES (:inst_id, :ind_id, :user_id, :val, :files, 2025, :status)
                             ON CONFLICT (institution_id, indicator_id, ranking_year)
                             DO UPDATE SET 
                                 value = EXCLUDED.value, 
                                 evidence_files = EXCLUDED.evidence_files, 
                                 user_id = EXCLUDED.user_id,
+                                review_status = EXCLUDED.review_status,
                                 updated_at = CURRENT_TIMESTAMP
                         """),
                         {
@@ -993,14 +1009,16 @@ class DashboardState(rx.State):
                             "user_id": current_user_id,
                             "val": str(value),
                             "files": json.dumps(files),
+                            "status": review_status,
                         },
                     )
             await session.commit()
         async with self:
+            self.review_status = review_status
             self.is_saving = False
             self.save_successful = True
             yield rx.toast(
-                "Assessment data saved successfully.",
+                f"Data synced successfully. Status: {review_status}",
                 duration=3000,
                 position="bottom-right",
                 close_button=True,
