@@ -333,9 +333,11 @@ class DashboardState(rx.State):
         self.is_uploading_employability = True
         self.upload_progress_employability = 0
         total = len(files)
+        hei_state = await self.get_state(HEIState)
+        inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
         for i, file in enumerate(files):
             self.upload_count_employability = f"{i + 1} of {total}"
-            saved_path = await self._save_uploaded_file(file, "employability")
+            saved_path = await self._save_uploaded_file(file, "employability", inst_id)
             if saved_path:
                 self.uploaded_employability_files.append(saved_path)
             self.upload_progress_employability = int((i + 1) / total * 100)
@@ -351,9 +353,13 @@ class DashboardState(rx.State):
         self.is_uploading_global_engagement = True
         self.upload_progress_global_engagement = 0
         total = len(files)
+        hei_state = await self.get_state(HEIState)
+        inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
         for i, file in enumerate(files):
             self.upload_count_global_engagement = f"{i + 1} of {total}"
-            saved_path = await self._save_uploaded_file(file, "global_engagement")
+            saved_path = await self._save_uploaded_file(
+                file, "global_engagement", inst_id
+            )
             if saved_path:
                 self.uploaded_global_engagement_files.append(saved_path)
             self.upload_progress_global_engagement = int((i + 1) / total * 100)
@@ -369,9 +375,13 @@ class DashboardState(rx.State):
         self.is_uploading_learning_experience = True
         self.upload_progress_learning_experience = 0
         total = len(files)
+        hei_state = await self.get_state(HEIState)
+        inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
         for i, file in enumerate(files):
             self.upload_count_learning_experience = f"{i + 1} of {total}"
-            saved_path = await self._save_uploaded_file(file, "learning_experience")
+            saved_path = await self._save_uploaded_file(
+                file, "learning_experience", inst_id
+            )
             if saved_path:
                 self.uploaded_learning_experience_files.append(saved_path)
             self.upload_progress_learning_experience = int((i + 1) / total * 100)
@@ -387,9 +397,11 @@ class DashboardState(rx.State):
         self.is_uploading_sustainability = True
         self.upload_progress_sustainability = 0
         total = len(files)
+        hei_state = await self.get_state(HEIState)
+        inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
         for i, file in enumerate(files):
             self.upload_count_sustainability = f"{i + 1} of {total}"
-            saved_path = await self._save_uploaded_file(file, "sustainability")
+            saved_path = await self._save_uploaded_file(file, "sustainability", inst_id)
             if saved_path:
                 self.uploaded_sustainability_files.append(saved_path)
             self.upload_progress_sustainability = int((i + 1) / total * 100)
@@ -434,8 +446,12 @@ class DashboardState(rx.State):
         self.is_uploading_formal_research = True
         self.upload_progress_formal_research = 0
         total = len(files)
+        hei_state = await self.get_state(HEIState)
+        inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
         for i, file in enumerate(files):
-            saved_path = await self._save_uploaded_file(file, "formal_research")
+            saved_path = await self._save_uploaded_file(
+                file, "formal_research", inst_id
+            )
             if saved_path:
                 self.uploaded_formal_research_files.append(saved_path)
             self.upload_progress_formal_research = int((i + 1) / total * 100)
@@ -450,8 +466,12 @@ class DashboardState(rx.State):
         self.is_uploading_formal_employability = True
         self.upload_progress_formal_employability = 0
         total = len(files)
+        hei_state = await self.get_state(HEIState)
+        inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
         for i, file in enumerate(files):
-            saved_path = await self._save_uploaded_file(file, "formal_employability")
+            saved_path = await self._save_uploaded_file(
+                file, "formal_employability", inst_id
+            )
             if saved_path:
                 self.uploaded_formal_employability_files.append(saved_path)
             self.upload_progress_formal_employability = int((i + 1) / total * 100)
@@ -466,8 +486,10 @@ class DashboardState(rx.State):
         self.is_uploading_formal_global = True
         self.upload_progress_formal_global = 0
         total = len(files)
+        hei_state = await self.get_state(HEIState)
+        inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
         for i, file in enumerate(files):
-            saved_path = await self._save_uploaded_file(file, "formal_global")
+            saved_path = await self._save_uploaded_file(file, "formal_global", inst_id)
             if saved_path:
                 self.uploaded_formal_global_files.append(saved_path)
             self.upload_progress_formal_global = int((i + 1) / total * 100)
@@ -482,8 +504,12 @@ class DashboardState(rx.State):
         self.is_uploading_formal_learning = True
         self.upload_progress_formal_learning = 0
         total = len(files)
+        hei_state = await self.get_state(HEIState)
+        inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
         for i, file in enumerate(files):
-            saved_path = await self._save_uploaded_file(file, "formal_learning")
+            saved_path = await self._save_uploaded_file(
+                file, "formal_learning", inst_id
+            )
             if saved_path:
                 self.uploaded_formal_learning_files.append(saved_path)
             self.upload_progress_formal_learning = int((i + 1) / total * 100)
@@ -498,8 +524,12 @@ class DashboardState(rx.State):
         self.is_uploading_formal_sustainability = True
         self.upload_progress_formal_sustainability = 0
         total = len(files)
+        hei_state = await self.get_state(HEIState)
+        inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
         for i, file in enumerate(files):
-            saved_path = await self._save_uploaded_file(file, "formal_sustainability")
+            saved_path = await self._save_uploaded_file(
+                file, "formal_sustainability", inst_id
+            )
             if saved_path:
                 self.uploaded_formal_sustainability_files.append(saved_path)
             self.upload_progress_formal_sustainability = int((i + 1) / total * 100)
