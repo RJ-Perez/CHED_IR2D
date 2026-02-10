@@ -4,6 +4,7 @@ import json
 import logging
 import asyncio
 import os
+import re
 from sqlalchemy import text
 from app.states.hei_state import HEIState
 from app.states.historical_state import HistoricalState
@@ -29,6 +30,48 @@ class HistoricalAnalyticsState(rx.State):
     heatmap_data: list[dict[str, str | int | float | bool]] = []
     ai_insights: list[dict[str, str]] = []
     active_view: str = "entry"
+
+    def _get_fallback_insights(self, data: list) -> list[dict[str, str]]:
+        """Generate fallback insights when AI is unavailable."""
+        insights = []
+        if len(data) >= 2:
+            first_score = data[0].get("Average", 0)
+            last_score = data[-1].get("Average", 0)
+            if last_score > first_score:
+                insights.append(
+                    {
+                        "title": "Positive Growth Trend",
+                        "description": f"Overall performance improved from {first_score} to {last_score} points, showing consistent institutional development.",
+                    }
+                )
+            else:
+                insights.append(
+                    {
+                        "title": "Performance Review Needed",
+                        "description": f"Performance declined from {first_score} to {last_score}. Consider reviewing strategic initiatives.",
+                    }
+                )
+        if data:
+            latest = data[-1]
+            categories = [
+                "academic_reputation",
+                "employer_reputation",
+                "sustainability_metrics",
+            ]
+            best_cat = max(categories, key=lambda c: latest.get(c, 0))
+            insights.append(
+                {
+                    "title": "Strength Identified",
+                    "description": f"Your strongest area is {best_cat.replace('_', ' ').title()} - continue investing in this competitive advantage.",
+                }
+            )
+        insights.append(
+            {
+                "title": "Data-Driven Planning",
+                "description": "Continue tracking metrics annually to identify trends and inform strategic decisions.",
+            }
+        )
+        return insights
 
     @rx.var(cache=True)
     async def stats_summary(self) -> dict[str, str | int | float]:
@@ -107,12 +150,15 @@ class HistoricalAnalyticsState(rx.State):
 
     @rx.event(background=True)
     async def generate_ai_insights(self):
+        async with self:
+            hist = await self.get_state(HistoricalState)
+            data = hist.trend_data
         if not GOOGLE_AI_AVAILABLE:
+            async with self:
+                self.ai_insights = self._get_fallback_insights(data)
             return
         async with self:
             self.is_generating_ai = True
-            hist = await self.get_state(HistoricalState)
-            data = hist.trend_data
             hei = await self.get_state(HEIState)
             hei_name = (
                 hei.selected_hei["name"] if hei.selected_hei else "the institution"
@@ -120,19 +166,58 @@ class HistoricalAnalyticsState(rx.State):
         try:
             prompt = f"Analyze the historical performance of {hei_name} based on this data: {json.dumps(data)}. Provide 3 strategic insights regarding their improvement trends, volatility, and areas of consistent strength in a valid JSON list of objects with 'title' and 'description' keys. Return ONLY JSON."
             client = genai.Client(api_key=GOOGLE_AI_API_KEY)
-            response = await client.aio.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json"
-                ),
-            )
-            if response and response.text:
-                insights = json.loads(response.text)
+            max_retries = 5
+            response_text = ""
+            for attempt in range(max_retries):
+                try:
+                    response = await client.aio.models.generate_content(
+                        model="gemini-2.0-flash",
+                        contents=prompt,
+                        config=types.GenerateContentConfig(
+                            response_mime_type="application/json"
+                        ),
+                    )
+                    if response and response.text:
+                        response_text = response.text
+                        break
+                except Exception as e:
+                    error_str = str(e)
+                    is_retriable = (
+                        "429" in error_str
+                        or "RESOURCE_EXHAUSTED" in error_str
+                        or "503" in error_str
+                        or ("UNAVAILABLE" in error_str)
+                    )
+                    if is_retriable:
+                        if attempt == max_retries - 1:
+                            logging.info(
+                                "Google AI quota exhausted after all retries. Using fallback insights."
+                            )
+                            break
+                        wait_time = 2.0 * 2**attempt
+                        retry_match = re.search("retry in (\\d+(\\.\\d+)?)s", error_str)
+                        if retry_match:
+                            wait_time = float(retry_match.group(1)) + 1.0
+                        wait_time = min(wait_time, 60.0)
+                        logging.warning(
+                            f"Google AI rate limit. Retrying in {wait_time:.2f}s (Attempt {attempt + 1}/{max_retries})"
+                        )
+                        await asyncio.sleep(wait_time)
+                    else:
+                        logging.exception(f"Non-retriable AI error: {e}")
+                        break
+            if not response_text:
                 async with self:
-                    self.ai_insights = insights
+                    self.ai_insights = self._get_fallback_insights(data)
+                    self.is_generating_ai = False
+                return
+            insights = json.loads(response_text)
+            async with self:
+                self.ai_insights = insights
         except Exception as e:
             logging.exception(f"AI Error: {e}")
+            async with self:
+                self.ai_insights = self._get_fallback_insights(data)
         finally:
             async with self:
                 self.is_generating_ai = False
