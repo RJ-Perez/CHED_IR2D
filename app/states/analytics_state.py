@@ -76,15 +76,16 @@ class AnalyticsState(rx.State):
         """
         if not text:
             return ""
-        text = re.sub("\\s*", "", text)
-        text = re.sub("\\s*", "", text)
-        text = text.strip()
+        text = re.sub("|", "", text).strip()
         start = text.find("{")
         end = text.rfind("}")
         if start != -1 and end != -1:
             text = text[start : end + 1]
-        text = re.sub(",(\\s*[}\\]])", "\\1", text)
         text = re.sub("'([^']+)'\\s*:", '"\\1":', text)
+        prev_text = ""
+        while prev_text != text:
+            prev_text = text
+            text = re.sub(",\\s*([}\\]])", "\\1", text)
         if not text.startswith("{") or not text.endswith("}"):
             return ""
         return text
@@ -502,10 +503,10 @@ class AnalyticsState(rx.State):
                     self.is_generating_recommendations = False
                 return
             response_text = self._clean_json_response(response_text)
-            if not self._is_valid_ai_response(response_text):
-                logging.warning(
-                    f"AI response validation failed. Cleaned text snippet: {response_text[:100]}..."
-                )
+            try:
+                recommendations_data = json.loads(response_text)
+            except (json.JSONDecodeError, TypeError, ValueError) as e:
+                logging.exception(f"JSON parsing failed for AI response: {e}")
                 async with self:
                     self.ai_recommendations = self._get_fallback_recommendations(
                         research_score,
@@ -516,10 +517,10 @@ class AnalyticsState(rx.State):
                     )
                     self.is_generating_recommendations = False
                 return
-            try:
-                recommendations_data = json.loads(response_text)
-            except (json.JSONDecodeError, TypeError, ValueError) as e:
-                logging.exception(f"JSON parsing failed: {e}")
+            if not self._is_valid_ai_response(response_text):
+                logging.warning(
+                    f"AI response validation failed. Cleaned text snippet: {response_text[:100]}..."
+                )
                 async with self:
                     self.ai_recommendations = self._get_fallback_recommendations(
                         research_score,
