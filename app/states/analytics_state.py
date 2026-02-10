@@ -72,12 +72,12 @@ class AnalyticsState(rx.State):
 
     def _clean_json_response(self, text: str) -> str:
         """Sanitizes AI response text to ensure it is valid parseable JSON.
-        Handles markdown blocks, control characters in strings, and single-quoted keys.
+        Preserves Unicode characters and handles markdown code blocks.
         """
         if not text:
             return ""
-        text = re.sub("[a-zA-Z]*\\n?", "", text)
-        text = re.sub("", "", text)
+        text = re.sub("\\s*", "", text)
+        text = re.sub("\\s*", "", text)
         text = text.strip()
         start = text.find("{")
         end = text.rfind("}")
@@ -85,23 +85,21 @@ class AnalyticsState(rx.State):
             text = text[start : end + 1]
         text = re.sub(",(\\s*[}\\]])", "\\1", text)
         text = re.sub("'([^']+)'\\s*:", '"\\1":', text)
-
-        @rx.event
-        def escape_string_content(match):
-            content = match.group(1)
-            content = (
-                content.replace(
-                    """
-""",
-                    "\\n",
-                )
-                .replace("\r", "\\r")
-                .replace("\t", "\\t")
-            )
-            return f'"{content}"'
-
-        text = re.sub('"([^"\\\\]*(?:\\\\.[^"\\\\]*)*)"', escape_string_content, text)
+        if not text.startswith("{") or not text.endswith("}"):
+            return ""
         return text
+
+    def _is_valid_ai_response(self, text: str) -> bool:
+        """Validates that the response contains meaningful content and required keys."""
+        if not text or len(text) < 20:
+            return False
+        if '"": ""' in text or '"": null' in text:
+            return False
+        required_keys = ["recommendations", "title", "description", "category"]
+        for key in required_keys:
+            if f'"{key}"' not in text:
+                return False
+        return True
 
     def _parse_float(self, value: str) -> float:
         try:
@@ -492,9 +490,7 @@ class AnalyticsState(rx.State):
                         )
                         break
             if not response_text or not response_text.strip():
-                logging.info(
-                    "Google AI returned an empty response or failed. Falling back to rule-based recommendations."
-                )
+                logging.warning("Google AI returned an empty response.")
                 async with self:
                     self.ai_recommendations = self._get_fallback_recommendations(
                         research_score,
@@ -506,9 +502,9 @@ class AnalyticsState(rx.State):
                     self.is_generating_recommendations = False
                 return
             response_text = self._clean_json_response(response_text)
-            if not response_text:
-                logging.info(
-                    "Cleaned AI response is empty. Falling back to rule-based recommendations."
+            if not self._is_valid_ai_response(response_text):
+                logging.warning(
+                    f"AI response validation failed. Cleaned text snippet: {response_text[:100]}..."
                 )
                 async with self:
                     self.ai_recommendations = self._get_fallback_recommendations(
@@ -522,10 +518,8 @@ class AnalyticsState(rx.State):
                 return
             try:
                 recommendations_data = json.loads(response_text)
-            except json.JSONDecodeError as e:
-                logging.exception(
-                    f"Failed to parse AI JSON response: {e}. Cleaned response: {response_text[:200]}..."
-                )
+            except (json.JSONDecodeError, TypeError, ValueError) as e:
+                logging.exception(f"JSON parsing failed: {e}")
                 async with self:
                     self.ai_recommendations = self._get_fallback_recommendations(
                         research_score,
