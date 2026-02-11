@@ -466,21 +466,20 @@ class AuthState(GoogleAuthState):
                     )
                     async with self:
                         self.reset_success = True
-                except ResendError as re:
-                    logging.exception("Unexpected error")
-                    error_str = str(re)
+                except Exception as e:
+                    error_str = str(e).lower()
+                    error_type = type(e).__name__.lower()
+                    logging.exception(f"Email delivery error: {e}")
                     async with self:
                         if (
-                            "restricted to the account owner" in error_str
+                            "resend" in error_type
+                            or "restricted to the account owner" in error_str
                             or "verify a domain" in error_str
+                            or ("testing emails" in error_str)
                         ):
-                            self.error_message = "The email service is in Test Mode. Reset links can only be sent to the registered owner. Please contact the administrator to verify the domain."
+                            self.error_message = "The email service is currently in Test Mode or unverified. Reset links can only be sent to the registered account owner. Please contact the system administrator to verify the domain."
                         else:
-                            self.error_message = f"Email delivery service returned an error: {error_str[:100]}"
-                except Exception as e:
-                    logging.exception(f"Unexpected failure during email delivery: {e}")
-                    async with self:
-                        self.error_message = "An unexpected system error occurred while attempting to send the reset email."
+                            self.error_message = "The system encountered a technical issue sending the email. Please try again later or contact support."
             else:
                 async with self:
                     self.reset_success = True
