@@ -179,7 +179,7 @@ def auth_form() -> rx.Component:
                             on_click=AuthState.toggle_forgot_password,
                             class_name="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline",
                         ),
-                        class_name="flex justify-end mt-2",
+                        class_name="flex justify-center mt-2",
                     ),
                     rx.el.p(
                         rx.cond(
