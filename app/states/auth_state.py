@@ -243,26 +243,41 @@ class AuthState(GoogleAuthState):
 
     @rx.event(background=True)
     async def on_google_login(self, token_data: dict):
-        """Triggered after Google sign-in. Directly decodes JWT to avoid timeouts."""
+        """Triggered after Google sign-in. Decodes JWT and syncs user with the database.
+        Includes extensive logging for debugging production OAuth failures.
+        """
         credential = token_data.get("credential")
         if not credential:
+            logging.error(
+                f"OAuth Failure: No credential in token_data. Keys present: {list(token_data.keys())}"
+            )
             async with self:
                 yield rx.toast(
-                    "Authentication error: No credential received from Google.",
+                    "Authentication error: Google did not return valid identity credentials.",
                     duration=5000,
                     position="top-center",
                 )
             return
         user_info = self._decode_jwt(credential)
+        if not user_info:
+            logging.error("OAuth Failure: Decoded user_info is empty or invalid.")
+            async with self:
+                yield rx.toast(
+                    "Authentication error: Failed to verify identity token.",
+                    duration=5000,
+                )
+            return
         user_email = user_info.get("email")
         google_id = user_info.get("sub")
         first_name = user_info.get("given_name", "")
         last_name = user_info.get("family_name", "")
         if not user_email or not google_id:
-            logging.warning("Google login failed: Incomplete JWT payload.")
+            logging.warning(
+                f"OAuth Failure: Incomplete JWT payload. Email: {bool(user_email)}, ID: {bool(google_id)}"
+            )
             async with self:
                 self.error_message = (
-                    "Google login failed: Required profile info missing from token."
+                    "Google login failed: Profile info missing from token."
                 )
                 yield rx.toast(self.error_message, duration=5000)
             return
@@ -281,6 +296,9 @@ class AuthState(GoogleAuthState):
                 now = datetime.datetime.now(datetime.timezone.utc)
                 if user:
                     user_id = user[0]
+                    logging.info(
+                        f"OAuth Sync: Updating existing user ID {user_id} (email: {user_email})"
+                    )
                     await asession.execute(
                         text("""
                         UPDATE users 
@@ -291,6 +309,9 @@ class AuthState(GoogleAuthState):
                         {"google_id": google_id, "now": now, "id": user_id},
                     )
                 else:
+                    logging.info(
+                        f"OAuth Sync: Registering new Google user (email: {user_email})"
+                    )
                     insert_result = await asession.execute(
                         text("""
                         INSERT INTO users (
@@ -327,10 +348,10 @@ class AuthState(GoogleAuthState):
                     user_id = new_user_row[0] if new_user_row else None
                 await asession.commit()
         except Exception as e:
-            logging.exception(f"Database error during Google login sync: {e}")
+            logging.exception(f"OAuth Failure: Database synchronization error: {e}")
             async with self:
                 yield rx.toast(
-                    "Database synchronization failed. Please contact support.",
+                    "Security sync failed. The database could not be reached.",
                     duration=5000,
                 )
             return
@@ -340,14 +361,17 @@ class AuthState(GoogleAuthState):
                 self.error_message = ""
                 self.is_redirecting = True
                 self.id_token_json = json.dumps(token_data)
-            yield rx.toast(f"Successfully signed in as {first_name}!", duration=3000)
+            yield rx.toast(f"Welcome to IR²D, {first_name}!", duration=3000)
             yield rx.redirect("/hei-selection")
         else:
+            logging.error(
+                "OAuth Failure: Sync process finished without a valid user_id."
+            )
             async with self:
                 self.error_message = (
-                    "Authentication failed during user profile synchronization."
+                    "Authentication failed during profile synchronization."
                 )
-            yield rx.toast("Could not finalize your login session.", duration=5000)
+            yield rx.toast("Final security handshake failed.", duration=5000)
 
     @rx.event
     def logout(self):

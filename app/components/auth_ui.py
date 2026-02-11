@@ -1,7 +1,11 @@
 import reflex as rx
+import os
 from app.states.auth_state import AuthState
-from reflex_google_auth import google_login, google_oauth_provider
+from reflex_google_auth import google_login, google_oauth_provider, set_client_id
 from app.components.design_system import ds_card, ds_input, ds_button
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+set_client_id(GOOGLE_CLIENT_ID)
 
 
 def auth_form() -> rx.Component:
@@ -163,7 +167,8 @@ def auth_form() -> rx.Component:
                 ),
                 rx.el.div(
                     google_oauth_provider(
-                        google_login(on_success=AuthState.on_google_login)
+                        google_login(on_success=AuthState.on_google_login),
+                        client_id=GOOGLE_CLIENT_ID,
                     ),
                     class_name="flex justify-center",
                 ),
