@@ -13,7 +13,7 @@ class HistoricalState(rx.State):
     available_years: list[str] = [str(y) for y in range(2020, 2025)]
     selected_year: str = "2024"
     years_with_data: list[str] = []
-    year_completion_map: dict[str, int] = {}
+    year_completion_map: dict[str, int] = {str(y): 0 for y in range(2020, 2025)}
     trend_data: list[dict[str, str | int]] = []
     academic_reputation: int = 0
     citations_per_faculty: int = 0
@@ -46,9 +46,10 @@ class HistoricalState(rx.State):
 
     @rx.event(background=True)
     async def on_load(self):
-        """Optimized batch loading of all historical data using parallel queries and single state update."""
+        """Optimized batch loading of all historical data with strict numeric initialization."""
         async with self:
             self.is_loading = True
+            self.year_completion_map = {y: 0 for y in self.available_years}
             hei = await self.get_state(HEIState)
             if not hei.selected_hei:
                 self.is_loading = False
@@ -59,21 +60,21 @@ class HistoricalState(rx.State):
             years_res = await session.execute(
                 text("""
                 SELECT ranking_year, 
-                       COUNT(*) filter (WHERE academic_reputation > 0) + 
-                       COUNT(*) filter (WHERE citations_per_faculty > 0) + 
-                       COUNT(*) filter (WHERE employer_reputation > 0) + 
-                       COUNT(*) filter (WHERE employment_outcomes > 0) + 
-                       COUNT(*) filter (WHERE international_research_network > 0) + 
-                       COUNT(*) filter (WHERE international_faculty_ratio > 0) + 
-                       COUNT(*) filter (WHERE international_student_ratio > 0) + 
-                       COUNT(*) filter (WHERE faculty_student_ratio > 0) + 
-                       COUNT(*) filter (WHERE sustainability_metrics > 0) as filled_count
+                       (CASE WHEN academic_reputation > 0 THEN 1 ELSE 0 END + 
+                        CASE WHEN citations_per_faculty > 0 THEN 1 ELSE 0 END + 
+                        CASE WHEN employer_reputation > 0 THEN 1 ELSE 0 END + 
+                        CASE WHEN employment_outcomes > 0 THEN 1 ELSE 0 END + 
+                        CASE WHEN international_research_network > 0 THEN 1 ELSE 0 END + 
+                        CASE WHEN international_faculty_ratio > 0 THEN 1 ELSE 0 END + 
+                        CASE WHEN international_student_ratio > 0 THEN 1 ELSE 0 END + 
+                        CASE WHEN faculty_student_ratio > 0 THEN 1 ELSE 0 END + 
+                        CASE WHEN sustainability_metrics > 0 THEN 1 ELSE 0 END) as filled_count
                 FROM historical_performance 
                 WHERE institution_id = :iid
-                GROUP BY ranking_year
                 """),
                 {"iid": inst_id},
             )
+            completion_rows = years_res.all()
             scores_res = await session.execute(
                 text("""
                 SELECT 
@@ -99,12 +100,14 @@ class HistoricalState(rx.State):
                 """),
                 {"iid": inst_id},
             )
-            completion_map = {y: 0 for y in self.available_years}
-            years_list = []
-            for row in years_res.all():
+            temp_completion_map = {y: 0 for y in self.available_years}
+            temp_years_with_data = []
+            for row in completion_rows:
                 y_str = str(row[0])
-                years_list.append(y_str)
-                completion_map[y_str] = int(row[1] / 9 * 100)
+                if y_str in temp_completion_map:
+                    temp_completion_map[y_str] = int(row[1] / 9.0 * 100)
+                    if row[1] > 0:
+                        temp_years_with_data.append(y_str)
             score_row = scores_res.first()
             year_scores = {
                 "academic_reputation": 0,
@@ -150,8 +153,8 @@ class HistoricalState(rx.State):
                     }
                 )
             async with self:
-                self.years_with_data = years_list
-                self.year_completion_map = completion_map
+                self.years_with_data = temp_years_with_data
+                self.year_completion_map = temp_completion_map
                 self.academic_reputation = year_scores["academic_reputation"]
                 self.citations_per_faculty = year_scores["citations_per_faculty"]
                 self.employer_reputation = year_scores["employer_reputation"]
@@ -172,48 +175,14 @@ class HistoricalState(rx.State):
                 self.is_loading = False
 
     @rx.var(cache=True)
-    def best_performing_year(self) -> str:
-        if not self.trend_data:
-            return "N/A"
-        best_year = ""
-        max_score = -1
-        for entry in self.trend_data:
-            score = entry.get("Average", 0)
-            if score > max_score:
-                max_score = score
-                best_year = str(entry["year"])
-        return best_year
-
-    @rx.var(cache=True)
     def years_count(self) -> int:
         return len(self.years_with_data)
-
-    @rx.var(cache=True)
-    def missing_years(self) -> list[str]:
-        return [y for y in self.available_years if y not in self.years_with_data]
 
     @rx.var(cache=True)
     def historical_coverage_pct(self) -> int:
         if not self.available_years:
             return 0
         return int(len(self.years_with_data) / len(self.available_years) * 100)
-
-    @rx.var(cache=True)
-    def first_incomplete_year(self) -> str:
-        for year in sorted(self.available_years):
-            if year not in self.years_with_data:
-                return year
-        return ""
-
-    @rx.var(cache=True)
-    def overall_improvement(self) -> float:
-        if len(self.trend_data) < 2:
-            return 0.0
-        first = self.trend_data[0].get("Average", 0)
-        last = self.trend_data[-1].get("Average", 0)
-        if first == 0:
-            return 0.0
-        return round((last - first) / first * 100, 1)
 
     @rx.var(cache=True)
     def selected_year_overall_score(self) -> int:
@@ -223,208 +192,8 @@ class HistoricalState(rx.State):
         return 0
 
     @rx.event(background=True)
-    async def fetch_all_historical_data(self):
-        async with self:
-            hei = await self.get_state(HEIState)
-            if not hei.selected_hei:
-                return
-            inst_id = int(hei.selected_hei["id"])
-        async with rx.asession() as session:
-            result = await session.execute(
-                text("""
-                SELECT 
-                    ranking_year, 
-                    academic_reputation, employer_reputation, 
-                    sustainability_metrics, overall_score
-                FROM historical_performance 
-                WHERE institution_id = :iid
-                ORDER BY ranking_year ASC
-                """),
-                {"iid": inst_id},
-            )
-            rows = result.all()
-            chart_data = []
-            if rows:
-                for year, ar, er, sm, ov in rows:
-                    chart_data.append(
-                        {
-                            "year": str(year),
-                            "academic_reputation": int(ar or 0),
-                            "employer_reputation": int(er or 0),
-                            "sustainability_metrics": int(sm or 0),
-                            "Average": int(ov or 0),
-                        }
-                    )
-            else:
-                old_res = await session.execute(
-                    text("""
-                    SELECT ranking_year, indicator_code, value 
-                    FROM historical_scores 
-                    WHERE institution_id = :iid
-                    ORDER BY ranking_year ASC
-                    """),
-                    {"iid": inst_id},
-                )
-                data_by_year = {}
-                for year, code, val in old_res.all():
-                    y_str = str(year)
-                    if y_str not in data_by_year:
-                        data_by_year[y_str] = {}
-                    try:
-                        data_by_year[y_str][code] = int(float(val))
-                    except (ValueError, TypeError) as e:
-                        logging.exception(f"Error parsing historical score: {e}")
-                        data_by_year[y_str][code] = 0
-                for year in sorted(data_by_year.keys()):
-                    entry = {"year": year, **data_by_year[year]}
-                    scores = list(data_by_year[year].values())
-                    if scores:
-                        entry["Average"] = int(sum(scores) / len(scores))
-                    chart_data.append(entry)
-            async with self:
-                self.trend_data = chart_data
-
-    async def _ensure_historical_table(self):
-        async with rx.asession() as session:
-            await session.execute(
-                text("""
-                CREATE TABLE IF NOT EXISTS historical_performance (
-                    id SERIAL PRIMARY KEY,
-                    institution_id INTEGER NOT NULL,
-                    ranking_year INTEGER NOT NULL,
-
-                    -- Research & Discovery (50%)
-                    academic_reputation DECIMAL(10, 2) DEFAULT 0,
-                    citations_per_faculty DECIMAL(10, 2) DEFAULT 0,
-                    research_score DECIMAL(10, 2) DEFAULT 0,
-
-                    -- Employability & Outcomes (20%)
-                    employer_reputation DECIMAL(10, 2) DEFAULT 0,
-                    employment_outcomes DECIMAL(10, 2) DEFAULT 0,
-                    employability_score DECIMAL(10, 2) DEFAULT 0,
-
-                    -- Global Engagement (15%)
-                    international_research_network DECIMAL(10, 2) DEFAULT 0,
-                    international_faculty_ratio DECIMAL(10, 2) DEFAULT 0,
-                    international_student_ratio DECIMAL(10, 2) DEFAULT 0,
-                    global_engagement_score DECIMAL(10, 2) DEFAULT 0,
-
-                    -- Learning Experience (10%)
-                    faculty_student_ratio DECIMAL(10, 2) DEFAULT 0,
-                    learning_experience_score DECIMAL(10, 2) DEFAULT 0,
-
-                    -- Sustainability (5%)
-                    sustainability_metrics DECIMAL(10, 2) DEFAULT 0,
-                    sustainability_score DECIMAL(10, 2) DEFAULT 0,
-
-                    overall_score DECIMAL(10, 2) DEFAULT 0,
-
-                    -- Metadata
-                    evidence_files JSONB DEFAULT '[]',
-                    notes TEXT,
-                    data_source VARCHAR(50) DEFAULT 'Self-Assessment',
-                    verified BOOLEAN DEFAULT FALSE,
-                    user_id INTEGER,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-
-                    UNIQUE(institution_id, ranking_year)
-                )
-            """)
-            )
-            await session.commit()
-            count_check = await session.execute(
-                text("SELECT COUNT(*) FROM historical_performance")
-            )
-            if count_check.scalar() == 0:
-                old_table_check = await session.execute(
-                    text("SELECT to_regclass('public.historical_scores')")
-                )
-                if old_table_check.scalar() is not None:
-                    rows = await session.execute(
-                        text(
-                            "SELECT DISTINCT institution_id, ranking_year FROM historical_scores"
-                        )
-                    )
-                    pairs = rows.all()
-                    for inst_id, year in pairs:
-                        scores_res = await session.execute(
-                            text(
-                                "SELECT indicator_code, value FROM historical_scores WHERE institution_id = :iid AND ranking_year = :yr"
-                            ),
-                            {"iid": inst_id, "yr": year},
-                        )
-                        scores_map = {
-                            row[0]: float(row[1])
-                            if row[1] and row[1].replace(".", "", 1).isdigit()
-                            else 0.0
-                            for row in scores_res.all()
-                        }
-                        acad_rep = scores_map.get("academic_reputation", 0)
-                        cit_fac = scores_map.get("citations_per_faculty", 0)
-                        research_score = acad_rep * 0.6 + cit_fac * 0.4
-                        emp_rep = scores_map.get("employer_reputation", 0)
-                        emp_out = scores_map.get("employment_outcomes", 0)
-                        emp_score = emp_rep * 0.75 + emp_out * 0.25
-                        irn = scores_map.get("international_research_network", 0)
-                        ifr = scores_map.get("international_faculty_ratio", 0)
-                        isr = scores_map.get("international_student_ratio", 0)
-                        global_score = (irn + ifr + isr) / 3
-                        fsr = scores_map.get("faculty_student_ratio", 0)
-                        learn_score = fsr
-                        sust = scores_map.get("sustainability_metrics", 0)
-                        sust_score = sust
-                        overall = (
-                            research_score * 0.5
-                            + emp_score * 0.2
-                            + global_score * 0.15
-                            + learn_score * 0.1
-                            + sust_score * 0.05
-                        )
-                        await session.execute(
-                            text("""
-                            INSERT INTO historical_performance (
-                                institution_id, ranking_year, 
-                                academic_reputation, citations_per_faculty, research_score,
-                                employer_reputation, employment_outcomes, employability_score,
-                                international_research_network, international_faculty_ratio, international_student_ratio, global_engagement_score,
-                                faculty_student_ratio, learning_experience_score,
-                                sustainability_metrics, sustainability_score,
-                                overall_score, data_source
-                            ) VALUES (
-                                :iid, :yr,
-                                :ar, :cf, :rs,
-                                :er, :eo, :es,
-                                :irn, :ifr, :isr, :gs,
-                                :fsr, :ls,
-                                :sm, :ss,
-                                :ov, 'Historical Import'
-                            )
-                            """),
-                            {
-                                "iid": inst_id,
-                                "yr": year,
-                                "ar": acad_rep,
-                                "cf": cit_fac,
-                                "rs": research_score,
-                                "er": emp_rep,
-                                "eo": emp_out,
-                                "es": emp_score,
-                                "irn": irn,
-                                "ifr": ifr,
-                                "isr": isr,
-                                "gs": global_score,
-                                "fsr": fsr,
-                                "ls": learn_score,
-                                "sm": sust,
-                                "ss": sust_score,
-                                "ov": overall,
-                            },
-                        )
-                    await session.commit()
-
-    @rx.event(background=True)
     async def fetch_years_with_data(self):
+        """Updates the completion map and years list from DB."""
         async with self:
             hei = await self.get_state(HEIState)
             if not hei.selected_hei:
@@ -434,19 +203,18 @@ class HistoricalState(rx.State):
             result = await session.execute(
                 text("""
                 SELECT ranking_year, 
-                       COUNT(*) filter (WHERE academic_reputation > 0) + 
-                       COUNT(*) filter (WHERE citations_per_faculty > 0) + 
-                       COUNT(*) filter (WHERE employer_reputation > 0) + 
-                       COUNT(*) filter (WHERE employment_outcomes > 0) + 
-                       COUNT(*) filter (WHERE international_research_network > 0) + 
-                       COUNT(*) filter (WHERE international_faculty_ratio > 0) + 
-                       COUNT(*) filter (WHERE international_student_ratio > 0) + 
-                       COUNT(*) filter (WHERE faculty_student_ratio > 0) + 
-                       COUNT(*) filter (WHERE sustainability_metrics > 0) as filled_count
+                       (CASE WHEN academic_reputation > 0 THEN 1 ELSE 0 END + 
+                        CASE WHEN citations_per_faculty > 0 THEN 1 ELSE 0 END + 
+                        CASE WHEN employer_reputation > 0 THEN 1 ELSE 0 END + 
+                        CASE WHEN employment_outcomes > 0 THEN 1 ELSE 0 END + 
+                        CASE WHEN international_research_network > 0 THEN 1 ELSE 0 END + 
+                        CASE WHEN international_faculty_ratio > 0 THEN 1 ELSE 0 END + 
+                        CASE WHEN international_student_ratio > 0 THEN 1 ELSE 0 END + 
+                        CASE WHEN faculty_student_ratio > 0 THEN 1 ELSE 0 END + 
+                        CASE WHEN sustainability_metrics > 0 THEN 1 ELSE 0 END) as filled_count
                 FROM historical_performance 
                 WHERE institution_id = :iid
-                GROUP BY ranking_year
-            """),
+                """),
                 {"iid": inst_id},
             )
             rows = result.all()
@@ -454,51 +222,36 @@ class HistoricalState(rx.State):
             years = []
             for row in rows:
                 year_str = str(row[0])
-                years.append(year_str)
-                completion_map[year_str] = int(row[1] / 9 * 100)
+                if year_str in completion_map:
+                    pct = int(row[1] / 9.0 * 100)
+                    completion_map[year_str] = pct
+                    if row[1] > 0:
+                        years.append(year_str)
             async with self:
                 self.years_with_data = years
                 self.year_completion_map = completion_map
-        async with rx.asession() as session:
-            result = await session.execute(
-                text("""
-                SELECT DISTINCT ranking_year FROM historical_performance WHERE institution_id = :iid
-                UNION 
-                SELECT DISTINCT ranking_year FROM historical_scores WHERE institution_id = :iid
-                ORDER BY ranking_year DESC
-            """),
-                {"iid": inst_id},
-            )
-            rows = result.all()
-            async with self:
-                self.years_with_data = [str(row[0]) for row in rows]
 
     @rx.event(background=True)
     async def select_year(self, year: str):
-        """Handles year selection with clear loading state feedback."""
+        """Handles year selection with loading state."""
         async with self:
             if self.selected_year == year:
                 return
             self.selected_year = year
             self.is_loading = True
-            for k in self.validation_errors.keys():
-                self.validation_errors[k] = ""
+            self.validation_errors = {k: "" for k in self.validation_errors.keys()}
         yield HistoricalState.fetch_scores_for_year
 
     @rx.event(background=True)
     async def fetch_scores_for_year(self):
-        scores_update = {
-            "academic_reputation": 0,
-            "citations_per_faculty": 0,
-            "employer_reputation": 0,
-            "employment_outcomes": 0,
-            "international_research_network": 0,
-            "international_faculty_ratio": 0,
-            "international_student_ratio": 0,
-            "faculty_student_ratio": 0,
-            "sustainability_metrics": 0,
-            "uploaded_files": [],
-        }
+        """Fetches score details for the current selected year."""
+        async with self:
+            hei = await self.get_state(HEIState)
+            if not hei.selected_hei:
+                self.is_loading = False
+                return
+            inst_id = int(hei.selected_hei["id"])
+            year = int(self.selected_year)
         async with rx.asession() as session:
             result = await session.execute(
                 text("""
@@ -514,67 +267,54 @@ class HistoricalState(rx.State):
                 {"iid": inst_id, "year": year},
             )
             row = result.first()
+            scores_update = {
+                "academic_reputation": 0,
+                "citations_per_faculty": 0,
+                "employer_reputation": 0,
+                "employment_outcomes": 0,
+                "international_research_network": 0,
+                "international_faculty_ratio": 0,
+                "international_student_ratio": 0,
+                "faculty_student_ratio": 0,
+                "sustainability_metrics": 0,
+                "uploaded_files": [],
+            }
             if row:
-                scores_update["academic_reputation"] = int(row[0] or 0)
-                scores_update["citations_per_faculty"] = int(row[1] or 0)
-                scores_update["employer_reputation"] = int(row[2] or 0)
-                scores_update["employment_outcomes"] = int(row[3] or 0)
-                scores_update["international_research_network"] = int(row[4] or 0)
-                scores_update["international_faculty_ratio"] = int(row[5] or 0)
-                scores_update["international_student_ratio"] = int(row[6] or 0)
-                scores_update["faculty_student_ratio"] = int(row[7] or 0)
-                scores_update["sustainability_metrics"] = int(row[8] or 0)
-                if row[9]:
-                    scores_update["uploaded_files"] = (
-                        json.loads(row[9]) if isinstance(row[9], str) else row[9]
-                    ) or []
-            else:
-                old_res = await session.execute(
-                    text("""
-                    SELECT indicator_code, value, evidence_files 
-                    FROM historical_scores 
-                    WHERE institution_id = :iid AND ranking_year = :year
-                    """),
-                    {"iid": inst_id, "year": year},
-                )
-                rows = old_res.all()
-                all_files = []
-                for r in rows:
-                    code, val, files_json = r
-                    try:
-                        num_val = int(float(val))
-                    except (ValueError, TypeError) as e:
-                        logging.exception(f"Error parsing score value '{val}': {e}")
-                        num_val = 0
-                    if code in scores_update and code != "uploaded_files":
-                        scores_update[code] = num_val
-                    if files_json:
-                        f_list = (
-                            json.loads(files_json)
-                            if isinstance(files_json, str)
-                            else files_json
+                scores_update.update(
+                    {
+                        "academic_reputation": int(row[0] or 0),
+                        "citations_per_faculty": int(row[1] or 0),
+                        "employer_reputation": int(row[2] or 0),
+                        "employment_outcomes": int(row[3] or 0),
+                        "international_research_network": int(row[4] or 0),
+                        "international_faculty_ratio": int(row[5] or 0),
+                        "international_student_ratio": int(row[6] or 0),
+                        "faculty_student_ratio": int(row[7] or 0),
+                        "sustainability_metrics": int(row[8] or 0),
+                        "uploaded_files": (
+                            json.loads(row[9]) if isinstance(row[9], str) else row[9]
                         )
-                        if isinstance(f_list, list):
-                            all_files.extend(f_list)
-                scores_update["uploaded_files"] = list(set(all_files))
-        async with self:
-            self.academic_reputation = scores_update["academic_reputation"]
-            self.citations_per_faculty = scores_update["citations_per_faculty"]
-            self.employer_reputation = scores_update["employer_reputation"]
-            self.employment_outcomes = scores_update["employment_outcomes"]
-            self.international_research_network = scores_update[
-                "international_research_network"
-            ]
-            self.international_faculty_ratio = scores_update[
-                "international_faculty_ratio"
-            ]
-            self.international_student_ratio = scores_update[
-                "international_student_ratio"
-            ]
-            self.faculty_student_ratio = scores_update["faculty_student_ratio"]
-            self.sustainability_metrics = scores_update["sustainability_metrics"]
-            self.uploaded_files = scores_update["uploaded_files"]
-            self.is_loading = False
+                        or [],
+                    }
+                )
+            async with self:
+                self.academic_reputation = scores_update["academic_reputation"]
+                self.citations_per_faculty = scores_update["citations_per_faculty"]
+                self.employer_reputation = scores_update["employer_reputation"]
+                self.employment_outcomes = scores_update["employment_outcomes"]
+                self.international_research_network = scores_update[
+                    "international_research_network"
+                ]
+                self.international_faculty_ratio = scores_update[
+                    "international_faculty_ratio"
+                ]
+                self.international_student_ratio = scores_update[
+                    "international_student_ratio"
+                ]
+                self.faculty_student_ratio = scores_update["faculty_student_ratio"]
+                self.sustainability_metrics = scores_update["sustainability_metrics"]
+                self.uploaded_files = scores_update["uploaded_files"]
+                self.is_loading = False
 
     @rx.event
     async def handle_upload(self, files: list[rx.UploadFile]):
@@ -605,6 +345,7 @@ class HistoricalState(rx.State):
 
     @rx.event(background=True)
     async def save_historical_scores(self):
+        """Persist historical scores to DB and refresh metadata."""
         async with self:
             if self.has_validation_errors:
                 yield rx.toast.error(
@@ -629,7 +370,7 @@ class HistoricalState(rx.State):
             irn = float(self.international_research_network)
             ifr = float(self.international_faculty_ratio)
             isr = float(self.international_student_ratio)
-            global_score = (irn + ifr + isr) / 3
+            global_score = (irn + ifr + isr) / 3.0
             fsr = float(self.faculty_student_ratio)
             learn_score = fsr
             sust = float(self.sustainability_metrics)
@@ -666,13 +407,24 @@ class HistoricalState(rx.State):
                 )
                 ON CONFLICT (institution_id, ranking_year)
                 DO UPDATE SET 
-                    academic_reputation = EXCLUDED.academic_reputation, citations_per_faculty = EXCLUDED.citations_per_faculty, research_score = EXCLUDED.research_score,
-                    employer_reputation = EXCLUDED.employer_reputation, employment_outcomes = EXCLUDED.employment_outcomes, employability_score = EXCLUDED.employability_score,
-                    international_research_network = EXCLUDED.international_research_network, international_faculty_ratio = EXCLUDED.international_faculty_ratio, international_student_ratio = EXCLUDED.international_student_ratio, global_engagement_score = EXCLUDED.global_engagement_score,
-                    faculty_student_ratio = EXCLUDED.faculty_student_ratio, learning_experience_score = EXCLUDED.learning_experience_score,
-                    sustainability_metrics = EXCLUDED.sustainability_metrics, sustainability_score = EXCLUDED.sustainability_score,
+                    academic_reputation = EXCLUDED.academic_reputation, 
+                    citations_per_faculty = EXCLUDED.citations_per_faculty, 
+                    research_score = EXCLUDED.research_score,
+                    employer_reputation = EXCLUDED.employer_reputation, 
+                    employment_outcomes = EXCLUDED.employment_outcomes, 
+                    employability_score = EXCLUDED.employability_score,
+                    international_research_network = EXCLUDED.international_research_network, 
+                    international_faculty_ratio = EXCLUDED.international_faculty_ratio, 
+                    international_student_ratio = EXCLUDED.international_student_ratio, 
+                    global_engagement_score = EXCLUDED.global_engagement_score,
+                    faculty_student_ratio = EXCLUDED.faculty_student_ratio, 
+                    learning_experience_score = EXCLUDED.learning_experience_score,
+                    sustainability_metrics = EXCLUDED.sustainability_metrics, 
+                    sustainability_score = EXCLUDED.sustainability_score,
                     overall_score = EXCLUDED.overall_score,
-                    evidence_files = EXCLUDED.evidence_files, user_id = EXCLUDED.user_id, updated_at = CURRENT_TIMESTAMP
+                    evidence_files = EXCLUDED.evidence_files, 
+                    user_id = EXCLUDED.user_id, 
+                    updated_at = CURRENT_TIMESTAMP
                 """),
                 {
                     "iid": inst_id,
@@ -701,3 +453,86 @@ class HistoricalState(rx.State):
             self.is_saving = False
             yield rx.toast(f"Historical scores for {year} saved successfully!")
             yield HistoricalState.fetch_years_with_data
+
+    @rx.event
+    def set_academic_reputation(self, value: str):
+        try:
+            self.academic_reputation = int(float(value)) if value else 0
+            self.validation_errors["academic_reputation"] = ""
+        except:
+            logging.exception("Unexpected error")
+            self.validation_errors["academic_reputation"] = "Numeric required"
+
+    @rx.event
+    def set_citations_per_faculty(self, value: str):
+        try:
+            self.citations_per_faculty = int(float(value)) if value else 0
+            self.validation_errors["citations_per_faculty"] = ""
+        except:
+            logging.exception("Unexpected error")
+            self.validation_errors["citations_per_faculty"] = "Numeric required"
+
+    @rx.event
+    def set_employer_reputation(self, value: str):
+        try:
+            self.employer_reputation = int(float(value)) if value else 0
+            self.validation_errors["employer_reputation"] = ""
+        except:
+            logging.exception("Unexpected error")
+            self.validation_errors["employer_reputation"] = "Numeric required"
+
+    @rx.event
+    def set_employment_outcomes(self, value: str):
+        try:
+            self.employment_outcomes = int(float(value)) if value else 0
+            self.validation_errors["employment_outcomes"] = ""
+        except:
+            logging.exception("Unexpected error")
+            self.validation_errors["employment_outcomes"] = "Numeric required"
+
+    @rx.event
+    def set_international_research_network(self, value: str):
+        try:
+            self.international_research_network = int(float(value)) if value else 0
+            self.validation_errors["international_research_network"] = ""
+        except:
+            logging.exception("Unexpected error")
+            self.validation_errors["international_research_network"] = (
+                "Numeric required"
+            )
+
+    @rx.event
+    def set_international_faculty_ratio(self, value: str):
+        try:
+            self.international_faculty_ratio = int(float(value)) if value else 0
+            self.validation_errors["international_faculty_ratio"] = ""
+        except:
+            logging.exception("Unexpected error")
+            self.validation_errors["international_faculty_ratio"] = "Numeric required"
+
+    @rx.event
+    def set_international_student_ratio(self, value: str):
+        try:
+            self.international_student_ratio = int(float(value)) if value else 0
+            self.validation_errors["international_student_ratio"] = ""
+        except:
+            logging.exception("Unexpected error")
+            self.validation_errors["international_student_ratio"] = "Numeric required"
+
+    @rx.event
+    def set_faculty_student_ratio(self, value: str):
+        try:
+            self.faculty_student_ratio = int(float(value)) if value else 0
+            self.validation_errors["faculty_student_ratio"] = ""
+        except:
+            logging.exception("Unexpected error")
+            self.validation_errors["faculty_student_ratio"] = "Numeric required"
+
+    @rx.event
+    def set_sustainability_metrics(self, value: str):
+        try:
+            self.sustainability_metrics = int(float(value)) if value else 0
+            self.validation_errors["sustainability_metrics"] = ""
+        except:
+            logging.exception("Unexpected error")
+            self.validation_errors["sustainability_metrics"] = "Numeric required"
