@@ -42,7 +42,114 @@ class HistoricalState(rx.State):
 
     @rx.var(cache=True)
     def has_validation_errors(self) -> bool:
-        return any((v != "" for v in self.validation_errors.values()))
+        """Correctly checks if any validation error messages exist in the dictionary."""
+        return (
+            (self.validation_errors["academic_reputation"] != "")
+            | (self.validation_errors["citations_per_faculty"] != "")
+            | (self.validation_errors["employer_reputation"] != "")
+            | (self.validation_errors["employment_outcomes"] != "")
+            | (self.validation_errors["international_research_network"] != "")
+            | (self.validation_errors["international_faculty_ratio"] != "")
+            | (self.validation_errors["international_student_ratio"] != "")
+            | (self.validation_errors["faculty_student_ratio"] != "")
+            | (self.validation_errors["sustainability_metrics"] != "")
+        )
+
+    @rx.var(cache=True)
+    def selected_year_overall_score(self) -> int:
+        """Returns the actual weighted score calculation based on specific ranking methodology."""
+        research = (
+            float(self.academic_reputation) * 0.3
+            + float(self.citations_per_faculty) * 0.2
+        )
+        employability = (
+            float(self.employer_reputation) * 0.15
+            + float(self.employment_outcomes) * 0.05
+        )
+        global_engagement = (
+            (
+                float(self.international_research_network)
+                + float(self.international_faculty_ratio)
+                + float(self.international_student_ratio)
+            )
+            / 3.0
+            * 0.15
+        )
+        learning = float(self.faculty_student_ratio) * 0.1
+        sustainability = float(self.sustainability_metrics) * 0.05
+        total = research + employability + global_engagement + learning + sustainability
+        return int(round(total))
+
+    def _validate_indicator(self, key: str, value: str) -> int:
+        """Internal helper to validate 0-100 range and update errors."""
+        try:
+            if not value:
+                self.validation_errors[key] = ""
+                return 0
+            num_float = float(value)
+            num = int(round(num_float))
+            if num_float < 0 or num_float > 100:
+                self.validation_errors[key] = "Value must be between 0 and 100"
+            else:
+                self.validation_errors[key] = ""
+            return num
+        except (ValueError, TypeError):
+            self.validation_errors[key] = "Please enter a valid number"
+            return 0
+
+    @rx.event
+    def set_academic_reputation(self, value: str):
+        self.academic_reputation = self._validate_indicator(
+            "academic_reputation", value
+        )
+
+    @rx.event
+    def set_citations_per_faculty(self, value: str):
+        self.citations_per_faculty = self._validate_indicator(
+            "citations_per_faculty", value
+        )
+
+    @rx.event
+    def set_employer_reputation(self, value: str):
+        self.employer_reputation = self._validate_indicator(
+            "employer_reputation", value
+        )
+
+    @rx.event
+    def set_employment_outcomes(self, value: str):
+        self.employment_outcomes = self._validate_indicator(
+            "employment_outcomes", value
+        )
+
+    @rx.event
+    def set_international_research_network(self, value: str):
+        self.international_research_network = self._validate_indicator(
+            "international_research_network", value
+        )
+
+    @rx.event
+    def set_international_faculty_ratio(self, value: str):
+        self.international_faculty_ratio = self._validate_indicator(
+            "international_faculty_ratio", value
+        )
+
+    @rx.event
+    def set_international_student_ratio(self, value: str):
+        self.international_student_ratio = self._validate_indicator(
+            "international_student_ratio", value
+        )
+
+    @rx.event
+    def set_faculty_student_ratio(self, value: str):
+        self.faculty_student_ratio = self._validate_indicator(
+            "faculty_student_ratio", value
+        )
+
+    @rx.event
+    def set_sustainability_metrics(self, value: str):
+        self.sustainability_metrics = self._validate_indicator(
+            "sustainability_metrics", value
+        )
 
     @rx.event(background=True)
     async def on_load(self):
@@ -183,13 +290,6 @@ class HistoricalState(rx.State):
         if not self.available_years:
             return 0
         return int(len(self.years_with_data) / len(self.available_years) * 100)
-
-    @rx.var(cache=True)
-    def selected_year_overall_score(self) -> int:
-        for entry in self.trend_data:
-            if str(entry.get("year")) == self.selected_year:
-                return int(entry.get("Average", 0))
-        return 0
 
     @rx.event(background=True)
     async def fetch_years_with_data(self):
@@ -363,25 +463,28 @@ class HistoricalState(rx.State):
             year = int(self.selected_year)
             acad_rep = float(self.academic_reputation)
             cit_fac = float(self.citations_per_faculty)
-            research_score = acad_rep * 0.6 + cit_fac * 0.4
+            research_part = acad_rep * 0.3 + cit_fac * 0.2
             emp_rep = float(self.employer_reputation)
             emp_out = float(self.employment_outcomes)
-            emp_score = emp_rep * 0.75 + emp_out * 0.25
+            employability_part = emp_rep * 0.15 + emp_out * 0.05
             irn = float(self.international_research_network)
             ifr = float(self.international_faculty_ratio)
             isr = float(self.international_student_ratio)
-            global_score = (irn + ifr + isr) / 3.0
+            global_part = (irn + ifr + isr) / 3.0 * 0.15
             fsr = float(self.faculty_student_ratio)
-            learn_score = fsr
+            learning_part = fsr * 0.1
             sust = float(self.sustainability_metrics)
-            sust_score = sust
+            sustainability_part = sust * 0.05
             overall = (
-                research_score * 0.5
-                + emp_score * 0.2
-                + global_score * 0.15
-                + learn_score * 0.1
-                + sust_score * 0.05
+                research_part
+                + employability_part
+                + global_part
+                + learning_part
+                + sustainability_part
             )
+            research_score_legacy = acad_rep * 0.6 + cit_fac * 0.4
+            emp_score_legacy = emp_rep * 0.75 + emp_out * 0.25
+            global_score_legacy = (irn + ifr + isr) / 3.0
             files_json = json.dumps(self.uploaded_files)
         async with rx.asession() as session:
             await session.execute(
@@ -431,18 +534,18 @@ class HistoricalState(rx.State):
                     "year": year,
                     "ar": acad_rep,
                     "cf": cit_fac,
-                    "rs": research_score,
+                    "rs": research_score_legacy,
                     "er": emp_rep,
                     "eo": emp_out,
-                    "es": emp_score,
+                    "es": emp_score_legacy,
                     "irn": irn,
                     "ifr": ifr,
                     "isr": isr,
-                    "gs": global_score,
+                    "gs": global_score_legacy,
                     "fsr": fsr,
-                    "ls": learn_score,
+                    "ls": fsr,
                     "sm": sust,
-                    "ss": sust_score,
+                    "ss": sust,
                     "ov": overall,
                     "files": files_json,
                     "uid": user_id,
@@ -453,86 +556,3 @@ class HistoricalState(rx.State):
             self.is_saving = False
             yield rx.toast(f"Historical scores for {year} saved successfully!")
             yield HistoricalState.fetch_years_with_data
-
-    @rx.event
-    def set_academic_reputation(self, value: str):
-        try:
-            self.academic_reputation = int(float(value)) if value else 0
-            self.validation_errors["academic_reputation"] = ""
-        except:
-            logging.exception("Unexpected error")
-            self.validation_errors["academic_reputation"] = "Numeric required"
-
-    @rx.event
-    def set_citations_per_faculty(self, value: str):
-        try:
-            self.citations_per_faculty = int(float(value)) if value else 0
-            self.validation_errors["citations_per_faculty"] = ""
-        except:
-            logging.exception("Unexpected error")
-            self.validation_errors["citations_per_faculty"] = "Numeric required"
-
-    @rx.event
-    def set_employer_reputation(self, value: str):
-        try:
-            self.employer_reputation = int(float(value)) if value else 0
-            self.validation_errors["employer_reputation"] = ""
-        except:
-            logging.exception("Unexpected error")
-            self.validation_errors["employer_reputation"] = "Numeric required"
-
-    @rx.event
-    def set_employment_outcomes(self, value: str):
-        try:
-            self.employment_outcomes = int(float(value)) if value else 0
-            self.validation_errors["employment_outcomes"] = ""
-        except:
-            logging.exception("Unexpected error")
-            self.validation_errors["employment_outcomes"] = "Numeric required"
-
-    @rx.event
-    def set_international_research_network(self, value: str):
-        try:
-            self.international_research_network = int(float(value)) if value else 0
-            self.validation_errors["international_research_network"] = ""
-        except:
-            logging.exception("Unexpected error")
-            self.validation_errors["international_research_network"] = (
-                "Numeric required"
-            )
-
-    @rx.event
-    def set_international_faculty_ratio(self, value: str):
-        try:
-            self.international_faculty_ratio = int(float(value)) if value else 0
-            self.validation_errors["international_faculty_ratio"] = ""
-        except:
-            logging.exception("Unexpected error")
-            self.validation_errors["international_faculty_ratio"] = "Numeric required"
-
-    @rx.event
-    def set_international_student_ratio(self, value: str):
-        try:
-            self.international_student_ratio = int(float(value)) if value else 0
-            self.validation_errors["international_student_ratio"] = ""
-        except:
-            logging.exception("Unexpected error")
-            self.validation_errors["international_student_ratio"] = "Numeric required"
-
-    @rx.event
-    def set_faculty_student_ratio(self, value: str):
-        try:
-            self.faculty_student_ratio = int(float(value)) if value else 0
-            self.validation_errors["faculty_student_ratio"] = ""
-        except:
-            logging.exception("Unexpected error")
-            self.validation_errors["faculty_student_ratio"] = "Numeric required"
-
-    @rx.event
-    def set_sustainability_metrics(self, value: str):
-        try:
-            self.sustainability_metrics = int(float(value)) if value else 0
-            self.validation_errors["sustainability_metrics"] = ""
-        except:
-            logging.exception("Unexpected error")
-            self.validation_errors["sustainability_metrics"] = "Numeric required"
