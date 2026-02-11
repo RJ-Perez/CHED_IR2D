@@ -12,8 +12,10 @@ import os
 
 try:
     import resend
+    from resend.exceptions import ResendError
 except ImportError:
     resend = None
+    ResendError = Exception
 
 
 class AuthState(GoogleAuthState):
@@ -462,9 +464,9 @@ class AuthState(GoogleAuthState):
                     )
                     async with self:
                         self.reset_success = True
-                except Exception as e:
-                    error_str = str(e)
-                    logging.exception(f"Failed to send email: {e}")
+                except ResendError as re:
+                    logging.exception("Unexpected error")
+                    error_str = str(re)
                     async with self:
                         if (
                             "restricted to the account owner" in error_str
@@ -474,8 +476,14 @@ class AuthState(GoogleAuthState):
                             self.error_message = "Resend is in Test Mode. Emails can only be sent to the account owner (perezryanjohn@gmail.com). To send to others, please verify a domain at resend.com/domains."
                         else:
                             self.error_message = (
-                                f"Failed to send email: {error_str[:100]}"
+                                f"Email service error: {error_str[:100]}"
                             )
+                except Exception as e:
+                    logging.exception(f"Failed to send email: {e}")
+                    async with self:
+                        self.error_message = (
+                            "An unexpected error occurred while sending the email."
+                        )
             else:
                 async with self:
                     self.reset_success = True
