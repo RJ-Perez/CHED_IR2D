@@ -581,4 +581,4 @@ class AuthState(GoogleAuthState):
         self.authenticated_user_id = None
         self.reset_form()
         self.is_sign_up = False
-        return rx.redirect("/")
+        yield rx.redirect("/")
