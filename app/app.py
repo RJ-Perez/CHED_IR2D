@@ -109,6 +109,77 @@ app = rx.App(
 app.add_page(landing_page, route="/")
 
 
+def reset_password_page() -> rx.Component:
+    from app.components.design_system import ds_input, ds_button
+
+    return rx.el.div(
+        branding_section(),
+        rx.el.div(
+            rx.el.div(
+                rx.el.div(
+                    rx.el.h2(
+                        "Set New Password",
+                        class_name="text-2xl font-bold text-center text-gray-900 mb-6",
+                    ),
+                    rx.cond(
+                        AuthState.reset_error_message != "",
+                        rx.el.div(
+                            rx.icon(
+                                "triangle-alert", class_name="h-5 w-5 text-red-600 mr-2"
+                            ),
+                            rx.el.p(
+                                AuthState.reset_error_message,
+                                class_name="text-sm text-red-700 font-medium",
+                            ),
+                            class_name="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start",
+                        ),
+                        rx.el.div(
+                            ds_input(
+                                label="New Password",
+                                type="password",
+                                placeholder="••••••••",
+                                value=AuthState.new_password,
+                                on_change=AuthState.set_new_password,
+                                icon="lock",
+                            ),
+                            rx.el.div(class_name="h-4"),
+                            ds_input(
+                                label="Confirm Password",
+                                type="password",
+                                placeholder="••••••••",
+                                value=AuthState.confirm_new_password,
+                                on_change=AuthState.set_confirm_new_password,
+                                icon="check-circle",
+                            ),
+                            ds_button(
+                                label="Reset Password",
+                                on_click=AuthState.reset_password,
+                                loading=AuthState.is_resetting_password,
+                                class_name="w-full mt-8",
+                            ),
+                        ),
+                    ),
+                    rx.el.div(
+                        rx.el.a(
+                            "Back to Login",
+                            href="/",
+                            class_name="text-sm text-gray-500 hover:text-blue-600 font-medium transition-colors block text-center mt-6",
+                        )
+                    ),
+                    class_name="w-full max-w-md bg-white p-8 rounded-2xl shadow-sm border border-gray-200",
+                ),
+                class_name="flex-1 flex items-center justify-center min-h-screen bg-gray-50 px-4",
+            )
+        ),
+        class_name="flex min-h-screen w-full font-['Inter']",
+    )
+
+
+app.add_page(
+    reset_password_page, route="/reset-password", on_load=AuthState.validate_reset_token
+)
+
+
 def hei_selection_page() -> rx.Component:
     from app.components.hei_ui import selection_screen_content
 

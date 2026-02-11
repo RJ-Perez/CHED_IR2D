@@ -7,6 +7,13 @@ from sqlalchemy import text
 import logging
 import bcrypt
 import datetime
+import secrets
+import os
+
+try:
+    import resend
+except ImportError:
+    resend = None
 
 
 class AuthState(GoogleAuthState):
@@ -27,6 +34,15 @@ class AuthState(GoogleAuthState):
     is_loading: bool = False
     is_redirecting: bool = False
     error_message: str = ""
+    forgot_password_email: str = ""
+    show_forgot_password: bool = False
+    reset_token: str = ""
+    new_password: str = ""
+    confirm_new_password: str = ""
+    reset_success: bool = False
+    reset_error_message: str = ""
+    is_sending_reset: bool = False
+    is_resetting_password: bool = False
 
     def _decode_jwt(self, token: str) -> dict:
         """Helper to decode JWT payload safely without external dependencies."""
@@ -82,6 +98,26 @@ class AuthState(GoogleAuthState):
         self.is_sign_up = not self.is_sign_up
         self.error_message = ""
         self.reset_form()
+
+    @rx.event
+    def toggle_forgot_password(self):
+        """Toggles the forgot password modal visibility."""
+        self.show_forgot_password = not self.show_forgot_password
+        self.forgot_password_email = ""
+        self.reset_success = False
+        self.error_message = ""
+
+    @rx.event
+    def set_forgot_password_email(self, value: str):
+        self.forgot_password_email = value
+
+    @rx.event
+    def set_new_password(self, value: str):
+        self.new_password = value
+
+    @rx.event
+    def set_confirm_new_password(self, value: str):
+        self.confirm_new_password = value
 
     @rx.event
     def reset_form(self):
@@ -372,6 +408,159 @@ class AuthState(GoogleAuthState):
                     "Authentication failed during profile synchronization."
                 )
             yield rx.toast("Final security handshake failed.", duration=5000)
+
+    @rx.event(background=True)
+    async def request_password_reset(self):
+        """Generates a reset token and sends an email to the user."""
+        async with self:
+            self.is_sending_reset = True
+            self.error_message = ""
+            if not self.forgot_password_email:
+                self.error_message = "Please enter your email address."
+                self.is_sending_reset = False
+                return
+        resend_api_key = os.getenv("RESEND_API_KEY")
+        if not resend_api_key:
+            async with self:
+                self.error_message = (
+                    "Email service is not configured. Please contact support."
+                )
+                self.is_sending_reset = False
+            return
+        if resend:
+            resend.api_key = resend_api_key
+        async with rx.asession() as session:
+            result = await session.execute(
+                text("SELECT id FROM users WHERE email = :email"),
+                {"email": self.forgot_password_email},
+            )
+            user = result.first()
+            if user:
+                user_id = user[0]
+                token = secrets.token_urlsafe(32)
+                expires_at = datetime.datetime.now(
+                    datetime.timezone.utc
+                ) + datetime.timedelta(hours=1)
+                await session.execute(
+                    text("""
+                    INSERT INTO password_reset_tokens (user_id, token, expires_at)
+                    VALUES (:user_id, :token, :expires_at)
+                    """),
+                    {"user_id": user_id, "token": token, "expires_at": expires_at},
+                )
+                await session.commit()
+                reset_link = f"{self.router.page.host}/reset-password?token={token}"
+                email_html = f'''\n                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">\n                    <h2 style="color: #1e40af;">Password Reset Request</h2>\n                    <p>We received a request to reset your password for the CHED IR²D Portal.</p>\n                    <p>Click the button below to reset it. This link will expire in 1 hour.</p>\n                    <a href="{reset_link}" style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 16px 0;">Reset Password</a>\n                    <p style="color: #64748b; font-size: 14px;">If you didn't request this, you can safely ignore this email.</p>\n                    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">\n                    <p style="color: #94a3b8; font-size: 12px;">CHED IR²D Strategic Management Portal</p>\n                </div>\n                '''
+                try:
+                    resend.Emails.send(
+                        {
+                            "from": "CHED IR²D <onboarding@resend.dev>",
+                            "to": self.forgot_password_email,
+                            "subject": "Reset Your Password - CHED IR²D",
+                            "html": email_html,
+                        }
+                    )
+                    async with self:
+                        self.reset_success = True
+                except Exception as e:
+                    logging.exception(f"Failed to send email: {e}")
+                    async with self:
+                        self.error_message = (
+                            "Failed to send email. Please try again later."
+                        )
+            else:
+                async with self:
+                    self.reset_success = True
+        async with self:
+            self.is_sending_reset = False
+
+    @rx.event(background=True)
+    async def validate_reset_token(self):
+        """Validates the reset token on page load."""
+        token = self.router.page.params.get("token")
+        async with self:
+            self.reset_token = token
+            self.reset_error_message = ""
+        if not token:
+            async with self:
+                self.reset_error_message = "Invalid or missing reset token."
+            return
+        async with rx.asession() as session:
+            result = await session.execute(
+                text("""
+                SELECT id, expires_at, used 
+                FROM password_reset_tokens 
+                WHERE token = :token
+                """),
+                {"token": token},
+            )
+            row = result.first()
+            if not row:
+                async with self:
+                    self.reset_error_message = "Invalid reset token."
+                return
+            expires_at = row[1]
+            used = row[2]
+            if used:
+                async with self:
+                    self.reset_error_message = "This reset token has already been used."
+                return
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=datetime.timezone.utc)
+            if datetime.datetime.now(datetime.timezone.utc) > expires_at:
+                async with self:
+                    self.reset_error_message = "This reset token has expired."
+                return
+
+    @rx.event(background=True)
+    async def reset_password(self):
+        """Resets the user's password using the valid token."""
+        async with self:
+            self.is_resetting_password = True
+            self.reset_error_message = ""
+            if self.new_password != self.confirm_new_password:
+                self.reset_error_message = "Passwords do not match."
+                self.is_resetting_password = False
+                return
+            validation_error = self._validate_password(self.new_password)
+            if validation_error:
+                self.reset_error_message = validation_error
+                self.is_resetting_password = False
+                return
+        async with rx.asession() as session:
+            token_res = await session.execute(
+                text(
+                    "SELECT user_id FROM password_reset_tokens WHERE token = :token AND used = FALSE"
+                ),
+                {"token": self.reset_token},
+            )
+            row = token_res.first()
+            if not row:
+                async with self:
+                    self.reset_error_message = "Invalid or expired token."
+                    self.is_resetting_password = False
+                return
+            user_id = row[0]
+            password_hash = bcrypt.hashpw(
+                self.new_password.encode("utf-8"), bcrypt.gensalt()
+            ).decode("utf-8")
+            await session.execute(
+                text("UPDATE users SET password_hash = :hash WHERE id = :id"),
+                {"hash": password_hash, "id": user_id},
+            )
+            await session.execute(
+                text(
+                    "UPDATE password_reset_tokens SET used = TRUE WHERE token = :token"
+                ),
+                {"token": self.reset_token},
+            )
+            await session.commit()
+        async with self:
+            self.is_resetting_password = False
+            yield rx.toast(
+                "Password reset successfully! Please sign in.", duration=3000
+            )
+            yield rx.redirect("/")
 
     @rx.event
     def logout(self):

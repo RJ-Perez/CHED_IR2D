@@ -173,6 +173,14 @@ def auth_form() -> rx.Component:
                     class_name="flex justify-center",
                 ),
                 rx.el.div(
+                    rx.el.div(
+                        rx.el.button(
+                            "Forgot password?",
+                            on_click=AuthState.toggle_forgot_password,
+                            class_name="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline",
+                        ),
+                        class_name="flex justify-end mt-2",
+                    ),
                     rx.el.p(
                         rx.cond(
                             AuthState.is_sign_up,
@@ -185,12 +193,90 @@ def auth_form() -> rx.Component:
                             class_name="text-blue-600 font-bold hover:underline",
                         ),
                         class_name="text-center text-sm text-gray-500 mt-8",
-                    )
+                    ),
                 ),
                 class_name="w-full",
             ),
             padding="p-8",
             class_name="max-w-md mx-auto w-full",
         ),
+        forgot_password_modal(),
         class_name="relative w-full",
+    )
+
+
+def forgot_password_modal() -> rx.Component:
+    """Modal for requesting a password reset."""
+    return rx.radix.primitives.dialog.root(
+        rx.radix.primitives.dialog.portal(
+            rx.radix.primitives.dialog.overlay(
+                class_name="fixed inset-0 bg-black/50 z-[100] animate-in fade-in duration-200"
+            ),
+            rx.radix.primitives.dialog.content(
+                rx.el.div(
+                    rx.el.h3(
+                        "Reset Password",
+                        class_name="text-lg font-bold text-gray-900 mb-2",
+                    ),
+                    rx.cond(
+                        AuthState.reset_success,
+                        rx.el.div(
+                            rx.icon(
+                                "mail-check",
+                                class_name="h-12 w-12 text-green-500 mx-auto mb-4",
+                            ),
+                            rx.el.p(
+                                "Check your email for a reset link. The link will expire in 1 hour.",
+                                class_name="text-center text-gray-600 mb-6",
+                            ),
+                            rx.el.button(
+                                "Close",
+                                on_click=AuthState.toggle_forgot_password,
+                                class_name="w-full py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-bold transition-colors",
+                            ),
+                        ),
+                        rx.el.div(
+                            rx.el.p(
+                                "Enter your email address and we'll send you a link to reset your password.",
+                                class_name="text-sm text-gray-500 mb-4",
+                            ),
+                            ds_input(
+                                label="Email Address",
+                                type="email",
+                                placeholder="name@institution.edu.ph",
+                                value=AuthState.forgot_password_email,
+                                on_change=AuthState.set_forgot_password_email,
+                                icon="mail",
+                            ),
+                            rx.cond(
+                                AuthState.error_message != "",
+                                rx.el.div(
+                                    rx.icon("circle-alert", class_name="h-4 w-4 mr-2"),
+                                    rx.el.span(AuthState.error_message),
+                                    class_name="mt-4 p-3 bg-red-50 text-red-600 rounded-lg text-xs font-semibold flex items-center",
+                                ),
+                            ),
+                            rx.el.div(
+                                rx.el.button(
+                                    "Cancel",
+                                    on_click=AuthState.toggle_forgot_password,
+                                    class_name="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors",
+                                ),
+                                ds_button(
+                                    label="Send Reset Link",
+                                    on_click=AuthState.request_password_reset,
+                                    loading=AuthState.is_sending_reset,
+                                    class_name="ml-2",
+                                ),
+                                class_name="flex justify-end items-center mt-6",
+                            ),
+                        ),
+                    ),
+                    class_name="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm",
+                ),
+                class_name="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] outline-none",
+            ),
+        ),
+        open=AuthState.show_forgot_password,
+        on_open_change=AuthState.toggle_forgot_password,
     )
