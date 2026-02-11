@@ -468,17 +468,17 @@ class AuthState(GoogleAuthState):
                         self.reset_success = True
                 except Exception as e:
                     error_str = str(e).lower()
-                    error_type = type(e).__name__.lower()
-                    logging.exception(f"Email delivery error: {e}")
+                    is_sandbox_restriction = (
+                        "testing emails" in error_str
+                        or "verify a domain" in error_str
+                        or "own email address" in error_str
+                        or ("restricted to the account owner" in error_str)
+                    )
                     async with self:
-                        if (
-                            "resend" in error_type
-                            or "restricted to the account owner" in error_str
-                            or "verify a domain" in error_str
-                            or ("testing emails" in error_str)
-                        ):
+                        if is_sandbox_restriction:
                             self.error_message = "The email service is currently in Test Mode or unverified. Reset links can only be sent to the registered account owner. Please contact the system administrator to verify the domain."
                         else:
+                            logging.exception(f"Unexpected email delivery error: {e}")
                             self.error_message = "The system encountered a technical issue sending the email. Please try again later or contact support."
             else:
                 async with self:
