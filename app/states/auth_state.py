@@ -463,11 +463,19 @@ class AuthState(GoogleAuthState):
                     async with self:
                         self.reset_success = True
                 except Exception as e:
+                    error_str = str(e)
                     logging.exception(f"Failed to send email: {e}")
                     async with self:
-                        self.error_message = (
-                            "Failed to send email. Please try again later."
-                        )
+                        if (
+                            "restricted to the account owner" in error_str
+                            or "verify a domain" in error_str
+                            or "403" in error_str
+                        ):
+                            self.error_message = "Resend is in Test Mode. Emails can only be sent to the account owner (perezryanjohn@gmail.com). To send to others, please verify a domain at resend.com/domains."
+                        else:
+                            self.error_message = (
+                                f"Failed to send email: {error_str[:100]}"
+                            )
             else:
                 async with self:
                     self.reset_success = True
