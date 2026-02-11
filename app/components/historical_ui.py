@@ -546,7 +546,7 @@ def historical_content() -> rx.Component:
                                                         class_name="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"
                                                     ),
                                                     "Syncing Archive...",
-                                                    class_name="flex items-center",
+                                                    class_name="flex items-center justify-center",
                                                 ),
                                             ),
                                             rx.el.div(
@@ -555,7 +555,7 @@ def historical_content() -> rx.Component:
                                                     class_name="h-5 w-5 mr-3",
                                                 ),
                                                 "Commit Historical Data",
-                                                class_name="flex items-center",
+                                                class_name="flex items-center justify-center",
                                             ),
                                         ),
                                         on_click=HistoricalState.save_historical_scores,
@@ -564,8 +564,8 @@ def historical_content() -> rx.Component:
                                         | HistoricalState.has_validation_errors,
                                         class_name=rx.cond(
                                             HistoricalState.has_validation_errors,
-                                            "w-full sm:w-80 py-4 bg-slate-200 text-slate-400 rounded-2xl font-black text-lg cursor-not-allowed mt-10 transition-all",
-                                            "w-full sm:w-80 py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-emerald-100 hover:shadow-emerald-200 hover:scale-[1.02] active:scale-[0.98] transition-all mt-10 border border-white/20",
+                                            "w-full sm:w-80 py-4 bg-slate-200 text-slate-400 rounded-2xl font-black text-lg cursor-not-allowed mt-10 transition-all flex items-center justify-center",
+                                            "w-full sm:w-80 py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-emerald-100 hover:shadow-emerald-200 hover:scale-[1.02] active:scale-[0.98] transition-all mt-10 border border-white/20 flex items-center justify-center",
                                         ),
                                     ),
                                     class_name="flex items-center justify-center mb-10",
