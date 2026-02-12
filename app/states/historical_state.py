@@ -157,11 +157,40 @@ class HistoricalState(rx.State):
         async with self:
             self.is_loading = True
             self.year_completion_map = {y: 0 for y in self.available_years}
-            hei = await self.get_state(HEIState)
-            if not hei.selected_hei:
-                self.is_loading = False
-                return
-            inst_id = int(hei.selected_hei["id"])
+            hei_state = await self.get_state(HEIState)
+            if not hei_state.selected_hei:
+                async with rx.asession() as session:
+                    result = await session.execute(
+                        text("""
+                            SELECT i.id, i.institution_name, i.street_address, i.city_municipality 
+                            FROM institutions i
+                            WHERE i.id IN (
+                                SELECT institution_id FROM historical_performance 
+                                WHERE overall_score > 0
+                            )
+                            ORDER BY i.id ASC LIMIT 1
+                        """)
+                    )
+                    row = result.first()
+                    if not row:
+                        result = await session.execute(
+                            text(
+                                "SELECT id, institution_name, street_address, city_municipality FROM institutions ORDER BY id ASC LIMIT 1"
+                            )
+                        )
+                        row = result.first()
+                    if row:
+                        hei_state.selected_hei = {
+                            "id": str(row[0]),
+                            "name": row[1],
+                            "address": f"{row[2]}, {row[3]}",
+                            "street": row[2],
+                            "city": row[3],
+                        }
+                    else:
+                        self.is_loading = False
+                        return
+            inst_id = int(hei_state.selected_hei["id"])
             year = int(self.selected_year)
         async with rx.asession() as session:
             years_res = await session.execute(

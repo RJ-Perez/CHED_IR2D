@@ -17,3 +17,19 @@ Verified database health and confirmed table counts for institutions (12), insti
 Discovered a discrepancy during testing between 'year_completion_data' and the actual attribute 'year_completion_map' in HistoricalState. Confirmed the codebase correctly uses 'year_completion_map'.
 
 Verified that the Reports page status distribution correctly maps to "For Review", "Reviewed", "In Progress", and "Pending" states for both the UI table and analytics pie charts.
+
+Fixed Resend email error handling in auth_state.py. Switched from catching a specific ResendError (which failed due to conditional import mismatches) to catching generic Exception and checking the error string for "testing emails" or "verify a domain".
+
+Optimized logging in AuthState to check for expected Resend test-mode limitations before calling logging.exception, preventing unnecessary backend error logs for known service restrictions.
+
+Fixed text alignment in the "Commit Historical Data" button on the /historical page by adding justify-center and items-center to the inner container elements.
+
+Resolved an issue where Logout did not redirect correctly by changing the event handler to 'yield' the rx.redirect("/") command instead of returning it.
+
+Implemented session-based route protection using a check_auth on_load handler for all sensitive routes. Used replace=True in all auth-related redirects to prevent browser back-button access to protected pages after logout.
+
+Resolved a PostgreSQL ProgrammingError in historical_state.py where ORDER BY expressions in a SELECT DISTINCT query were not in the select list.
+
+Updated HistoricalAnalyticsState to fetch trend data independently via rx.asession() instead of relying on cross-state variables, ensuring data consistency when switching views.
+
+Added auto-selection of the first available institution in HistoricalState.on_load if HEIState.selected_hei is None, mirroring the fix implemented for the main analytics page.

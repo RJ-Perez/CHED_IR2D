@@ -30,6 +30,15 @@ class HistoricalAnalyticsState(rx.State):
     heatmap_data: list[dict[str, str | int | float | bool]] = []
     ai_insights: list[dict[str, str]] = []
     active_view: str = "entry"
+    cached_trend_data: list[dict[str, str | int | float]] = []
+
+    @rx.var(cache=True)
+    def has_meaningful_data(self) -> bool:
+        """Checks if there is at least one historical record with a non-zero aggregate score."""
+        for record in self.cached_trend_data:
+            if record.get("Average", 0) > 0:
+                return True
+        return False
 
     def _get_fallback_insights(self, data: list) -> list[dict[str, str]]:
         """Generate fallback insights when AI is unavailable."""
@@ -75,11 +84,10 @@ class HistoricalAnalyticsState(rx.State):
 
     @rx.var(cache=True)
     async def stats_summary(self) -> dict[str, str | int | float]:
-        hist = await self.get_state(HistoricalState)
-        data = hist.trend_data
+        data = self.cached_trend_data
         if not data:
             return {"best_year": "N/A", "avg_score": 0, "growth": 0.0, "consistency": 0}
-        scores = [d.get("Average", 0) for d in data]
+        scores = [float(d.get("Average", 0)) for d in data]
         best_idx = scores.index(max(scores))
         best_year = str(data[best_idx].get("year", "N/A"))
         avg_score = sum(scores) / len(scores)
@@ -110,49 +118,91 @@ class HistoricalAnalyticsState(rx.State):
     async def refresh_analytics(self):
         async with self:
             self.is_loading = True
-            hist = await self.get_state(HistoricalState)
-            data = hist.trend_data
-            if not data:
+        try:
+            async with self:
+                hei_state = await self.get_state(HEIState)
+                if not hei_state.selected_hei:
+                    self.is_loading = False
+                    return
+                inst_id = int(hei_state.selected_hei["id"])
+            async with rx.asession() as session:
+                result = await session.execute(
+                    text("""
+                        SELECT ranking_year, academic_reputation, citations_per_faculty,
+                               employer_reputation, employment_outcomes,
+                               international_research_network, international_faculty_ratio,
+                               international_student_ratio, faculty_student_ratio,
+                               sustainability_metrics, overall_score
+                        FROM historical_performance
+                        WHERE institution_id = :iid AND overall_score > 0
+                        ORDER BY ranking_year ASC
+                    """),
+                    {"iid": inst_id},
+                )
+                rows = result.all()
+            data = []
+            for row in rows:
+                data.append(
+                    {
+                        "year": str(row[0]),
+                        "academic_reputation": int(row[1] or 0),
+                        "citations_per_faculty": int(row[2] or 0),
+                        "employer_reputation": int(row[3] or 0),
+                        "employment_outcomes": int(row[4] or 0),
+                        "international_research_network": int(row[5] or 0),
+                        "international_faculty_ratio": int(row[6] or 0),
+                        "international_student_ratio": int(row[7] or 0),
+                        "faculty_student_ratio": int(row[8] or 0),
+                        "sustainability_metrics": int(row[9] or 0),
+                        "Average": int(row[10] or 0),
+                    }
+                )
+            radar = []
+            cats = [
+                ("Research", "academic_reputation"),
+                ("Citations", "citations_per_faculty"),
+                ("Employer", "employer_reputation"),
+                ("Employment", "employment_outcomes"),
+                ("Network", "international_research_network"),
+                ("Faculty %", "international_faculty_ratio"),
+                ("Student %", "international_student_ratio"),
+                ("Teaching", "faculty_student_ratio"),
+                ("Sustainability", "sustainability_metrics"),
+            ]
+            for label, key in cats:
+                vals = [d.get(key, 0) for d in data if key in d]
+                avg = sum(vals) / len(vals) if vals else 0
+                radar.append({"subject": label, "A": int(avg), "fullMark": 100})
+            growth = []
+            for i in range(1, len(data)):
+                prev = data[i - 1].get("Average", 0)
+                curr = data[i].get("Average", 0)
+                delta = (
+                    (float(curr) - float(prev)) / float(prev) * 100
+                    if float(prev) > 0
+                    else 0
+                )
+                growth.append(
+                    {
+                        "year": f"{data[i - 1]['year']}→{data[i]['year']}",
+                        "rate": round(delta, 1),
+                    }
+                )
+            async with self:
+                self.cached_trend_data = data
+                self.category_radar_data = radar
+                self.performance_growth_data = growth
+        except Exception as e:
+            logging.exception(f"Error refreshing analytics: {e}")
+        finally:
+            async with self:
                 self.is_loading = False
-                return
-        radar = []
-        cats = [
-            ("Research", "academic_reputation"),
-            ("Citations", "citations_per_faculty"),
-            ("Employer", "employer_reputation"),
-            ("Employment", "employment_outcomes"),
-            ("Network", "international_research_network"),
-            ("Faculty %", "international_faculty_ratio"),
-            ("Student %", "international_student_ratio"),
-            ("Teaching", "faculty_student_ratio"),
-            ("Sustainability", "sustainability_metrics"),
-        ]
-        for label, key in cats:
-            vals = [d.get(key, 0) for d in data if key in d]
-            avg = sum(vals) / len(vals) if vals else 0
-            radar.append({"subject": label, "A": int(avg), "fullMark": 100})
-        growth = []
-        for i in range(1, len(data)):
-            prev = data[i - 1].get("Average", 0)
-            curr = data[i].get("Average", 0)
-            delta = (curr - prev) / prev * 100 if prev > 0 else 0
-            growth.append(
-                {
-                    "year": f"{data[i - 1]['year']}→{data[i]['year']}",
-                    "rate": round(delta, 1),
-                }
-            )
-        async with self:
-            self.category_radar_data = radar
-            self.performance_growth_data = growth
-            self.is_loading = False
         yield HistoricalAnalyticsState.generate_ai_insights
 
     @rx.event(background=True)
     async def generate_ai_insights(self):
         async with self:
-            hist = await self.get_state(HistoricalState)
-            data = hist.trend_data
+            data = self.cached_trend_data
         if not GOOGLE_AI_AVAILABLE:
             async with self:
                 self.ai_insights = self._get_fallback_insights(data)
