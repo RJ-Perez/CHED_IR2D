@@ -303,35 +303,15 @@ from app.states.notification_state import NotificationState
 app.add_page(
     assessment_page,
     route="/dashboard",
-    on_load=[
-        AuthState.check_auth,
-        DashboardState.on_load,
-        NotificationState.fetch_notifications,
-    ],
+    on_load=[DashboardState.on_load, NotificationState.fetch_notifications],
 )
 from app.states.institutions_state import InstitutionsState
 
 app.add_page(
-    institutions_page,
-    route="/institutions",
-    on_load=[AuthState.check_auth, InstitutionsState.on_load],
+    institutions_page, route="/institutions", on_load=InstitutionsState.on_load
 )
-app.add_page(
-    analytics_page,
-    route="/analytics",
-    on_load=[AuthState.check_auth, AnalyticsState.on_load],
-)
-app.add_page(
-    reports_page, route="/reports", on_load=[AuthState.check_auth, ReportsState.on_load]
-)
-app.add_page(settings_page, route="/settings", on_load=AuthState.check_auth)
-app.add_page(
-    post_assessment_page,
-    route="/post-assessment",
-    on_load=[AuthState.check_auth, PostAssessmentState.on_load],
-)
-app.add_page(
-    historical_page,
-    route="/historical",
-    on_load=[AuthState.check_auth, HistoricalState.on_load],
-)
+app.add_page(analytics_page, route="/analytics", on_load=[AnalyticsState.on_load])
+app.add_page(reports_page, route="/reports", on_load=ReportsState.on_load)
+app.add_page(settings_page, route="/settings")
+app.add_page(post_assessment_page, route="/post-assessment")
+app.add_page(historical_page, route="/historical")
