@@ -48,6 +48,17 @@ class AuthState(GoogleAuthState):
     is_sending_reset: bool = False
     is_resetting_password: bool = False
 
+    @rx.var(cache=True)
+    def is_authenticated(self) -> bool:
+        """Computed var to check if a user session is active."""
+        return self.authenticated_user_id is not None
+
+    @rx.event
+    def check_auth(self):
+        """Protects routes by redirecting unauthenticated users to the login page."""
+        if not self.is_authenticated:
+            return rx.redirect("/", replace=True)
+
     def _decode_jwt(self, token: str) -> dict:
         """Helper to decode JWT payload safely without external dependencies."""
         try:
@@ -279,7 +290,7 @@ class AuthState(GoogleAuthState):
                     self.is_loading = False
                     self.is_redirecting = True
                     yield rx.toast(f"Welcome back, {user[2]}!", duration=3000)
-                    yield rx.redirect("/hei-selection")
+                    yield rx.redirect("/hei-selection", replace=True)
 
     @rx.event(background=True)
     async def on_google_login(self, token_data: dict):
@@ -402,7 +413,7 @@ class AuthState(GoogleAuthState):
                 self.is_redirecting = True
                 self.id_token_json = json.dumps(token_data)
             yield rx.toast(f"Welcome to IR²D, {first_name}!", duration=3000)
-            yield rx.redirect("/hei-selection")
+            yield rx.redirect("/hei-selection", replace=True)
         else:
             logging.error(
                 "OAuth Failure: Sync process finished without a valid user_id."
@@ -576,9 +587,16 @@ class AuthState(GoogleAuthState):
 
     @rx.event
     def logout(self):
-        """Sign out the user and redirect to landing page."""
+        """Sign out the user, clear sensitive state, and redirect to landing page."""
         super().logout()
         self.authenticated_user_id = None
+        self.email = ""
+        self.password = ""
+        self.confirm_password = ""
+        self.forgot_password_email = ""
+        self.new_password = ""
+        self.confirm_new_password = ""
         self.reset_form()
         self.is_sign_up = False
-        return rx.redirect("/")
+        self.is_redirecting = False
+        yield rx.redirect("/", replace=True)
