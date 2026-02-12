@@ -40,47 +40,120 @@ class HistoricalAnalyticsState(rx.State):
                 return True
         return False
 
-    def _get_fallback_insights(self, data: list) -> list[dict[str, str]]:
+    def _get_fallback_insights(self, data: list | None = None) -> list[dict[str, str]]:
         """Generate fallback insights when AI is unavailable."""
+        if data is None:
+            data = self.cached_trend_data
         insights = []
+        if not data:
+            return [
+                {
+                    "title": "Insufficient Data",
+                    "description": "Not enough historical data available to generate meaningful insights. Please enter data for multiple years.",
+                }
+            ]
         if len(data) >= 2:
-            first_score = data[0].get("Average", 0)
-            last_score = data[-1].get("Average", 0)
-            if last_score > first_score:
+            first_score = float(data[0].get("Average", 0))
+            last_score = float(data[-1].get("Average", 0))
+            growth = (
+                (last_score - first_score) / first_score * 100 if first_score > 0 else 0
+            )
+            if growth >= 10:
                 insights.append(
                     {
-                        "title": "Positive Growth Trend",
-                        "description": f"Overall performance improved from {first_score} to {last_score} points, showing consistent institutional development.",
+                        "title": "Strong Positive Growth",
+                        "description": f"Overall performance has improved significantly by {growth:.1f}% (from {int(first_score)} to {int(last_score)}), indicating successful strategic initiatives.",
+                    }
+                )
+            elif growth > 0:
+                insights.append(
+                    {
+                        "title": "Steady Improvement",
+                        "description": f"Performance shows a positive trend with a {growth:.1f}% increase over the recorded period.",
+                    }
+                )
+            elif growth > -10:
+                insights.append(
+                    {
+                        "title": "Performance Stability",
+                        "description": f"Overall scores have remained relatively stable with a slight variance of {growth:.1f}%.",
                     }
                 )
             else:
                 insights.append(
                     {
-                        "title": "Performance Review Needed",
-                        "description": f"Performance declined from {first_score} to {last_score}. Consider reviewing strategic initiatives.",
+                        "title": "Declining Trend Warning",
+                        "description": f"Performance has dropped by {abs(growth):.1f}%. Immediate review of core metrics is recommended to reverse this trend.",
                     }
                 )
-        if data:
-            latest = data[-1]
-            categories = [
-                "academic_reputation",
-                "employer_reputation",
-                "sustainability_metrics",
-            ]
-            best_cat = max(categories, key=lambda c: latest.get(c, 0))
+        scores = [float(d.get("Average", 0)) for d in data]
+        if len(scores) > 1:
+            avg = sum(scores) / len(scores)
+            variance = sum(((x - avg) ** 2 for x in scores)) / len(scores)
+            std_dev = variance**0.5
+            volatility = std_dev / avg * 100 if avg > 0 else 0
+            if volatility < 5:
+                insights.append(
+                    {
+                        "title": "Highly Consistent Performance",
+                        "description": "Your institution demonstrates excellent stability across ranking cycles, suggesting robust quality assurance processes.",
+                    }
+                )
+            elif volatility > 15:
+                insights.append(
+                    {
+                        "title": "High Performance Volatility",
+                        "description": "Scores fluctuate significantly between years. Investigating the root causes of this instability is crucial for long-term planning.",
+                    }
+                )
+        best_year = max(data, key=lambda x: float(x.get("Average", 0)))
+        worst_year = min(data, key=lambda x: float(x.get("Average", 0)))
+        if best_year != worst_year:
             insights.append(
                 {
-                    "title": "Strength Identified",
-                    "description": f"Your strongest area is {best_cat.replace('_', ' ').title()} - continue investing in this competitive advantage.",
+                    "title": f"Peak Performance: {best_year.get('year')}",
+                    "description": f"Your highest recorded score was {best_year.get('Average')} in {best_year.get('year')}. Analyze the strategies used that year for replication.",
                 }
             )
-        insights.append(
-            {
-                "title": "Data-Driven Planning",
-                "description": "Continue tracking metrics annually to identify trends and inform strategic decisions.",
+        if data:
+            latest = data[-1]
+            categories = {
+                "academic_reputation": "Academic Reputation",
+                "employer_reputation": "Employer Reputation",
+                "sustainability_metrics": "Sustainability",
+                "citations_per_faculty": "Citations Impact",
+                "international_research_network": "Global Network",
             }
-        )
-        return insights
+            valid_scores = {
+                k: float(latest.get(k, 0)) for k in categories.keys() if k in latest
+            }
+            if valid_scores:
+                best_cat_key = max(valid_scores, key=valid_scores.get)
+                worst_cat_key = min(valid_scores, key=valid_scores.get)
+                if valid_scores[best_cat_key] > 0:
+                    insights.append(
+                        {
+                            "title": f"Key Strength: {categories[best_cat_key]}",
+                            "description": f"This is currently your strongest competitive advantage with a score of {int(valid_scores[best_cat_key])}. Continue to leverage this in your institutional branding.",
+                        }
+                    )
+                if valid_scores[worst_cat_key] < 50:
+                    insights.append(
+                        {
+                            "title": f"Focus Area: {categories[worst_cat_key]}",
+                            "description": f"Score of {int(valid_scores[worst_cat_key])} indicates a critical gap. Prioritize resource allocation here for the biggest overall ranking gain.",
+                        }
+                    )
+        if len(insights) > 3:
+            insights = insights[:3]
+        elif len(insights) < 3:
+            insights.append(
+                {
+                    "title": "Data-Driven Planning",
+                    "description": "Continue populating historical data to enable more precise AI-driven forecasting and trend analysis.",
+                }
+            )
+        return insights[:3]
 
     @rx.var(cache=True)
     async def stats_summary(self) -> dict[str, str | int | float]:
@@ -232,16 +305,16 @@ class HistoricalAnalyticsState(rx.State):
                         break
                 except Exception as e:
                     error_str = str(e)
-                    is_retriable = (
-                        "429" in error_str
-                        or "RESOURCE_EXHAUSTED" in error_str
-                        or "503" in error_str
-                        or ("UNAVAILABLE" in error_str)
-                    )
+                    if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                        logging.warning(
+                            "Google AI quota exhausted immediately (429). Switching to fallback insights."
+                        )
+                        break
+                    is_retriable = "503" in error_str or "UNAVAILABLE" in error_str
                     if is_retriable:
                         if attempt == max_retries - 1:
                             logging.info(
-                                "Google AI quota exhausted after all retries. Using fallback insights."
+                                "Google AI service unavailable after all retries. Using fallback insights."
                             )
                             break
                         wait_time = 2.0 * 2**attempt
@@ -250,22 +323,24 @@ class HistoricalAnalyticsState(rx.State):
                             wait_time = float(retry_match.group(1)) + 1.0
                         wait_time = min(wait_time, 60.0)
                         logging.warning(
-                            f"Google AI rate limit. Retrying in {wait_time:.2f}s (Attempt {attempt + 1}/{max_retries})"
+                            f"Google AI service error. Retrying in {wait_time:.2f}s (Attempt {attempt + 1}/{max_retries})"
                         )
                         await asyncio.sleep(wait_time)
                     else:
                         logging.exception(f"Non-retriable AI error: {e}")
                         break
             if not response_text:
+                logging.warning(
+                    "No response text received from AI. Generating fallback insights."
+                )
                 async with self:
                     self.ai_insights = self._get_fallback_insights(data)
-                    self.is_generating_ai = False
                 return
             insights = json.loads(response_text)
             async with self:
                 self.ai_insights = insights
         except Exception as e:
-            logging.exception(f"AI Error: {e}")
+            logging.exception(f"AI Error during generation: {e}")
             async with self:
                 self.ai_insights = self._get_fallback_insights(data)
         finally:
