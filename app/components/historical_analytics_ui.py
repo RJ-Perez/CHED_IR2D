@@ -73,8 +73,8 @@ def radar_category_chart() -> rx.Component:
                 rx.recharts.radar(
                     name="Avg Performance",
                     data_key="A",
-                    stroke="#059669",
-                    fill="#10b981",
+                    stroke="#2563eb",
+                    fill="#3b82f6",
                     fill_opacity=0.5,
                 ),
                 data=HistoricalAnalyticsState.category_radar_data,
@@ -89,7 +89,7 @@ def radar_category_chart() -> rx.Component:
                 class_name="flex items-center justify-center h-[350px] border-2 border-dashed border-slate-100 rounded-3xl",
             ),
         ),
-        class_name="bg-white p-8 rounded-[2.5rem] border border-emerald-100 shadow-sm",
+        class_name="bg-white p-8 rounded-[2.5rem] border border-blue-100 shadow-sm",
     )
 
 
@@ -109,7 +109,7 @@ def growth_rate_chart() -> rx.Component:
                 rx.recharts.y_axis(),
                 rx.recharts.bar(
                     data_key="rate",
-                    fill="#059669",
+                    fill="#2563eb",
                     radius=[4, 4, 0, 0],
                     name="Growth %",
                 ),
@@ -125,7 +125,7 @@ def growth_rate_chart() -> rx.Component:
                 class_name="flex items-center justify-center h-[350px] border-2 border-dashed border-slate-100 rounded-3xl",
             ),
         ),
-        class_name="bg-white p-8 rounded-[2.5rem] border border-emerald-100 shadow-sm",
+        class_name="bg-white p-8 rounded-[2.5rem] border border-blue-100 shadow-sm",
     )
 
 
@@ -133,10 +133,10 @@ def ai_insights_section() -> rx.Component:
     has_data = HistoricalAnalyticsState.has_meaningful_data
     return rx.el.div(
         rx.el.div(
-            rx.icon("sparkles", class_name="h-6 w-6 text-emerald-600 mr-3"),
+            rx.icon("sparkles", class_name="h-6 w-6 text-blue-600 mr-3"),
             rx.el.h3(
                 "AI Historical Trend Analysis",
-                class_name="text-xl font-black text-emerald-900",
+                class_name="text-xl font-black text-blue-900",
             ),
             class_name="flex items-center mb-6",
         ),
@@ -144,13 +144,13 @@ def ai_insights_section() -> rx.Component:
             HistoricalAnalyticsState.is_generating_ai,
             rx.el.div(
                 rx.el.div(
-                    class_name="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto"
+                    class_name="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"
                 ),
                 rx.el.p(
                     "Analyzing historical data patterns...",
-                    class_name="text-emerald-700 font-bold mt-4",
+                    class_name="text-blue-700 font-bold mt-4",
                 ),
-                class_name="text-center p-12 bg-emerald-50/50 rounded-3xl border border-dashed border-emerald-200",
+                class_name="text-center p-12 bg-blue-50 rounded-3xl border border-dashed border-blue-200",
             ),
             rx.cond(
                 has_data,
@@ -160,13 +160,13 @@ def ai_insights_section() -> rx.Component:
                         lambda insight: rx.el.div(
                             rx.el.h4(
                                 insight["title"],
-                                class_name="font-black text-emerald-900 mb-2",
+                                class_name="font-black text-blue-900 mb-2",
                             ),
                             rx.el.p(
                                 insight["description"],
-                                class_name="text-sm text-emerald-800 leading-relaxed",
+                                class_name="text-sm text-blue-800 leading-relaxed",
                             ),
-                            class_name="p-6 bg-white border border-emerald-100 rounded-3xl shadow-sm",
+                            class_name="p-6 bg-white border border-blue-100 rounded-3xl shadow-sm",
                         ),
                     ),
                     class_name="grid grid-cols-1 md:grid-cols-3 gap-6",
@@ -174,9 +174,9 @@ def ai_insights_section() -> rx.Component:
                 rx.el.div(
                     rx.el.p(
                         "Historical data analysis is unavailable. Please commit records in the Data Entry tab.",
-                        class_name="text-emerald-600/60 font-medium",
+                        class_name="text-blue-600/60 font-medium",
                     ),
-                    class_name="text-center p-12 bg-emerald-50/30 rounded-3xl border border-emerald-100/50",
+                    class_name="text-center p-12 bg-blue-50 rounded-3xl border border-blue-100",
                 ),
             ),
         ),
@@ -205,25 +205,23 @@ def historical_analytics_view() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    rx.icon(
-                        "database-zap", class_name="h-12 w-12 text-emerald-200 mb-4"
-                    ),
+                    rx.icon("database-zap", class_name="h-12 w-12 text-blue-200 mb-4"),
                     rx.el.h2(
                         "No Historical Records Found",
-                        class_name="text-2xl font-black text-emerald-900 mb-2",
+                        class_name="text-2xl font-black text-blue-900 mb-2",
                     ),
                     rx.el.p(
                         "The archive is currently empty for this institution. Please populate historical scores in the Data Entry tab first to generate multi-year analytics.",
-                        class_name="text-emerald-700/70 max-w-md mx-auto mb-8 text-sm leading-relaxed",
+                        class_name="text-blue-700/70 max-w-md mx-auto mb-8 text-sm leading-relaxed",
                     ),
                     rx.el.button(
                         "Switch to Data Entry",
                         on_click=lambda: HistoricalAnalyticsState.set_active_view(
                             "entry"
                         ),
-                        class_name="px-8 py-3 bg-emerald-600 text-white rounded-full font-black shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all active:scale-95",
+                        class_name="px-8 py-3 bg-blue-600 text-white rounded-full font-black shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95",
                     ),
-                    class_name="text-center py-24 px-8 bg-emerald-50/20 rounded-[3rem] border border-dashed border-emerald-200 max-w-4xl mx-auto",
+                    class_name="text-center py-24 px-8 bg-blue-50 rounded-[3rem] border border-dashed border-blue-200 max-w-4xl mx-auto",
                 ),
                 class_name="py-12 animate-in fade-in slide-in-from-bottom-4 duration-500",
             ),
