@@ -133,7 +133,7 @@ def research_chart() -> rx.Component:
                 fill=AnalyticsState.target_color,
                 radius=[4, 4, 0, 0],
                 bar_size=40,
-                name="QS Stars 5★ Target",
+                name="QS Ranking Target",
             ),
             data=AnalyticsState.research_comparison_data,
             width="100%",
