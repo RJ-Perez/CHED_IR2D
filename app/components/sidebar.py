@@ -115,7 +115,7 @@ def sidebar(current_page: str) -> rx.Component:
                         "log-out",
                         class_name="h-4 w-4 text-gray-400 group-hover:text-red-500 transition-colors",
                     ),
-                    on_click=AuthState.logout,
+                    on_click=lambda: AuthState.logout(),
                     class_name="p-2 hover:bg-red-50 rounded-lg transition-colors group",
                     title="Sign Out",
                 ),
