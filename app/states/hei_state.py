@@ -497,9 +497,12 @@ class HEIState(rx.State):
     @rx.event
     def acknowledge_and_proceed(self):
         self.show_preliminary_notice = False
-        hei_name = (
-            self.reg_name if self.is_registration_mode else self.selected_hei["name"]
-        )
+        if self.is_registration_mode:
+            hei_name = self.reg_name
+        elif self.selected_hei:
+            hei_name = self.selected_hei["name"]
+        else:
+            hei_name = "Unknown Institution"
         framework_full = (
             "QS Stars" if self.ranking_framework == "QS" else "Times Higher Education"
         )
