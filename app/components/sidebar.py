@@ -66,21 +66,29 @@ def sidebar(current_page: str) -> rx.Component:
                 "/historical",
                 is_active=current_page == "historical",
             ),
-            sidebar_section_label("CHED Modules"),
-            sidebar_item(
-                "Institutions",
-                "building-2",
-                "/institutions",
-                is_active=current_page == "institutions",
-            ),
-            sidebar_item(
-                "Reports", "file-text", "/reports", is_active=current_page == "reports"
-            ),
-            sidebar_item(
-                "Settings",
-                "settings",
-                "/settings",
-                is_active=current_page == "settings",
+            rx.cond(
+                AuthState.is_ched_admin,
+                rx.fragment(
+                    sidebar_section_label("CHED Modules"),
+                    sidebar_item(
+                        "Institutions",
+                        "building-2",
+                        "/institutions",
+                        is_active=current_page == "institutions",
+                    ),
+                    sidebar_item(
+                        "Reports",
+                        "file-text",
+                        "/reports",
+                        is_active=current_page == "reports",
+                    ),
+                    sidebar_item(
+                        "Settings",
+                        "settings",
+                        "/settings",
+                        is_active=current_page == "settings",
+                    ),
+                ),
             ),
             class_name="p-4 space-y-2 flex-1 overflow-y-auto",
         ),

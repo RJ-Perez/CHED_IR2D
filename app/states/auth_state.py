@@ -93,6 +93,23 @@ class AuthState(GoogleAuthState):
             return self.tokeninfo.get("email", "")
         return ""
 
+    @rx.var(cache=True)
+    async def is_ched_admin(self) -> bool:
+        """Determines if the current user has administrative privileges for CHED modules."""
+        email = await self.user_email_address
+        if email == "admin@ched.gov.ph":
+            return True
+        if self.authenticated_user_id is not None:
+            async with rx.asession() as session:
+                result = await session.execute(
+                    text("SELECT position FROM users WHERE id = :id"),
+                    {"id": self.authenticated_user_id},
+                )
+                row = result.first()
+                if row and row[0] == "CHED Administrator":
+                    return True
+        return False
+
     @rx.event
     def toggle_auth_mode(self):
         """
