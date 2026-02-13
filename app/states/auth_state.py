@@ -596,7 +596,11 @@ class AuthState(GoogleAuthState):
     def logout(self):
         """Sign out the user and redirect to landing page."""
         super().logout()
+        self.id_token_json = ""
         self.authenticated_user_id = None
+        self.is_loading = False
+        self.is_redirecting = False
+        self.error_message = ""
         self.reset_form()
         self.is_sign_up = False
         yield rx.redirect("/")
