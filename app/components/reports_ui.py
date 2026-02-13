@@ -252,15 +252,24 @@ def ai_analysis_section() -> rx.Component:
                 class_name="text-gray-600 mb-6",
             ),
             rx.el.div(
-                rx.el.select(
-                    rx.el.option("Select Institution for Analysis...", value=""),
-                    rx.foreach(
-                        ReportsState.reports,
-                        lambda r: rx.el.option(r["name"], value=r["id"]),
+                rx.el.div(
+                    rx.el.select(
+                        rx.el.option("Select Institution for Analysis...", value=""),
+                        rx.foreach(
+                            ReportsState.reports,
+                            lambda r: rx.el.option(r["name"], value=r["id"]),
+                        ),
+                        on_change=lambda val: ReportsState.select_report_for_analysis(
+                            val
+                        ),
+                        value=ReportsState.selected_report_id,
+                        class_name="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm appearance-none cursor-pointer",
                     ),
-                    on_change=ReportsState.select_report_for_analysis,
-                    value=ReportsState.selected_report_id,
-                    class_name="w-full md:w-80 px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm appearance-none",
+                    rx.icon(
+                        "chevron-down",
+                        class_name="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none",
+                    ),
+                    class_name="relative w-full md:w-80",
                 ),
                 class_name="mb-8",
             ),
@@ -380,47 +389,51 @@ def reset_confirmation_modal() -> rx.Component:
                 rx.el.div(
                     rx.el.div(
                         rx.el.div(
-                            rx.icon(
-                                "triangle_alert",
-                                class_name="h-12 w-12 text-red-600 mx-auto mb-4",
-                            ),
-                            rx.el.h3(
-                                "Reset All Assessments",
-                                class_name="text-lg font-bold text-gray-900 mb-2",
-                            ),
-                            rx.el.p(
-                                "This will permanently delete all scores and evidence files for all institutions. This action cannot be undone.",
-                                class_name="text-sm text-gray-600 mb-6",
-                            ),
                             rx.el.div(
-                                rx.el.button(
-                                    "Cancel",
-                                    on_click=ReportsState.cancel_reset_assessment,
-                                    class_name="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors",
+                                rx.icon(
+                                    "triangle_alert",
+                                    class_name="h-12 w-12 text-red-600 mx-auto mb-4",
                                 ),
-                                rx.el.button(
-                                    rx.cond(
-                                        ReportsState.is_resetting,
-                                        rx.el.span(
-                                            "Purging Data...",
-                                            class_name="animate-pulse",
-                                        ),
-                                        "Reset All Data",
+                                rx.el.h3(
+                                    "Reset All Assessments",
+                                    class_name="text-lg font-bold text-gray-900 mb-2",
+                                ),
+                                rx.el.p(
+                                    "This will permanently delete all scores and evidence files for all institutions. This action cannot be undone.",
+                                    class_name="text-sm text-gray-600 mb-6",
+                                ),
+                                rx.el.div(
+                                    rx.el.button(
+                                        "Cancel",
+                                        on_click=ReportsState.cancel_reset_assessment,
+                                        class_name="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors",
                                     ),
-                                    on_click=ReportsState.reset_all_assessments,
-                                    disabled=ReportsState.is_resetting,
-                                    class_name="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 disabled:opacity-50 transition-colors",
+                                    rx.el.button(
+                                        rx.cond(
+                                            ReportsState.is_resetting,
+                                            rx.el.span(
+                                                "Purging Data...",
+                                                class_name="animate-pulse",
+                                            ),
+                                            "Reset All Data",
+                                        ),
+                                        on_click=ReportsState.reset_all_assessments,
+                                        disabled=ReportsState.is_resetting,
+                                        class_name="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 disabled:opacity-50 transition-colors",
+                                    ),
+                                    class_name="flex items-center justify-end gap-3",
                                 ),
-                                class_name="flex items-center justify-end gap-3",
+                                class_name="text-center",
                             ),
-                            class_name="text-center",
+                            class_name="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4",
+                            on_click=rx.stop_propagation,
                         ),
-                        class_name="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4",
+                        class_name="flex items-start justify-center min-h-screen p-4 pt-24",
                     ),
-                    class_name="flex items-start justify-center min-h-screen p-4 pt-24",
+                    class_name="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-start justify-center",
+                    on_click=ReportsState.cancel_reset_assessment,
                 ),
-                class_name="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-start justify-center",
-                on_click=ReportsState.cancel_reset_assessment,
+                class_name="fixed inset-0 z-[110]",
             )
         ),
     )
