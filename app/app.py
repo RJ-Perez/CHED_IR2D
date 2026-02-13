@@ -25,12 +25,15 @@ def branding_section() -> rx.Component:
             ),
             rx.el.div(
                 rx.el.div(
-                    rx.image(
-                        src="https://chedcar.com/wp-content/uploads/2020/09/Commission_on_Higher_Education_CHEd.svg_.png",
-                        class_name="h-16 w-16 object-contain mb-6",
-                        alt="CHED Logo",
+                    rx.el.div(
+                        rx.image(
+                            src="https://chedcar.com/wp-content/uploads/2020/09/Commission_on_Higher_Education_CHEd.svg_.png",
+                            class_name="h-16 w-16 object-contain",
+                            alt="CHED Logo",
+                        ),
+                        class_name="bg-white rounded-xl p-2 shadow-sm",
                     ),
-                    class_name="bg-white/20 w-fit p-4 rounded-2xl backdrop-blur-sm",
+                    class_name="bg-white/20 w-fit p-4 rounded-2xl backdrop-blur-sm mb-6",
                 ),
                 rx.el.h1(
                     "CHED",
@@ -64,7 +67,7 @@ def branding_section() -> rx.Component:
                 rx.el.div(
                     rx.el.div(
                         rx.image(
-                            src="https://www.uspceu.com/portals/0/docs/prensa/noticias/original/14122.jpg",
+                            src="https://web.ub.edu/documents/2948544/39139315/rankingQS.jpg/2ec728ac-59c9-845b-95eb-3c0e5e1fab38?t=1750255089999",
                             class_name="mt-3 h-20 object-contain",
                             alt="QS Stars Logo",
                         ),

@@ -52,9 +52,12 @@ def auth_form() -> rx.Component:
         ds_card(
             rx.el.div(
                 rx.el.div(
-                    rx.image(
-                        src="https://chedcar.com/wp-content/uploads/2020/09/Commission_on_Higher_Education_CHEd.svg_.png",
-                        class_name="h-12 w-12 mx-auto mb-4",
+                    rx.el.div(
+                        rx.image(
+                            src="https://chedcar.com/wp-content/uploads/2020/09/Commission_on_Higher_Education_CHEd.svg_.png",
+                            class_name="h-12 w-12 object-contain",
+                        ),
+                        class_name="bg-white rounded-lg p-1.5 shadow-sm mx-auto mb-4 w-fit border border-gray-100",
                     ),
                     rx.el.h2(
                         rx.cond(
@@ -173,14 +176,6 @@ def auth_form() -> rx.Component:
                     class_name="flex justify-center",
                 ),
                 rx.el.div(
-                    rx.el.div(
-                        rx.el.button(
-                            "Forgot password?",
-                            on_click=AuthState.toggle_forgot_password,
-                            class_name="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline",
-                        ),
-                        class_name="flex justify-center mt-2",
-                    ),
                     rx.el.p(
                         rx.cond(
                             AuthState.is_sign_up,
@@ -193,7 +188,7 @@ def auth_form() -> rx.Component:
                             class_name="text-blue-600 font-bold hover:underline",
                         ),
                         class_name="text-center text-sm text-gray-500 mt-8",
-                    ),
+                    )
                 ),
                 class_name="w-full",
             ),
