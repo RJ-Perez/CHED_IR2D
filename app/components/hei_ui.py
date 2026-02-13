@@ -512,7 +512,7 @@ def selection_screen_content() -> rx.Component:
                         description="Evaluates based on academic reputation, employer reputation, and faculty impact.",
                         icon="sparkles",
                     ),
-                    class_name="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 mb-8 md:mb-12 animate-in fade-in slide-in-from-bottom-10 duration-700",
+                    class_name="grid grid-cols-1 gap-4 md:gap-8 mb-8 md:mb-12 animate-in fade-in slide-in-from-bottom-10 duration-700",
                 ),
                 rx.el.button(
                     rx.cond(
