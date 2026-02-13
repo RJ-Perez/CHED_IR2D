@@ -251,6 +251,7 @@ class AuthState(GoogleAuthState):
                     yield rx.toast(
                         "Account created successfully! Please sign in.", duration=3000
                     )
+                    yield rx.call_script("location.reload()")
             else:
                 result = await session.execute(
                     text(
