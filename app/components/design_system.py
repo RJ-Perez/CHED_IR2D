@@ -144,6 +144,29 @@ def ds_card(
     )
 
 
+def ds_skeleton_card(height: str = "h-32") -> rx.Component:
+    """Lightweight skeleton card for instant loading feedback."""
+    return rx.el.div(
+        rx.el.div(class_name="h-4 bg-gray-200 rounded w-3/4 mb-3 animate-pulse"),
+        rx.el.div(class_name="h-3 bg-gray-100 rounded w-1/2 animate-pulse"),
+        class_name=f"bg-white rounded-2xl p-6 border border-gray-100 {height}",
+    )
+
+
+def ds_skeleton_table(rows: int = 5) -> rx.Component:
+    """Skeleton table for data loading."""
+    return rx.el.div(
+        rx.foreach(
+            rx.Var.range(rows),
+            lambda _: rx.el.div(
+                rx.el.div(class_name="h-4 bg-gray-100 rounded w-full animate-pulse"),
+                class_name="py-4 border-b border-gray-50",
+            ),
+        ),
+        class_name="bg-white rounded-2xl p-4 border border-gray-100",
+    )
+
+
 def ds_pagination(
     current_page: rx.Var[int],
     total_pages: rx.Var[int],

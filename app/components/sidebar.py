@@ -17,8 +17,8 @@ def sidebar_item(
         href=href,
         class_name=rx.cond(
             is_active,
-            "flex items-center px-4 py-3 bg-blue-50 text-blue-600 rounded-xl transition-all shadow-sm border border-blue-100",
-            "flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl transition-all",
+            "flex items-center px-4 py-3 bg-blue-50 text-blue-600 rounded-xl transition-all duration-75 shadow-sm border border-blue-100 active:scale-95",
+            "flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl transition-all duration-75 active:scale-95",
         ),
     )
 

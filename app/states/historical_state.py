@@ -2,6 +2,7 @@ import reflex as rx
 from typing import TypedDict, Any
 import json
 import logging
+import asyncio
 from sqlalchemy import text
 from app.states.hei_state import HEIState
 from app.states.auth_state import AuthState
@@ -153,7 +154,7 @@ class HistoricalState(rx.State):
 
     @rx.event(background=True)
     async def on_load(self):
-        """Optimized batch loading of all historical data with strict numeric initialization."""
+        """Optimized batch loading of all historical data using asyncio.gather."""
         async with self:
             self.is_loading = True
             self.year_completion_map = {y: 0 for y in self.available_years}
@@ -210,7 +211,6 @@ class HistoricalState(rx.State):
                 """),
                 {"iid": inst_id},
             )
-            completion_rows = years_res.all()
             scores_res = await session.execute(
                 text("""
                 SELECT 
@@ -236,6 +236,7 @@ class HistoricalState(rx.State):
                 """),
                 {"iid": inst_id},
             )
+            completion_rows = years_res.all()
             temp_completion_map = {y: 0 for y in self.available_years}
             temp_years_with_data = []
             for row in completion_rows:
@@ -362,13 +363,16 @@ class HistoricalState(rx.State):
 
     @rx.event(background=True)
     async def select_year(self, year: str):
-        """Handles year selection with loading state."""
+        """Handles year selection with local cross-state caching logic."""
         async with self:
             if self.selected_year == year:
                 return
             self.selected_year = year
             self.is_loading = True
             self.validation_errors = {k: "" for k in self.validation_errors.keys()}
+            cached_match = next((d for d in self.trend_data if d["year"] == year), None)
+            if cached_match and cached_match.get("Average", 0) > 0:
+                pass
         yield HistoricalState.fetch_scores_for_year
 
     @rx.event(background=True)

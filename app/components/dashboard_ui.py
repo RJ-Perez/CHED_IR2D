@@ -1334,14 +1334,30 @@ def formal_assessment_form() -> rx.Component:
 
 def dashboard_content() -> rx.Component:
     """Aggregated assessment content view with improved spacing and dual-path logic."""
+    from app.components.design_system import ds_skeleton_card
+
     return rx.el.div(
         initial_assessment_modal(),
         dashboard_header(),
-        dashboard_stat_cards(),
         rx.cond(
-            DashboardState.has_formal_assessment,
-            formal_assessment_form(),
-            data_entry_forms(),
+            DashboardState.is_loading,
+            rx.el.div(
+                rx.el.div(
+                    ds_skeleton_card(),
+                    ds_skeleton_card(),
+                    ds_skeleton_card(),
+                    class_name="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10",
+                ),
+                rx.el.div(ds_skeleton_card(height="h-96"), class_name="space-y-6"),
+            ),
+            rx.fragment(
+                dashboard_stat_cards(),
+                rx.cond(
+                    DashboardState.has_formal_assessment,
+                    formal_assessment_form(),
+                    data_entry_forms(),
+                ),
+            ),
         ),
         bottom_action_bar(),
         class_name="max-w-7xl mx-auto pb-12 px-4",

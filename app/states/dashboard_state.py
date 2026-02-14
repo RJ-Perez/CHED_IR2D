@@ -350,22 +350,26 @@ class DashboardState(rx.State):
     async def _save_uploaded_file(
         self, file: rx.UploadFile, category: str, inst_id: str
     ) -> str | None:
-        """Optimized: Takes inst_id as arg to avoid repeated state fetches in loops."""
-        relative_dir = f"institution_{inst_id}/{category}"
-        upload_dir = rx.get_upload_dir() / relative_dir
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        import random, string
+        """Save a single uploaded file. Returns the relative path."""
+        try:
+            relative_dir = f"institution_{inst_id}/{category}"
+            upload_dir = rx.get_upload_dir() / relative_dir
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            import random, string
 
-        unique_name = f"{''.join(random.choices(string.ascii_letters + string.digits, k=6))}_{file.name}"
-        upload_data = await file.read()
-        file_path = upload_dir / unique_name
-        with file_path.open("wb") as f:
-            f.write(upload_data)
-        return f"{relative_dir}/{unique_name}"
+            unique_name = f"{''.join(random.choices(string.ascii_letters + string.digits, k=6))}_{file.name}"
+            upload_data = await file.read()
+            file_path = upload_dir / unique_name
+            with file_path.open("wb") as f:
+                f.write(upload_data)
+            return f"{relative_dir}/{unique_name}"
+        except Exception as e:
+            logging.exception(f"Error saving file: {e}")
+            return None
 
     @rx.event
     async def handle_research_upload(self, files: list[rx.UploadFile]):
-        """Optimized: Uses asyncio.gather for parallelized file writing."""
+        """Handle file upload for Research section."""
         if not files:
             return
         self.is_uploading_research = True
@@ -373,17 +377,21 @@ class DashboardState(rx.State):
         yield
         hei_state = await self.get_state(HEIState)
         inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
-        tasks = [self._save_uploaded_file(f, "research", inst_id) for f in files]
-        results = await asyncio.gather(*tasks)
-        valid_results = [r for r in results if r is not None]
-        self.uploaded_research_files.extend(valid_results)
-        self.upload_progress_research = 100
+        saved_files = []
+        total = len(files)
+        for i, file in enumerate(files):
+            saved_path = await self._save_uploaded_file(file, "research", inst_id)
+            if saved_path:
+                saved_files.append(saved_path)
+            self.upload_progress_research = int((i + 1) / total * 100)
+            yield
+        self.uploaded_research_files.extend(saved_files)
         self.is_uploading_research = False
         yield rx.clear_selected_files("upload_research")
 
     @rx.event
     async def handle_employability_upload(self, files: list[rx.UploadFile]):
-        """Handle file upload for Employability section with unique directory."""
+        """Handle file upload for Employability section."""
         if not files:
             return
         self.is_uploading_employability = True
@@ -391,19 +399,21 @@ class DashboardState(rx.State):
         total = len(files)
         hei_state = await self.get_state(HEIState)
         inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
+        saved_files = []
         for i, file in enumerate(files):
             self.upload_count_employability = f"{i + 1} of {total}"
             saved_path = await self._save_uploaded_file(file, "employability", inst_id)
             if saved_path:
-                self.uploaded_employability_files.append(saved_path)
+                saved_files.append(saved_path)
             self.upload_progress_employability = int((i + 1) / total * 100)
             yield
+        self.uploaded_employability_files.extend(saved_files)
         self.is_uploading_employability = False
         yield rx.clear_selected_files("upload_employability")
 
     @rx.event
     async def handle_global_engagement_upload(self, files: list[rx.UploadFile]):
-        """Handle file upload for Global Engagement section with unique directory."""
+        """Handle file upload for Global Engagement section."""
         if not files:
             return
         self.is_uploading_global_engagement = True
@@ -411,21 +421,23 @@ class DashboardState(rx.State):
         total = len(files)
         hei_state = await self.get_state(HEIState)
         inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
+        saved_files = []
         for i, file in enumerate(files):
             self.upload_count_global_engagement = f"{i + 1} of {total}"
             saved_path = await self._save_uploaded_file(
                 file, "global_engagement", inst_id
             )
             if saved_path:
-                self.uploaded_global_engagement_files.append(saved_path)
+                saved_files.append(saved_path)
             self.upload_progress_global_engagement = int((i + 1) / total * 100)
             yield
+        self.uploaded_global_engagement_files.extend(saved_files)
         self.is_uploading_global_engagement = False
         yield rx.clear_selected_files("upload_global_engagement")
 
     @rx.event
     async def handle_learning_experience_upload(self, files: list[rx.UploadFile]):
-        """Handle file upload for Learning Experience section with unique directory."""
+        """Handle file upload for Learning Experience section."""
         if not files:
             return
         self.is_uploading_learning_experience = True
@@ -433,21 +445,23 @@ class DashboardState(rx.State):
         total = len(files)
         hei_state = await self.get_state(HEIState)
         inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
+        saved_files = []
         for i, file in enumerate(files):
             self.upload_count_learning_experience = f"{i + 1} of {total}"
             saved_path = await self._save_uploaded_file(
                 file, "learning_experience", inst_id
             )
             if saved_path:
-                self.uploaded_learning_experience_files.append(saved_path)
+                saved_files.append(saved_path)
             self.upload_progress_learning_experience = int((i + 1) / total * 100)
             yield
+        self.uploaded_learning_experience_files.extend(saved_files)
         self.is_uploading_learning_experience = False
         yield rx.clear_selected_files("upload_learning_experience")
 
     @rx.event
     async def handle_sustainability_upload(self, files: list[rx.UploadFile]):
-        """Handle file upload for Sustainability section with unique directory."""
+        """Handle file upload for Sustainability section."""
         if not files:
             return
         self.is_uploading_sustainability = True
@@ -455,13 +469,15 @@ class DashboardState(rx.State):
         total = len(files)
         hei_state = await self.get_state(HEIState)
         inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
+        saved_files = []
         for i, file in enumerate(files):
             self.upload_count_sustainability = f"{i + 1} of {total}"
             saved_path = await self._save_uploaded_file(file, "sustainability", inst_id)
             if saved_path:
-                self.uploaded_sustainability_files.append(saved_path)
+                saved_files.append(saved_path)
             self.upload_progress_sustainability = int((i + 1) / total * 100)
             yield
+        self.uploaded_sustainability_files.extend(saved_files)
         self.is_uploading_sustainability = False
         yield rx.clear_selected_files("upload_sustainability")
 
@@ -497,6 +513,7 @@ class DashboardState(rx.State):
 
     @rx.event
     async def handle_formal_research_upload(self, files: list[rx.UploadFile]):
+        """Handle formal research file upload."""
         if not files:
             return
         self.is_uploading_formal_research = True
@@ -504,19 +521,22 @@ class DashboardState(rx.State):
         total = len(files)
         hei_state = await self.get_state(HEIState)
         inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
+        saved_files = []
         for i, file in enumerate(files):
             saved_path = await self._save_uploaded_file(
                 file, "formal_research", inst_id
             )
             if saved_path:
-                self.uploaded_formal_research_files.append(saved_path)
+                saved_files.append(saved_path)
             self.upload_progress_formal_research = int((i + 1) / total * 100)
             yield
+        self.uploaded_formal_research_files.extend(saved_files)
         self.is_uploading_formal_research = False
         yield rx.clear_selected_files("upload_formal_research")
 
     @rx.event
     async def handle_formal_employability_upload(self, files: list[rx.UploadFile]):
+        """Handle formal employability file upload."""
         if not files:
             return
         self.is_uploading_formal_employability = True
@@ -524,19 +544,22 @@ class DashboardState(rx.State):
         total = len(files)
         hei_state = await self.get_state(HEIState)
         inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
+        saved_files = []
         for i, file in enumerate(files):
             saved_path = await self._save_uploaded_file(
                 file, "formal_employability", inst_id
             )
             if saved_path:
-                self.uploaded_formal_employability_files.append(saved_path)
+                saved_files.append(saved_path)
             self.upload_progress_formal_employability = int((i + 1) / total * 100)
             yield
+        self.uploaded_formal_employability_files.extend(saved_files)
         self.is_uploading_formal_employability = False
         yield rx.clear_selected_files("upload_formal_employability")
 
     @rx.event
     async def handle_formal_global_upload(self, files: list[rx.UploadFile]):
+        """Handle formal global engagement file upload."""
         if not files:
             return
         self.is_uploading_formal_global = True
@@ -544,17 +567,20 @@ class DashboardState(rx.State):
         total = len(files)
         hei_state = await self.get_state(HEIState)
         inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
+        saved_files = []
         for i, file in enumerate(files):
             saved_path = await self._save_uploaded_file(file, "formal_global", inst_id)
             if saved_path:
-                self.uploaded_formal_global_files.append(saved_path)
+                saved_files.append(saved_path)
             self.upload_progress_formal_global = int((i + 1) / total * 100)
             yield
+        self.uploaded_formal_global_files.extend(saved_files)
         self.is_uploading_formal_global = False
         yield rx.clear_selected_files("upload_formal_global")
 
     @rx.event
     async def handle_formal_learning_upload(self, files: list[rx.UploadFile]):
+        """Handle formal learning experience file upload."""
         if not files:
             return
         self.is_uploading_formal_learning = True
@@ -562,19 +588,22 @@ class DashboardState(rx.State):
         total = len(files)
         hei_state = await self.get_state(HEIState)
         inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
+        saved_files = []
         for i, file in enumerate(files):
             saved_path = await self._save_uploaded_file(
                 file, "formal_learning", inst_id
             )
             if saved_path:
-                self.uploaded_formal_learning_files.append(saved_path)
+                saved_files.append(saved_path)
             self.upload_progress_formal_learning = int((i + 1) / total * 100)
             yield
+        self.uploaded_formal_learning_files.extend(saved_files)
         self.is_uploading_formal_learning = False
         yield rx.clear_selected_files("upload_formal_learning")
 
     @rx.event
     async def handle_formal_sustainability_upload(self, files: list[rx.UploadFile]):
+        """Handle formal sustainability file upload."""
         if not files:
             return
         self.is_uploading_formal_sustainability = True
@@ -582,14 +611,16 @@ class DashboardState(rx.State):
         total = len(files)
         hei_state = await self.get_state(HEIState)
         inst_id = hei_state.selected_hei["id"] if hei_state.selected_hei else "unknown"
+        saved_files = []
         for i, file in enumerate(files):
             saved_path = await self._save_uploaded_file(
                 file, "formal_sustainability", inst_id
             )
             if saved_path:
-                self.uploaded_formal_sustainability_files.append(saved_path)
+                saved_files.append(saved_path)
             self.upload_progress_formal_sustainability = int((i + 1) / total * 100)
             yield
+        self.uploaded_formal_sustainability_files.extend(saved_files)
         self.is_uploading_formal_sustainability = False
         yield rx.clear_selected_files("upload_formal_sustainability")
 
@@ -625,179 +656,87 @@ class DashboardState(rx.State):
 
     @rx.event(background=True)
     async def on_load(self):
-        """Load existing data for the selected institution."""
+        """Load existing data for the selected institution using optimized batch queries."""
         async with self:
             self.is_loading = True
-        try:
-            async with rx.asession() as session:
-                await self._ensure_static_data(session)
-                async with self:
-                    hei_state = await self.get_state(HEIState)
-                if not hei_state.selected_hei:
-                    return
-                institution_id = int(hei_state.selected_hei["id"])
-                rows = await session.execute(
-                    text("""
-                    SELECT 
-                        i.code, 
-                        s.value, 
-                        s.evidence_files,
-                        s.review_status
-                    FROM institution_scores s
-                    JOIN ranking_indicators i ON s.indicator_id = i.id
-                    WHERE s.institution_id = :inst_id AND s.ranking_year = 2025
-                    """),
-                    {"inst_id": institution_id},
-                )
-                data = rows.all()
-                async with self:
-                    for code, value, evidence, r_status in data:
-                        if r_status:
-                            self.review_status = r_status
-                        if code == "academic_reputation":
-                            try:
-                                self.academic_reputation = int(float(value))
-                            except (ValueError, TypeError) as e:
-                                logging.exception(
-                                    f"Error loading academic reputation from DB: {e}"
-                                )
-                                self.academic_reputation = 0
-                            self.uploaded_research_files = (
-                                json.loads(evidence) if evidence else []
-                            )
-                        elif code == "domestic_nominations":
-                            try:
-                                self.domestic_nominations = int(float(value))
-                            except (ValueError, TypeError) as e:
-                                logging.exception(
-                                    f"Error loading domestic nominations: {e}"
-                                )
-                                self.domestic_nominations = 0
-                        elif code == "international_nominations":
-                            try:
-                                self.international_nominations = int(float(value))
-                            except (ValueError, TypeError) as e:
-                                logging.exception(
-                                    f"Error loading international nominations: {e}"
-                                )
-                                self.international_nominations = 0
-                        elif code == "citations_per_faculty":
-                            try:
-                                self.citations_per_faculty = int(float(value))
-                            except (ValueError, TypeError) as e:
-                                logging.exception(
-                                    f"Error loading citations per faculty from DB: {e}"
-                                )
-                                self.citations_per_faculty = 0
-                        elif code == "employer_reputation":
-                            try:
-                                self.employer_reputation = int(float(value))
-                            except (ValueError, TypeError) as e:
-                                logging.exception(
-                                    f"Error loading employer reputation from DB: {e}"
-                                )
-                                self.employer_reputation = 0
-                            self.uploaded_employability_files = (
-                                json.loads(evidence) if evidence else []
-                            )
-                        elif code == "employer_domestic_nominations":
-                            try:
-                                self.employer_domestic_nominations = int(float(value))
-                            except (ValueError, TypeError) as e:
-                                logging.exception(
-                                    f"Error loading employer domestic nominations: {e}"
-                                )
-                                self.employer_domestic_nominations = 0
-                        elif code == "employer_international_nominations":
-                            try:
-                                self.employer_international_nominations = int(
-                                    float(value)
-                                )
-                            except (ValueError, TypeError) as e:
-                                logging.exception(
-                                    f"Error loading employer international nominations: {e}"
-                                )
-                                self.employer_international_nominations = 0
-                            try:
-                                self.employer_domestic_nominations = int(float(value))
-                            except (ValueError, TypeError) as e:
-                                logging.exception(
-                                    f"Error loading employer domestic nominations: {e}"
-                                )
-                                self.employer_domestic_nominations = 0
-                        elif code == "employer_international_nominations":
-                            try:
-                                self.employer_international_nominations = int(
-                                    float(value)
-                                )
-                            except (ValueError, TypeError) as e:
-                                logging.exception(
-                                    f"Error loading employer international nominations: {e}"
-                                )
-                                self.employer_international_nominations = 0
-                        elif code == "employment_outcomes":
-                            try:
-                                self.employment_outcomes = int(float(value))
-                            except (ValueError, TypeError) as e:
-                                logging.exception(
-                                    f"Error loading employment outcomes from DB: {e}"
-                                )
-                                self.employment_outcomes = 0
-                        elif code == "international_research_network":
-                            try:
-                                self.international_research_network = int(float(value))
-                            except (ValueError, TypeError) as e:
-                                logging.exception(
-                                    f"Error loading international research network from DB: {e}"
-                                )
-                                self.international_research_network = 0
-                            self.uploaded_global_engagement_files = (
-                                json.loads(evidence) if evidence else []
-                            )
-                        elif code == "international_faculty_ratio":
-                            try:
-                                self.international_faculty_ratio = int(float(value))
-                            except (ValueError, TypeError) as e:
-                                logging.exception(
-                                    f"Error loading international faculty ratio from DB: {e}"
-                                )
-                                self.international_faculty_ratio = 0
-                        elif code == "international_student_ratio":
-                            try:
-                                self.international_student_ratio = int(float(value))
-                            except (ValueError, TypeError) as e:
-                                logging.exception(
-                                    f"Error loading international student ratio from DB: {e}"
-                                )
-                                self.international_student_ratio = 0
-                        elif code == "international_student_diversity":
-                            self.international_student_diversity = value
-                        elif code == "faculty_student_ratio":
-                            try:
-                                self.faculty_student_ratio = int(float(value))
-                            except (ValueError, TypeError) as e:
-                                logging.exception(
-                                    f"Error loading faculty student ratio from DB: {e}"
-                                )
-                                self.faculty_student_ratio = 0
-                            self.uploaded_learning_experience_files = (
-                                json.loads(evidence) if evidence else []
-                            )
-                        elif code == "sustainability_metrics":
-                            try:
-                                self.sustainability_metrics = int(float(value))
-                            except (ValueError, TypeError) as e:
-                                logging.exception(
-                                    f"Error loading sustainability metrics from DB: {e}"
-                                )
-                                self.sustainability_metrics = 0
-                            self.uploaded_sustainability_files = (
-                                json.loads(evidence) if evidence else []
-                            )
-        except Exception as e:
-            logging.exception(f"Error in DashboardState.on_load: {e}")
-        finally:
+            hei_state = await self.get_state(HEIState)
+            if not hei_state.selected_hei:
+                self.is_loading = False
+                return
+            institution_id = int(hei_state.selected_hei["id"])
+        async with rx.asession() as session:
+            static_task = self._ensure_static_data(session)
+            scores_task = session.execute(
+                text("""
+                SELECT 
+                    i.code, 
+                    s.value, 
+                    s.evidence_files,
+                    s.review_status
+                FROM institution_scores s
+                JOIN ranking_indicators i ON s.indicator_id = i.id
+                WHERE s.institution_id = :inst_id AND s.ranking_year = 2025
+                """),
+                {"inst_id": institution_id},
+            )
+            await static_task
+            rows = (await scores_task).all()
+            updates = {
+                "review_status": "",
+                "academic_reputation": 0,
+                "uploaded_research_files": [],
+                "domestic_nominations": 0,
+                "international_nominations": 0,
+                "citations_per_faculty": 0,
+                "employer_reputation": 0,
+                "uploaded_employability_files": [],
+                "employer_domestic_nominations": 0,
+                "employer_international_nominations": 0,
+                "employment_outcomes": 0,
+                "international_research_network": 0,
+                "uploaded_global_engagement_files": [],
+                "international_faculty_ratio": 0,
+                "international_student_ratio": 0,
+                "international_student_diversity": "",
+                "faculty_student_ratio": 0,
+                "uploaded_learning_experience_files": [],
+                "sustainability_metrics": 0,
+                "uploaded_sustainability_files": [],
+            }
+            for code, value, evidence, r_status in rows:
+                if r_status:
+                    updates["review_status"] = r_status
+                if code in [
+                    "academic_reputation",
+                    "employer_reputation",
+                    "international_research_network",
+                    "faculty_student_ratio",
+                    "sustainability_metrics",
+                ]:
+                    files = json.loads(evidence) if evidence else []
+                    if code == "academic_reputation":
+                        updates["uploaded_research_files"] = files
+                    elif code == "employer_reputation":
+                        updates["uploaded_employability_files"] = files
+                    elif code == "international_research_network":
+                        updates["uploaded_global_engagement_files"] = files
+                    elif code == "faculty_student_ratio":
+                        updates["uploaded_learning_experience_files"] = files
+                    elif code == "sustainability_metrics":
+                        updates["uploaded_sustainability_files"] = files
+                if code == "international_student_diversity":
+                    updates["international_student_diversity"] = value
+                    continue
+                try:
+                    val = int(float(value)) if value else 0
+                except (ValueError, TypeError):
+                    val = 0
+                if code in updates:
+                    updates[code] = val
             async with self:
+                for key, val in updates.items():
+                    if hasattr(self, key):
+                        setattr(self, key, val)
                 self.is_loading = False
 
     async def _ensure_static_data(self, session):

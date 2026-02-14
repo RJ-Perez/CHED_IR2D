@@ -229,75 +229,111 @@ class AuthState(GoogleAuthState):
                     self.error_message = password_error
                     self.is_loading = False
                     return
-        async with rx.asession() as session:
-            if self.is_sign_up:
-                result = await session.execute(
-                    text("SELECT id FROM users WHERE email = :email"),
-                    {"email": self.email},
-                )
-                first_row = result.first()
-                if first_row:
-                    async with self:
-                        self.error_message = (
-                            "An account with this email already exists."
+        async with self:
+            email = self.email
+            password = self.password
+            is_sign_up = self.is_sign_up
+            first_name = self.first_name
+            last_name = self.last_name
+            position = self.position
+            institution_name = self.institution_name
+        try:
+            async with rx.asession() as warmup_session:
+                await warmup_session.execute(text("SELECT 1"))
+            async with asyncio.timeout(15):
+                async with rx.asession() as session:
+                    if is_sign_up:
+                        result = await session.execute(
+                            text("SELECT id FROM users WHERE email = :email"),
+                            {"email": email},
                         )
-                        self.is_loading = False
-                        return
-                password_hash = bcrypt.hashpw(
-                    self.password.encode("utf-8"), bcrypt.gensalt()
-                ).decode("utf-8")
-                await session.execute(
-                    text("""
-                    INSERT INTO users (first_name, last_name, position, institution_name, email, password_hash, auth_provider)
-                    VALUES (:first_name, :last_name, :position, :institution_name, :email, :password_hash, 'email')
-                    """),
-                    {
-                        "first_name": self.first_name,
-                        "last_name": self.last_name,
-                        "position": self.position,
-                        "institution_name": self.institution_name,
-                        "email": self.email,
-                        "password_hash": password_hash,
-                    },
-                )
-                await session.commit()
-                async with self:
-                    self.is_loading = False
-                    self.is_sign_up = False
-                    self.reset_form()
-                    yield rx.toast(
-                        "Account created successfully! Please sign in.", duration=3000
-                    )
-                    yield rx.call_script("location.reload()")
-            else:
-                result = await session.execute(
-                    text(
-                        "SELECT id, password_hash, first_name FROM users WHERE email = :email AND auth_provider = 'email'"
-                    ),
-                    {"email": self.email},
-                )
-                user = result.first()
-                if not user or not bcrypt.checkpw(
-                    self.password.encode("utf-8"), user[1].encode("utf-8")
-                ):
-                    async with self:
-                        self.error_message = "Invalid email or password."
-                        self.is_loading = False
-                        return
-                await session.execute(
-                    text("UPDATE users SET last_login = :now WHERE id = :id"),
-                    {
-                        "now": datetime.datetime.now(datetime.timezone.utc),
-                        "id": user[0],
-                    },
-                )
-                await session.commit()
-                async with self:
-                    self.authenticated_user_id = user[0]
-                    self.is_loading = False
-                    self.is_redirecting = True
-                    yield rx.toast(f"Welcome back, {user[2]}!", duration=3000)
-                    yield rx.redirect("/hei-selection")
+                        if result.first():
+                            async with self:
+                                self.error_message = (
+                                    "An account with this email already exists."
+                                )
+                                self.is_loading = False
+                            return
+                        password_hash = await asyncio.to_thread(
+                            lambda: bcrypt.hashpw(
+                                password.encode("utf-8"), bcrypt.gensalt(rounds=10)
+                            ).decode("utf-8")
+                        )
+                        await session.execute(
+                            text("""
+                            INSERT INTO users (first_name, last_name, position, institution_name, email, password_hash, auth_provider)
+                            VALUES (:first_name, :last_name, :position, :institution_name, :email, :password_hash, 'email')
+                            """),
+                            {
+                                "first_name": first_name,
+                                "last_name": last_name,
+                                "position": position,
+                                "institution_name": institution_name,
+                                "email": email,
+                                "password_hash": password_hash,
+                            },
+                        )
+                        await session.commit()
+                        async with self:
+                            self.is_loading = False
+                            self.is_sign_up = False
+                            self.reset_form()
+                        yield rx.toast(
+                            "Account created successfully! Please sign in.",
+                            duration=3000,
+                        )
+                        yield rx.call_script("location.reload()")
+                    else:
+                        result = await session.execute(
+                            text(
+                                "SELECT id, password_hash, first_name FROM users WHERE email = :email AND auth_provider = 'email'"
+                            ),
+                            {"email": email},
+                        )
+                        user = result.first()
+                        if not user:
+                            async with self:
+                                self.error_message = "Invalid email or password."
+                                self.is_loading = False
+                            return
+                        is_valid = await asyncio.to_thread(
+                            lambda: bcrypt.checkpw(
+                                password.encode("utf-8"), user[1].encode("utf-8")
+                            )
+                        )
+                        if not is_valid:
+                            async with self:
+                                self.error_message = "Invalid email or password."
+                                self.is_loading = False
+                            return
+                        await session.execute(
+                            text("UPDATE users SET last_login = :now WHERE id = :id"),
+                            {
+                                "now": datetime.datetime.now(datetime.timezone.utc),
+                                "id": user[0],
+                            },
+                        )
+                        await session.commit()
+                        async with self:
+                            self.authenticated_user_id = user[0]
+                            self.is_loading = False
+                            self.is_redirecting = True
+                        yield rx.toast(f"Welcome back, {user[2]}!", duration=3000)
+                        yield rx.redirect("/hei-selection")
+        except (asyncio.TimeoutError, TimeoutError):
+            logging.exception("Unexpected error")
+            logging.error("Authentication timed out (DB connection latency)")
+            async with self:
+                self.error_message = "The request timed out while connecting to the institutional database. Please try again."
+                self.is_loading = False
+        except Exception as e:
+            logging.exception(f"Authentication error: {e}")
+            async with self:
+                self.error_message = "Unable to connect to the strategic portal server. Please try again later."
+                self.is_loading = False
+        finally:
+            async with self:
+                self.is_loading = False
 
     @rx.event(background=True)
     async def on_google_login(self, token_data: dict):
@@ -557,34 +593,55 @@ class AuthState(GoogleAuthState):
                 self.reset_error_message = validation_error
                 self.is_resetting_password = False
                 return
-        async with rx.asession() as session:
-            token_res = await session.execute(
-                text(
-                    "SELECT user_id FROM password_reset_tokens WHERE token = :token AND used = FALSE"
-                ),
-                {"token": self.reset_token},
-            )
-            row = token_res.first()
-            if not row:
-                async with self:
-                    self.reset_error_message = "Invalid or expired token."
-                    self.is_resetting_password = False
-                return
-            user_id = row[0]
-            password_hash = bcrypt.hashpw(
-                self.new_password.encode("utf-8"), bcrypt.gensalt()
-            ).decode("utf-8")
-            await session.execute(
-                text("UPDATE users SET password_hash = :hash WHERE id = :id"),
-                {"hash": password_hash, "id": user_id},
-            )
-            await session.execute(
-                text(
-                    "UPDATE password_reset_tokens SET used = TRUE WHERE token = :token"
-                ),
-                {"token": self.reset_token},
-            )
-            await session.commit()
+        try:
+            async with rx.asession() as warmup_session:
+                await warmup_session.execute(text("SELECT 1"))
+            async with asyncio.timeout(15):
+                async with rx.asession() as session:
+                    token_res = await session.execute(
+                        text(
+                            "SELECT user_id FROM password_reset_tokens WHERE token = :token AND used = FALSE"
+                        ),
+                        {"token": self.reset_token},
+                    )
+                    row = token_res.first()
+                    if not row:
+                        async with self:
+                            self.reset_error_message = "Invalid or expired token."
+                            self.is_resetting_password = False
+                        return
+                    user_id = row[0]
+                    password_hash = await asyncio.to_thread(
+                        lambda: bcrypt.hashpw(
+                            self.new_password.encode("utf-8"), bcrypt.gensalt(rounds=10)
+                        ).decode("utf-8")
+                    )
+                    await session.execute(
+                        text("UPDATE users SET password_hash = :hash WHERE id = :id"),
+                        {"hash": password_hash, "id": user_id},
+                    )
+                    await session.execute(
+                        text(
+                            "UPDATE password_reset_tokens SET used = TRUE WHERE token = :token"
+                        ),
+                        {"token": self.reset_token},
+                    )
+                    await session.commit()
+        except (asyncio.TimeoutError, TimeoutError):
+            logging.exception("Unexpected error")
+            logging.error("Reset password timed out (DB latency)")
+            async with self:
+                self.reset_error_message = "Security handshake timed out. Please check your network and try again."
+                self.is_resetting_password = False
+            return
+        except Exception as e:
+            logging.exception(f"Reset password error: {e}")
+            async with self:
+                self.reset_error_message = (
+                    "The system encountered a technical issue. Please try again later."
+                )
+                self.is_resetting_password = False
+            return
         async with self:
             self.is_resetting_password = False
             yield rx.toast(

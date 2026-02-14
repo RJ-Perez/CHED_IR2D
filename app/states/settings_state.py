@@ -160,64 +160,90 @@ class SettingsState(rx.State):
                 self.is_saving_account = False
             yield rx.toast.error("First and last names are required.")
             return
-        async with rx.asession() as session:
-            if new_pass or current_pass or confirm_pass:
-                if not current_pass or not new_pass or (not confirm_pass):
-                    async with self:
-                        self.is_saving_account = False
-                    yield rx.toast.error(
-                        "All password fields are required to change your password."
-                    )
-                    return
-                if new_pass != confirm_pass:
-                    async with self:
-                        self.is_saving_account = False
-                    yield rx.toast.error("New passwords do not match.")
-                    return
-                strength_error = self._validate_password(new_pass)
-                if strength_error:
-                    async with self:
-                        self.is_saving_account = False
-                    yield rx.toast.error(strength_error)
-                    return
-                user_check = await session.execute(
-                    text("SELECT password_hash FROM users WHERE id = :uid"),
-                    {"uid": user_id},
-                )
-                row = user_check.first()
-                if not row or not row[0]:
-                    async with self:
-                        self.is_saving_account = False
-                    yield rx.toast.error("User account data is corrupted.")
-                    return
-                if not bcrypt.checkpw(
-                    current_pass.encode("utf-8"), row[0].encode("utf-8")
-                ):
-                    async with self:
-                        self.is_saving_account = False
-                    yield rx.toast.error("Current password is incorrect.")
-                    return
-                new_hash = bcrypt.hashpw(
-                    new_pass.encode("utf-8"), bcrypt.gensalt()
-                ).decode("utf-8")
-                await session.execute(
-                    text("""
-                        UPDATE users 
-                        SET first_name = :f, last_name = :l, password_hash = :h 
-                        WHERE id = :uid
-                    """),
-                    {"f": first, "l": last, "h": new_hash, "uid": user_id},
-                )
-            else:
-                await session.execute(
-                    text("""
-                        UPDATE users 
-                        SET first_name = :f, last_name = :l 
-                        WHERE id = :uid
-                    """),
-                    {"f": first, "l": last, "uid": user_id},
-                )
-            await session.commit()
+        try:
+            async with rx.asession() as warmup_session:
+                await warmup_session.execute(text("SELECT 1"))
+            async with asyncio.timeout(15):
+                async with rx.asession() as session:
+                    if new_pass or current_pass or confirm_pass:
+                        if not current_pass or not new_pass or (not confirm_pass):
+                            async with self:
+                                self.is_saving_account = False
+                            yield rx.toast.error(
+                                "All password fields are required to change your password."
+                            )
+                            return
+                        if new_pass != confirm_pass:
+                            async with self:
+                                self.is_saving_account = False
+                            yield rx.toast.error("New passwords do not match.")
+                            return
+                        strength_error = self._validate_password(new_pass)
+                        if strength_error:
+                            async with self:
+                                self.is_saving_account = False
+                            yield rx.toast.error(strength_error)
+                            return
+                        user_check = await session.execute(
+                            text("SELECT password_hash FROM users WHERE id = :uid"),
+                            {"uid": user_id},
+                        )
+                        row = user_check.first()
+                        if not row or not row[0]:
+                            async with self:
+                                self.is_saving_account = False
+                            yield rx.toast.error("User account data is corrupted.")
+                            return
+                        is_valid = await asyncio.to_thread(
+                            lambda: bcrypt.checkpw(
+                                current_pass.encode("utf-8"), row[0].encode("utf-8")
+                            )
+                        )
+                        if not is_valid:
+                            async with self:
+                                self.is_saving_account = False
+                            yield rx.toast.error("Current password is incorrect.")
+                            return
+                        new_hash = await asyncio.to_thread(
+                            lambda: bcrypt.hashpw(
+                                new_pass.encode("utf-8"), bcrypt.gensalt(rounds=10)
+                            ).decode("utf-8")
+                        )
+                        await session.execute(
+                            text("""
+                                UPDATE users 
+                                SET first_name = :f, last_name = :l, password_hash = :h 
+                                WHERE id = :uid
+                            """),
+                            {"f": first, "l": last, "h": new_hash, "uid": user_id},
+                        )
+                    else:
+                        await session.execute(
+                            text("""
+                                UPDATE users 
+                                SET first_name = :f, last_name = :l 
+                                WHERE id = :uid
+                            """),
+                            {"f": first, "l": last, "uid": user_id},
+                        )
+                    await session.commit()
+        except (asyncio.TimeoutError, TimeoutError):
+            logging.exception("Unexpected error")
+            logging.error("Save account settings timed out (DB latency)")
+            async with self:
+                self.is_saving_account = False
+            yield rx.toast.error(
+                "Request timed out while updating your profile. Please check your connection."
+            )
+            return
+        except Exception as e:
+            logging.exception(f"Save account settings error: {e}")
+            async with self:
+                self.is_saving_account = False
+            yield rx.toast.error(
+                "The system encountered an error. Please try again later."
+            )
+            return
         async with self:
             self.current_password = ""
             self.new_password = ""

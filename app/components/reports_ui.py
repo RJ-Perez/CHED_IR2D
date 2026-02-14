@@ -649,7 +649,12 @@ def status_distribution_chart() -> rx.Component:
 
 def reports_dashboard_ui() -> rx.Component:
     """Main UI for the Reports page."""
-    from app.components.design_system import ds_pagination, ds_stat_card, DS
+    from app.components.design_system import (
+        ds_pagination,
+        ds_stat_card,
+        DS,
+        ds_skeleton_table,
+    )
 
     return rx.el.div(
         review_report_modal(),
@@ -713,85 +718,89 @@ def reports_dashboard_ui() -> rx.Component:
                 class_name="mb-4",
             ),
             rx.cond(
-                ReportsState.filtered_reports.length() > 0,
-                rx.el.div(
+                ReportsState.is_loading,
+                ds_skeleton_table(),
+                rx.cond(
+                    ReportsState.filtered_reports.length() > 0,
                     rx.el.div(
-                        rx.el.table(
-                            rx.el.thead(
-                                rx.el.tr(
-                                    rx.el.th(
-                                        "Institution",
-                                        class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                        rx.el.div(
+                            rx.el.table(
+                                rx.el.thead(
+                                    rx.el.tr(
+                                        rx.el.th(
+                                            "Institution",
+                                            class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                        ),
+                                        rx.el.th(
+                                            "Overall Score",
+                                            class_name="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                        ),
+                                        rx.el.th(
+                                            "Dimension Scores",
+                                            class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                        ),
+                                        rx.el.th(
+                                            "Status",
+                                            class_name="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                        ),
+                                        rx.el.th(
+                                            "Last Generated",
+                                            class_name="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                        ),
+                                        rx.el.th(
+                                            "Actions",
+                                            class_name="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                        ),
+                                        class_name="bg-gray-50 border-b border-gray-200",
                                     ),
-                                    rx.el.th(
-                                        "Overall Score",
-                                        class_name="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider",
-                                    ),
-                                    rx.el.th(
-                                        "Dimension Scores",
-                                        class_name="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
-                                    ),
-                                    rx.el.th(
-                                        "Status",
-                                        class_name="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider",
-                                    ),
-                                    rx.el.th(
-                                        "Last Generated",
-                                        class_name="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider",
-                                    ),
-                                    rx.el.th(
-                                        "Actions",
-                                        class_name="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider",
-                                    ),
-                                    class_name="bg-gray-50 border-b border-gray-200",
+                                    class_name="bg-gray-50",
                                 ),
-                                class_name="bg-gray-50",
-                            ),
-                            rx.el.tbody(
-                                rx.cond(
-                                    ReportsState.is_loading_page,
-                                    rx.foreach(
-                                        rx.Var.range(ReportsState.page_size),
-                                        lambda _: rx.el.tr(
-                                            rx.el.td(
-                                                rx.el.div(
-                                                    class_name="animate-pulse bg-gray-100 h-10 rounded-lg"
-                                                ),
-                                                class_name="px-6 py-4",
-                                                col_span=6,
-                                            )
+                                rx.el.tbody(
+                                    rx.cond(
+                                        ReportsState.is_loading_page,
+                                        rx.foreach(
+                                            rx.Var.range(ReportsState.page_size),
+                                            lambda _: rx.el.tr(
+                                                rx.el.td(
+                                                    rx.el.div(
+                                                        class_name="animate-pulse bg-gray-100 h-10 rounded-lg"
+                                                    ),
+                                                    class_name="px-6 py-4",
+                                                    col_span=6,
+                                                )
+                                            ),
+                                        ),
+                                        rx.foreach(
+                                            ReportsState.paginated_reports,
+                                            lambda report: report_table_row(
+                                                report=report, key=report["id"]
+                                            ),
                                         ),
                                     ),
-                                    rx.foreach(
-                                        ReportsState.paginated_reports,
-                                        lambda report: report_table_row(
-                                            report=report, key=report["id"]
-                                        ),
-                                    ),
+                                    class_name="divide-y divide-gray-200",
                                 ),
-                                class_name="divide-y divide-gray-200",
+                                class_name="min-w-full divide-y divide-gray-200",
                             ),
-                            class_name="min-w-full divide-y divide-gray-200",
+                            class_name="overflow-x-auto",
                         ),
-                        class_name="overflow-x-auto",
+                        ds_pagination(
+                            current_page=ReportsState.current_page,
+                            total_pages=ReportsState.total_pages,
+                            on_prev=ReportsState.prev_page,
+                            on_next=ReportsState.next_page,
+                            on_page_change=rx.noop(),
+                            page_size=ReportsState.page_size,
+                            on_page_size_change=ReportsState.set_page_size,
+                        ),
+                        class_name="shadow-md rounded-lg",
                     ),
-                    ds_pagination(
-                        current_page=ReportsState.current_page,
-                        total_pages=ReportsState.total_pages,
-                        on_prev=ReportsState.prev_page,
-                        on_next=ReportsState.next_page,
-                        on_page_change=rx.noop(),
-                        page_size=ReportsState.page_size,
-                        on_page_size_change=ReportsState.set_page_size,
+                    rx.el.div(
+                        rx.el.p(
+                            "No reports found. Try adjusting your search criteria.",
+                            class_name="text-center py-8 text-gray-500",
+                        ),
+                        class_name="bg-white rounded-lg shadow-md p-8",
                     ),
-                    class_name="shadow-md rounded-lg",
-                ),
-                rx.el.div(
-                    rx.el.p(
-                        "No reports found. Try adjusting your search criteria.",
-                        class_name="text-center py-8 text-gray-500",
-                    ),
-                    class_name="bg-white rounded-lg shadow-md p-8",
                 ),
             ),
             class_name="bg-white rounded-lg shadow-md p-6",

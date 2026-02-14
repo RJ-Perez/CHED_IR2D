@@ -424,18 +424,25 @@ class HEIState(rx.State):
 
     @rx.event(background=True)
     async def fetch_institutions(self):
-        """Loads all institutions from the database. Kept for Institutions page."""
+        """Loads all institutions from the database with aggressive caching."""
+        from app.utils.db_utils import get_cached_institutions, set_cached_institutions
+
         async with self:
+            cached_data = get_cached_institutions()
+            if cached_data:
+                self.hei_database = cached_data
+                self.is_fetching = False
+                return
             self.is_fetching = True
-        async with rx.asession() as session:
-            result = await session.execute(
-                text(
-                    "SELECT id, institution_name, street_address, city_municipality, 'Private', admin_name FROM institutions ORDER BY institution_name ASC"
+        try:
+            async with rx.asession() as session:
+                result = await session.execute(
+                    text(
+                        "SELECT id, institution_name, street_address, city_municipality, 'Private', admin_name FROM institutions ORDER BY institution_name ASC"
+                    )
                 )
-            )
-            rows = result.all()
-            async with self:
-                self.hei_database = [
+                rows = result.all()
+                data = [
                     {
                         "id": str(row[0]),
                         "name": row[1],
@@ -447,6 +454,13 @@ class HEIState(rx.State):
                     }
                     for row in rows
                 ]
+                set_cached_institutions(data)
+                async with self:
+                    self.hei_database = data
+        except Exception as e:
+            logging.exception(f"Error fetching institutions: {e}")
+        finally:
+            async with self:
                 self.is_fetching = False
 
     @rx.event(background=True)

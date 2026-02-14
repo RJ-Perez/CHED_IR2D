@@ -52,7 +52,13 @@ class AnalyticsState(rx.State):
     year_over_year_changes: dict[str, float] = {}
 
     async def _calculate_ncr_averages(self) -> dict[str, float]:
-        """Queries all scores for 2025 and calculates real NCR averages per indicator."""
+        """Queries all scores for 2025 and calculates real NCR averages per indicator with caching."""
+        from app.utils.db_utils import cached_query
+
+        get_cache, set_cache = cached_query("ncr_averages_2025", ttl=86400)
+        cached_data = get_cache()
+        if cached_data:
+            return cached_data
         async with rx.asession() as session:
             result = await session.execute(
                 text("""
@@ -66,9 +72,11 @@ class AnalyticsState(rx.State):
                 """)
             )
             rows = result.all()
-            return {
+            data = {
                 row[0]: round(row[1], 2) if row[1] is not None else 0.0 for row in rows
             }
+            set_cache(data)
+            return data
 
     def _clean_json_response(self, text: str) -> str:
         """Sanitizes AI response text to ensure it is valid parseable JSON.
@@ -478,7 +486,7 @@ class AnalyticsState(rx.State):
             for attempt in range(max_retries):
                 try:
                     response = await client.aio.models.generate_content(
-                        model="gemini-2.5-flash",
+                        model="gemini-2.0-flash",
                         contents=prompt,
                         config=types.GenerateContentConfig(
                             response_mime_type="application/json"
